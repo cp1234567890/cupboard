@@ -14,6 +14,18 @@
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --oat:#1d1b17; --card:#28251f; --ink:#eee8dc; --ink-soft:#a89f8c;
+      --herb:#6a8c68; --herb-dark:#587257; --paprika:#d68a4e; --brick:#d16a5a;
+      --line:#413c32;
+    }
+  }
+  :root[data-theme="dark"]{
+    --oat:#1d1b17; --card:#28251f; --ink:#eee8dc; --ink-soft:#a89f8c;
+    --herb:#6a8c68; --herb-dark:#587257; --paprika:#d68a4e; --brick:#d16a5a;
+    --line:#413c32;
+  }
   *{box-sizing:inherit;}
   html{scroll-padding-top: env(safe-area-inset-top, 0px);}
   html,body{height:100%;margin:0;}
@@ -48,8 +60,9 @@
     cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .row.selected{border-color:var(--herb); box-shadow:0 0 0 2px rgba(75,107,74,0.18);}
+  .row.low .qty{color:var(--brick); font-weight:600;}
   .row .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
-  .row .qty{font-variant-numeric:tabular-nums; font-size:0.98rem; color:var(--ink-soft); min-width:26px; text-align:right;}
+  .row .qty{font-variant-numeric:tabular-nums; font-size:0.98rem; color:var(--ink-soft); min-width:44px; text-align:right;}
   .del{
     background:none; border:none; color:var(--ink-soft); font-size:1.1rem;
     padding:4px 2px; cursor:pointer;
@@ -62,21 +75,26 @@
     max-width:560px; width:100%; margin:0 auto;
   }
   .adjust-info{
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
     margin-bottom:10px; font-size:0.95rem;
+  }
+  .adjust-info span{flex:1; min-width:0; overflow-wrap:anywhere;}
+  .adjust-info select{
+    padding:6px 4px; border-radius:8px; border:1px solid var(--line);
+    font-size:0.88rem; background:var(--card); color:var(--ink);
   }
   .adjust-info .close{background:none; border:none; color:var(--ink-soft); font-size:1.05rem; cursor:pointer; padding:2px 4px;}
   .adjust-controls{display:flex; align-items:stretch; gap:8px;}
   .toggle{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; flex-shrink:0;}
   .toggle .seg{
-    width:38px; border:none; background:#fff; font-size:1.15rem;
+    width:38px; border:none; background:var(--card); font-size:1.15rem;
     color:var(--ink-soft); cursor:pointer;
   }
   .toggle .seg.active[data-dir="add"]{background:var(--herb); color:#fff;}
   .toggle .seg.active[data-dir="remove"]{background:var(--brick); color:#fff;}
   .presets{display:flex; gap:6px; flex:1;}
   .presets button{
-    flex:1; border:1px solid var(--line); border-radius:10px; background:#fff;
+    flex:1; border:1px solid var(--line); border-radius:10px; background:var(--card);
     color:var(--ink); font-size:0.95rem; font-variant-numeric:tabular-nums; cursor:pointer;
     padding:0;
   }
@@ -89,11 +107,15 @@
   }
   form#add input[type=text]{
     flex:1; min-width:0; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
-    font-size:1rem; background:#fff; color:var(--ink);
+    font-size:1rem; background:var(--card); color:var(--ink);
   }
   form#add input[type=number]{
     width:58px; padding:11px 6px; border-radius:10px; border:1px solid var(--line);
-    font-size:1rem; background:#fff; color:var(--ink); text-align:center;
+    font-size:1rem; background:var(--card); color:var(--ink); text-align:center;
+  }
+  form#add select{
+    width:58px; padding:11px 2px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.9rem; background:var(--card); color:var(--ink); text-align:center;
   }
   form#add button{
     background:var(--herb); color:#fff; border:none; border-radius:10px;
@@ -114,7 +136,7 @@
   .field label{display:block; font-size:0.82rem; color:var(--ink-soft); margin-bottom:4px;}
   .field input{
     width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
-    font-size:1rem; background:#fff; color:var(--ink);
+    font-size:1rem; background:var(--card); color:var(--ink);
   }
   .modal-actions{display:flex; gap:10px; margin-top:6px;}
   .modal-actions button{
@@ -122,7 +144,7 @@
   }
   .btn-primary{background:var(--herb); color:#fff;}
   .btn-primary:active{background:var(--herb-dark);}
-  .btn-secondary{background:#fff; border:1px solid var(--line) !important; color:var(--ink);}
+  .btn-secondary{background:var(--card); border:1px solid var(--line) !important; color:var(--ink);}
   .error-text{color:var(--brick); font-size:0.82rem; margin-top:8px; display:none;}
   .hidden{display:none !important;}
 </style>
@@ -134,7 +156,11 @@
     <h1>Cupboard</h1>
     <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading…</span></div>
   </div>
-  <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+  <div>
+    <button class="icon-btn hidden" id="undoBtn" aria-label="Undo">↺</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">◐</button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+  </div>
 </header>
 
 <main>
@@ -145,12 +171,20 @@
 <form id="add">
   <input type="text" id="addName" placeholder="Ingredient" autocomplete="off" required>
   <input type="number" id="addQty" value="1" min="1">
+  <select id="addUnit">
+    <option value="g">g</option>
+    <option value="pcs">pcs</option>
+  </select>
   <button type="submit" aria-label="Add">+</button>
 </form>
 
 <div id="adjustBar" class="adjust-bar hidden">
   <div class="adjust-info">
     <span id="adjustName"></span>
+    <select id="adjustUnit">
+      <option value="g">g</option>
+      <option value="pcs">pcs</option>
+    </select>
     <button type="button" class="close" id="adjustClose" aria-label="Done">Done</button>
   </div>
   <div class="adjust-controls">
@@ -198,6 +232,20 @@ let saveTimer = null;
 let saving = false;
 let selectedName = null;
 let lastDir = "remove";
+let undoStack = [];
+
+function pushUndo(){
+  undoStack.push(JSON.parse(JSON.stringify(items)));
+  if(undoStack.length > 20) undoStack.shift();
+  document.getElementById("undoBtn").classList.remove("hidden");
+}
+function undo(){
+  if(undoStack.length === 0) return;
+  items = undoStack.pop();
+  if(undoStack.length === 0) document.getElementById("undoBtn").classList.add("hidden");
+  queueSave("Undo last change");
+  render();
+}
 
 function loadSettings(){
   try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){ return null; }
@@ -223,30 +271,39 @@ function parseText(text){
     line = line.trim();
     if(!line) return;
     if(line.includes("|")){
-      const idx = line.lastIndexOf("|");
-      const name = line.slice(0, idx);
-      let qty = parseInt(line.slice(idx+1), 10);
+      const parts = line.split("|");
+      const unit = (parts.length >= 3 && (parts[2] === "g" || parts[2] === "pcs")) ? parts[2] : "g";
+      const name = parts[0];
+      let qty = parseInt(parts[1], 10);
       if(isNaN(qty)) qty = 1;
-      out.push({name, quantity: qty});
+      out.push({name, quantity: qty, unit});
     } else {
-      out.push({name: line, quantity: 1});
+      out.push({name: line, quantity: 1, unit: "g"});
     }
   });
   return out;
 }
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}`).join("\n") + (list.length ? "\n" : "");
 }
 function titleCase(s){
   return s.trim().replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
 }
-function presetsFor(qty){
+function presetsFor(qty, unit){
+  if(unit === "pcs"){
+    if(qty <= 12) return [1, 2, 3];
+    if(qty <= 50) return [1, 5, 10];
+    return [5, 10, 25];
+  }
   if(qty <= 10) return [1, 2, 5];
   if(qty <= 50) return [5, 10, 25];
   if(qty <= 200) return [10, 25, 50];
   if(qty <= 1000) return [25, 50, 100];
   if(qty <= 5000) return [50, 100, 250];
   return [100, 250, 500];
+}
+function isLowStock(item){
+  return item.unit === "pcs" ? item.quantity <= 2 : item.quantity <= 100;
 }
 
 function setStatus(state, text){
@@ -326,10 +383,12 @@ function render(){
     .sort((a,b) => a.name.localeCompare(b.name))
     .forEach(item => {
       const row = document.createElement("div");
-      row.className = "row" + (item.name === selectedName ? " selected" : "");
+      row.className = "row"
+        + (item.name === selectedName ? " selected" : "")
+        + (isLowStock(item) ? " low" : "");
       row.innerHTML = `
         <span class="name">${item.name}</span>
-        <span class="qty">${item.quantity}</span>
+        <span class="qty">${item.quantity} ${item.unit}</span>
         <button type="button" class="del" aria-label="Remove ${item.name}">✕</button>
       `;
       row.addEventListener("click", () => {
@@ -359,6 +418,15 @@ function renderAdjustBar(){
   bar.classList.remove("hidden");
   document.getElementById("adjustName").textContent = item.name;
 
+  const unitSel = document.getElementById("adjustUnit");
+  unitSel.value = item.unit;
+  unitSel.onchange = () => {
+    pushUndo();
+    item.unit = unitSel.value;
+    queueSave(`Set ${item.name} unit`);
+    render();
+  };
+
   const segs = document.querySelectorAll("#adjustToggle .seg");
   segs.forEach(s => {
     s.classList.toggle("active", s.dataset.dir === lastDir);
@@ -367,7 +435,7 @@ function renderAdjustBar(){
 
   const presetsEl = document.getElementById("adjustPresets");
   presetsEl.innerHTML = "";
-  presetsFor(item.quantity).forEach(amt => {
+  presetsFor(item.quantity, item.unit).forEach(amt => {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = amt;
@@ -379,6 +447,7 @@ function renderAdjustBar(){
 function changeQty(name, delta){
   const item = items.find(i => i.name === name);
   if(!item) return;
+  pushUndo();
   item.quantity += delta;
   if(item.quantity <= 0){
     items = items.filter(i => i.name !== name);
@@ -391,24 +460,47 @@ function changeQty(name, delta){
 
 function removeItem(name){
   if(!confirm(`Remove ${name}?`)) return;
+  pushUndo();
   items = items.filter(i => i.name !== name);
   queueSave(`Remove ${name}`);
   render();
 }
 
-function addItem(name, qty){
+function addItem(name, qty, unit){
   name = titleCase(name);
   if(!name || qty <= 0) return;
+  pushUndo();
   const existing = items.find(i => i.name.toLowerCase() === name.toLowerCase());
   if(existing){
     existing.quantity += qty;
     queueSave(`Increase ${name}`);
   } else {
-    items.push({name, quantity: qty});
+    items.push({name, quantity: qty, unit});
     queueSave(`Add ${name}`);
   }
   render();
 }
+
+// theme
+const THEME_KEY = "cupboard-theme";
+function applyTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  if(saved === "light" || saved === "dark"){
+    document.documentElement.setAttribute("data-theme", saved);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+document.getElementById("themeBtn").onclick = () => {
+  const current = localStorage.getItem(THEME_KEY) || "auto";
+  const next = current === "auto" ? "dark" : current === "dark" ? "light" : "auto";
+  if(next === "auto") localStorage.removeItem(THEME_KEY);
+  else localStorage.setItem(THEME_KEY, next);
+  applyTheme();
+};
+applyTheme();
+
+document.getElementById("undoBtn").onclick = undo;
 
 document.getElementById("adjustClose").onclick = () => {
   selectedName = null;
@@ -419,8 +511,9 @@ document.getElementById("add").addEventListener("submit", e => {
   e.preventDefault();
   const nameEl = document.getElementById("addName");
   const qtyEl = document.getElementById("addQty");
+  const unitEl = document.getElementById("addUnit");
   const qty = parseInt(qtyEl.value, 10) || 1;
-  addItem(nameEl.value, qty);
+  addItem(nameEl.value, qty, unitEl.value);
   nameEl.value = "";
   qtyEl.value = 1;
   nameEl.focus();
