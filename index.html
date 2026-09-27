@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cupboard</title>
+<style>
+  :root{
+    --oat:#efeae0; --card:#faf8f2; --ink:#2b2620; --ink-soft:#6b6355;
+    --herb:#4b6b4a; --herb-dark:#3a5439; --paprika:#b5652b; --brick:#a23b3b;
+    --line:#ddd6c6;
+    --radius:14px;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:inherit;}
+  html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--oat); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column;
+  }
+  h1,h2{font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif; font-weight:600; margin:0;}
+  header{
+    position:sticky; top:0; z-index:5;
+    padding:calc(env(safe-area-inset-top,0px) + 18px) 20px 14px;
+    background:var(--oat);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between;
+  }
+  header h1{font-size:1.5rem; letter-spacing:-0.01em;}
+  .status{font-size:0.78rem; color:var(--ink-soft); display:flex; align-items:center; gap:6px; margin-top:2px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--herb);display:inline-block;}
+  .dot.busy{background:var(--paprika);}
+  .dot.err{background:var(--brick);}
+  .icon-btn{
+    background:none;border:none;font-size:1.3rem;color:var(--ink-soft);
+    padding:6px; cursor:pointer; line-height:1;
+  }
+  main{flex:1; overflow-y:auto; padding:14px 16px 8px; max-width:560px; width:100%; margin:0 auto;}
+  .empty{text-align:center; color:var(--ink-soft); padding:60px 20px; font-size:0.95rem;}
+  .row{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:9px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .row .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
+  .stepper{display:flex; align-items:center; gap:2px;}
+  .stepper button{
+    width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
+    background:#fff; font-size:1.15rem; color:var(--herb-dark); cursor:pointer;
+  }
+  .stepper button:active{background:var(--herb); color:#fff;}
+  .qty{width:30px; text-align:center; font-variant-numeric:tabular-nums; font-size:0.98rem;}
+  .del{
+    background:none; border:none; color:var(--ink-soft); font-size:1.1rem;
+    padding:4px 2px; cursor:pointer;
+  }
+  .del:active{color:var(--brick);}
+  form#add{
+    position:sticky; bottom:0; z-index:5;
+    display:flex; gap:8px; padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);
+    background:var(--oat); border-top:1px solid var(--line);
+    max-width:560px; width:100%; margin:0 auto;
+  }
+  form#add input[type=text]{
+    flex:1; min-width:0; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+    font-size:1rem; background:#fff; color:var(--ink);
+  }
+  form#add input[type=number]{
+    width:58px; padding:11px 6px; border-radius:10px; border:1px solid var(--line);
+    font-size:1rem; background:#fff; color:var(--ink); text-align:center;
+  }
+  form#add button{
+    background:var(--herb); color:#fff; border:none; border-radius:10px;
+    padding:0 18px; font-size:1.4rem; cursor:pointer;
+  }
+  form#add button:active{background:var(--herb-dark);}
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(43,38,32,0.45); z-index:10;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal{
+    background:var(--card); width:100%; max-width:480px; border-radius:18px 18px 0 0;
+    padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 20px);
+  }
+  .modal h2{font-size:1.2rem; margin-bottom:4px;}
+  .modal p.hint{color:var(--ink-soft); font-size:0.85rem; margin:4px 0 16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:0.82rem; color:var(--ink-soft); margin-bottom:4px;}
+  .field input{
+    width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+    font-size:1rem; background:#fff; color:var(--ink);
+  }
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .modal-actions button{
+    flex:1; padding:12px; border-radius:10px; border:none; font-size:0.98rem; cursor:pointer;
+  }
+  .btn-primary{background:var(--herb); color:#fff;}
+  .btn-primary:active{background:var(--herb-dark);}
+  .btn-secondary{background:#fff; border:1px solid var(--line) !important; color:var(--ink);}
+  .error-text{color:var(--brick); font-size:0.82rem; margin-top:8px; display:none;}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Cupboard</h1>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Loading…</span></div>
+  </div>
+  <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</button>
+</header>
+
+<main>
+  <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
+  <div id="list"></div>
+</main>
+
+<form id="add">
+  <input type="text" id="addName" placeholder="Ingredient" autocomplete="off" required>
+  <input type="number" id="addQty" value="1" min="1">
+  <button type="submit" aria-label="Add">+</button>
+</form>
+
+<div id="settingsModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Connect to GitHub</h2>
+    <p class="hint">Reads and writes Ingredients.txt at the repo root. The token stays only on this device.</p>
+    <div class="field">
+      <label for="cfgOwner">Repo owner</label>
+      <input type="text" id="cfgOwner" placeholder="e.g. cameron">
+    </div>
+    <div class="field">
+      <label for="cfgRepo">Repo name</label>
+      <input type="text" id="cfgRepo" placeholder="e.g. cupboard">
+    </div>
+    <div class="field">
+      <label for="cfgToken">Personal access token</label>
+      <input type="password" id="cfgToken" placeholder="ghp_… (needs repo contents write access)">
+    </div>
+    <p class="error-text" id="cfgError"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="cfgCancel">Cancel</button>
+      <button type="button" class="btn-primary" id="cfgSave">Save & connect</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BRANCH = "main";
+const PATH = "Ingredients.txt";
+const STORE_KEY = "cupboard-settings-v1";
+
+let settings = null;
+let items = [];
+let sha = null;
+let saveTimer = null;
+let saving = false;
+
+function loadSettings(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){ return null; }
+}
+function persistSettings(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+function apiUrl(){
+  return `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${encodeURIComponent(PATH)}?ref=${BRANCH}`;
+}
+function authHeaders(){
+  return { "Authorization": `Bearer ${settings.token}`, "Accept": "application/vnd.github+json" };
+}
+function b64EncodeUtf8(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64DecodeUtf8(b64){
+  return decodeURIComponent(escape(atob(b64.replace(/\n/g,""))));
+}
+
+function parseText(text){
+  const out = [];
+  text.split(/\r?\n/).forEach(line=>{
+    line = line.trim();
+    if(!line) return;
+    if(line.includes("|")){
+      const idx = line.lastIndexOf("|");
+      const name = line.slice(0, idx);
+      let qty = parseInt(line.slice(idx+1), 10);
+      if(isNaN(qty)) qty = 1;
+      out.push({name, quantity: qty});
+    } else {
+      out.push({name: line, quantity: 1});
+    }
+  });
+  return out;
+}
+function serialize(list){
+  return list.map(i => `${i.name}|${i.quantity}`).join("\n") + (list.length ? "\n" : "");
+}
+function titleCase(s){
+  return s.trim().replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
+}
+
+function setStatus(state, text){
+  const dot = document.getElementById("statusDot");
+  const label = document.getElementById("statusText");
+  dot.className = "dot" + (state === "busy" ? " busy" : state === "err" ? " err" : "");
+  label.textContent = text;
+}
+
+async function fetchFile(){
+  setStatus("busy", "Loading…");
+  try{
+    const res = await fetch(apiUrl(), { headers: authHeaders() });
+    if(res.status === 404){
+      items = []; sha = null;
+      setStatus("ok", "Synced");
+      render();
+      return;
+    }
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    const data = await res.json();
+    sha = data.sha;
+    items = parseText(b64DecodeUtf8(data.content));
+    setStatus("ok", "Synced");
+    render();
+  }catch(err){
+    setStatus("err", "Couldn't load — check settings");
+  }
+}
+
+async function pushFile(message){
+  saving = true;
+  setStatus("busy", "Saving…");
+  try{
+    const body = {
+      message,
+      content: b64EncodeUtf8(serialize(items)),
+      branch: BRANCH
+    };
+    if(sha) body.sha = sha;
+    let res = await fetch(apiUrl(), { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
+
+    if(res.status === 409){
+      // sha out of date — refetch and retry once
+      const fresh = await fetch(apiUrl(), { headers: authHeaders() });
+      if(fresh.ok){ sha = (await fresh.json()).sha; body.sha = sha; }
+      res = await fetch(apiUrl(), { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
+    }
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    const data = await res.json();
+    sha = data.content.sha;
+    setStatus("ok", "Synced");
+  }catch(err){
+    setStatus("err", "Sync failed — will retry on next change");
+  }finally{
+    saving = false;
+  }
+}
+
+function queueSave(message){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => pushFile(message), 700);
+}
+
+function render(){
+  const list = document.getElementById("list");
+  const empty = document.getElementById("empty");
+  list.innerHTML = "";
+  if(items.length === 0){
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  items
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .forEach(item => {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <span class="name">${item.name}</span>
+        <div class="stepper">
+          <button type="button" data-act="minus">−</button>
+          <span class="qty">${item.quantity}</span>
+          <button type="button" data-act="plus">+</button>
+        </div>
+        <button type="button" class="del" aria-label="Remove">✕</button>
+      `;
+      row.querySelector('[data-act="minus"]').onclick = () => changeQty(item.name, -1);
+      row.querySelector('[data-act="plus"]').onclick = () => changeQty(item.name, +1);
+      row.querySelector(".del").onclick = () => removeItem(item.name);
+      list.appendChild(row);
+    });
+}
+
+function changeQty(name, delta){
+  const item = items.find(i => i.name === name);
+  if(!item) return;
+  item.quantity += delta;
+  if(item.quantity <= 0){
+    items = items.filter(i => i.name !== name);
+    queueSave(`Remove ${name}`);
+  } else {
+    queueSave(`Update ${name} quantity`);
+  }
+  render();
+}
+
+function removeItem(name){
+  if(!confirm(`Remove ${name}?`)) return;
+  items = items.filter(i => i.name !== name);
+  queueSave(`Remove ${name}`);
+  render();
+}
+
+function addItem(name, qty){
+  name = titleCase(name);
+  if(!name || qty <= 0) return;
+  const existing = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+  if(existing){
+    existing.quantity += qty;
+    queueSave(`Increase ${name}`);
+  } else {
+    items.push({name, quantity: qty});
+    queueSave(`Add ${name}`);
+  }
+  render();
+}
+
+document.getElementById("add").addEventListener("submit", e => {
+  e.preventDefault();
+  const nameEl = document.getElementById("addName");
+  const qtyEl = document.getElementById("addQty");
+  const qty = parseInt(qtyEl.value, 10) || 1;
+  addItem(nameEl.value, qty);
+  nameEl.value = "";
+  qtyEl.value = 1;
+  nameEl.focus();
+});
+
+// settings modal
+const modal = document.getElementById("settingsModal");
+function openSettings(){
+  document.getElementById("cfgOwner").value = settings?.owner || "";
+  document.getElementById("cfgRepo").value = settings?.repo || "";
+  document.getElementById("cfgToken").value = settings?.token || "";
+  document.getElementById("cfgError").style.display = "none";
+  modal.classList.remove("hidden");
+}
+document.getElementById("settingsBtn").onclick = openSettings;
+document.getElementById("cfgCancel").onclick = () => {
+  if(settings) modal.classList.add("hidden");
+};
+document.getElementById("cfgSave").onclick = () => {
+  const owner = document.getElementById("cfgOwner").value.trim();
+  const repo = document.getElementById("cfgRepo").value.trim();
+  const token = document.getElementById("cfgToken").value.trim();
+  const errEl = document.getElementById("cfgError");
+  if(!owner || !repo || !token){
+    errEl.textContent = "All three fields are required.";
+    errEl.style.display = "block";
+    return;
+  }
+  settings = { owner, repo, token };
+  persistSettings(settings);
+  modal.classList.add("hidden");
+  fetchFile();
+};
+
+// boot
+settings = loadSettings();
+if(!settings){
+  setStatus("err", "Not connected");
+  openSettings();
+} else {
+  fetchFile();
+}
+</script>
+</body>
+</html>
