@@ -44,16 +44,28 @@
   .row{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
     padding:12px 14px; margin-bottom:9px;
-    display:flex; align-items:center; gap:10px;
+    display:flex; flex-direction:column; gap:8px;
   }
-  .row .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
-  .stepper{display:flex; align-items:center; gap:2px;}
-  .stepper button{
-    width:34px; height:34px; border-radius:9px; border:1px solid var(--line);
-    background:#fff; font-size:1.15rem; color:var(--herb-dark); cursor:pointer;
+  .row-top{display:flex; align-items:center; gap:10px;}
+  .row-top .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
+  .row-top .qty{font-variant-numeric:tabular-nums; font-size:0.98rem; color:var(--ink-soft); min-width:26px; text-align:right;}
+  .row-bottom{display:flex; align-items:center; justify-content:flex-end; gap:6px;}
+  .toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .toggle .seg{
+    width:32px; height:32px; border:none; background:#fff; font-size:1.05rem;
+    color:var(--ink-soft); cursor:pointer;
   }
-  .stepper button:active{background:var(--herb); color:#fff;}
-  .qty{width:30px; text-align:center; font-variant-numeric:tabular-nums; font-size:0.98rem;}
+  .toggle .seg.active[data-dir="add"]{background:var(--herb); color:#fff;}
+  .toggle .seg.active[data-dir="remove"]{background:var(--brick); color:#fff;}
+  .amt{
+    width:60px; height:32px; text-align:center; border-radius:8px; border:1px solid var(--line);
+    font-size:0.95rem; background:#fff; color:var(--ink);
+  }
+  .apply{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--line);
+    background:#fff; color:var(--herb-dark); font-size:1.05rem; cursor:pointer;
+  }
+  .apply:active{background:var(--herb); color:#fff;}
   .del{
     background:none; border:none; color:var(--ink-soft); font-size:1.1rem;
     padding:4px 2px; cursor:pointer;
@@ -160,6 +172,8 @@ let items = [];
 let sha = null;
 let saveTimer = null;
 let saving = false;
+let lastAmt = 1;
+let lastDir = "remove";
 
 function loadSettings(){
   try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){ return null; }
@@ -281,16 +295,34 @@ function render(){
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML = `
-        <span class="name">${item.name}</span>
-        <div class="stepper">
-          <button type="button" data-act="minus">−</button>
+        <div class="row-top">
+          <span class="name">${item.name}</span>
           <span class="qty">${item.quantity}</span>
-          <button type="button" data-act="plus">+</button>
+          <button type="button" class="del" aria-label="Remove ${item.name}">✕</button>
         </div>
-        <button type="button" class="del" aria-label="Remove">✕</button>
+        <div class="row-bottom">
+          <div class="toggle">
+            <button type="button" class="seg" data-dir="add" aria-label="Add">+</button>
+            <button type="button" class="seg" data-dir="remove" aria-label="Remove amount">−</button>
+          </div>
+          <input type="number" class="amt" inputmode="numeric" min="1" value="${lastAmt}">
+          <button type="button" class="apply" aria-label="Apply">✓</button>
+        </div>
       `;
-      row.querySelector('[data-act="minus"]').onclick = () => changeQty(item.name, -1);
-      row.querySelector('[data-act="plus"]').onclick = () => changeQty(item.name, +1);
+      const segs = row.querySelectorAll(".seg");
+      const amtInput = row.querySelector(".amt");
+      const setDir = dir => segs.forEach(s => s.classList.toggle("active", s.dataset.dir === dir));
+      setDir(lastDir);
+      segs.forEach(s => s.onclick = () => { lastDir = s.dataset.dir; setDir(lastDir); });
+
+      const apply = () => {
+        const amt = parseInt(amtInput.value, 10);
+        if(!amt || amt <= 0) return;
+        lastAmt = amt;
+        changeQty(item.name, lastDir === "add" ? amt : -amt);
+      };
+      row.querySelector(".apply").onclick = apply;
+      amtInput.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); apply(); } });
       row.querySelector(".del").onclick = () => removeItem(item.name);
       list.appendChild(row);
     });
