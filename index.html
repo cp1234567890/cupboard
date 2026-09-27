@@ -44,33 +44,43 @@
   .row{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
     padding:12px 14px; margin-bottom:9px;
-    display:flex; flex-direction:column; gap:8px;
+    display:flex; align-items:center; gap:10px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
-  .row-top{display:flex; align-items:center; gap:10px;}
-  .row-top .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
-  .row-top .qty{font-variant-numeric:tabular-nums; font-size:0.98rem; color:var(--ink-soft); min-width:26px; text-align:right;}
-  .row-bottom{display:flex; align-items:center; justify-content:flex-end; gap:6px;}
-  .toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
-  .toggle .seg{
-    width:32px; height:32px; border:none; background:#fff; font-size:1.05rem;
-    color:var(--ink-soft); cursor:pointer;
-  }
-  .toggle .seg.active[data-dir="add"]{background:var(--herb); color:#fff;}
-  .toggle .seg.active[data-dir="remove"]{background:var(--brick); color:#fff;}
-  .amt{
-    width:60px; height:32px; text-align:center; border-radius:8px; border:1px solid var(--line);
-    font-size:0.95rem; background:#fff; color:var(--ink);
-  }
-  .apply{
-    width:32px; height:32px; border-radius:8px; border:1px solid var(--line);
-    background:#fff; color:var(--herb-dark); font-size:1.05rem; cursor:pointer;
-  }
-  .apply:active{background:var(--herb); color:#fff;}
+  .row.selected{border-color:var(--herb); box-shadow:0 0 0 2px rgba(75,107,74,0.18);}
+  .row .name{flex:1; font-size:1.02rem; min-width:0; overflow-wrap:anywhere;}
+  .row .qty{font-variant-numeric:tabular-nums; font-size:0.98rem; color:var(--ink-soft); min-width:26px; text-align:right;}
   .del{
     background:none; border:none; color:var(--ink-soft); font-size:1.1rem;
     padding:4px 2px; cursor:pointer;
   }
   .del:active{color:var(--brick);}
+  .adjust-bar{
+    position:sticky; bottom:0; z-index:5;
+    padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);
+    background:var(--oat); border-top:1px solid var(--line);
+    max-width:560px; width:100%; margin:0 auto;
+  }
+  .adjust-info{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px; font-size:0.95rem;
+  }
+  .adjust-info .close{background:none; border:none; color:var(--ink-soft); font-size:1.05rem; cursor:pointer; padding:2px 4px;}
+  .adjust-controls{display:flex; align-items:stretch; gap:8px;}
+  .toggle{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; flex-shrink:0;}
+  .toggle .seg{
+    width:38px; border:none; background:#fff; font-size:1.15rem;
+    color:var(--ink-soft); cursor:pointer;
+  }
+  .toggle .seg.active[data-dir="add"]{background:var(--herb); color:#fff;}
+  .toggle .seg.active[data-dir="remove"]{background:var(--brick); color:#fff;}
+  .presets{display:flex; gap:6px; flex:1;}
+  .presets button{
+    flex:1; border:1px solid var(--line); border-radius:10px; background:#fff;
+    color:var(--ink); font-size:0.95rem; font-variant-numeric:tabular-nums; cursor:pointer;
+    padding:0;
+  }
+  .presets button:active{background:var(--herb); color:#fff; border-color:var(--herb);}
   form#add{
     position:sticky; bottom:0; z-index:5;
     display:flex; gap:8px; padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);
@@ -138,6 +148,20 @@
   <button type="submit" aria-label="Add">+</button>
 </form>
 
+<div id="adjustBar" class="adjust-bar hidden">
+  <div class="adjust-info">
+    <span id="adjustName"></span>
+    <button type="button" class="close" id="adjustClose" aria-label="Done">Done</button>
+  </div>
+  <div class="adjust-controls">
+    <div class="toggle" id="adjustToggle">
+      <button type="button" class="seg" data-dir="add" aria-label="Add">+</button>
+      <button type="button" class="seg" data-dir="remove" aria-label="Remove">−</button>
+    </div>
+    <div class="presets" id="adjustPresets"></div>
+  </div>
+</div>
+
 <div id="settingsModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Connect to GitHub</h2>
@@ -172,7 +196,7 @@ let items = [];
 let sha = null;
 let saveTimer = null;
 let saving = false;
-let lastAmt = 1;
+let selectedName = null;
 let lastDir = "remove";
 
 function loadSettings(){
@@ -215,6 +239,14 @@ function serialize(list){
 }
 function titleCase(s){
   return s.trim().replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
+}
+function presetsFor(qty){
+  if(qty <= 10) return [1, 2, 5];
+  if(qty <= 50) return [5, 10, 25];
+  if(qty <= 200) return [10, 25, 50];
+  if(qty <= 1000) return [25, 50, 100];
+  if(qty <= 5000) return [50, 100, 250];
+  return [100, 250, 500];
 }
 
 function setStatus(state, text){
@@ -285,6 +317,7 @@ function render(){
   list.innerHTML = "";
   if(items.length === 0){
     empty.classList.remove("hidden");
+    renderAdjustBar();
     return;
   }
   empty.classList.add("hidden");
@@ -293,39 +326,54 @@ function render(){
     .sort((a,b) => a.name.localeCompare(b.name))
     .forEach(item => {
       const row = document.createElement("div");
-      row.className = "row";
+      row.className = "row" + (item.name === selectedName ? " selected" : "");
       row.innerHTML = `
-        <div class="row-top">
-          <span class="name">${item.name}</span>
-          <span class="qty">${item.quantity}</span>
-          <button type="button" class="del" aria-label="Remove ${item.name}">✕</button>
-        </div>
-        <div class="row-bottom">
-          <div class="toggle">
-            <button type="button" class="seg" data-dir="add" aria-label="Add">+</button>
-            <button type="button" class="seg" data-dir="remove" aria-label="Remove amount">−</button>
-          </div>
-          <input type="number" class="amt" inputmode="numeric" min="1" value="${lastAmt}">
-          <button type="button" class="apply" aria-label="Apply">✓</button>
-        </div>
+        <span class="name">${item.name}</span>
+        <span class="qty">${item.quantity}</span>
+        <button type="button" class="del" aria-label="Remove ${item.name}">✕</button>
       `;
-      const segs = row.querySelectorAll(".seg");
-      const amtInput = row.querySelector(".amt");
-      const setDir = dir => segs.forEach(s => s.classList.toggle("active", s.dataset.dir === dir));
-      setDir(lastDir);
-      segs.forEach(s => s.onclick = () => { lastDir = s.dataset.dir; setDir(lastDir); });
-
-      const apply = () => {
-        const amt = parseInt(amtInput.value, 10);
-        if(!amt || amt <= 0) return;
-        lastAmt = amt;
-        changeQty(item.name, lastDir === "add" ? amt : -amt);
-      };
-      row.querySelector(".apply").onclick = apply;
-      amtInput.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); apply(); } });
-      row.querySelector(".del").onclick = () => removeItem(item.name);
+      row.addEventListener("click", () => {
+        selectedName = (selectedName === item.name) ? null : item.name;
+        render();
+      });
+      row.querySelector(".del").addEventListener("click", e => {
+        e.stopPropagation();
+        removeItem(item.name);
+      });
       list.appendChild(row);
     });
+  renderAdjustBar();
+}
+
+function renderAdjustBar(){
+  const bar = document.getElementById("adjustBar");
+  const addForm = document.getElementById("add");
+  const item = items.find(i => i.name === selectedName);
+  if(!item){
+    selectedName = null;
+    bar.classList.add("hidden");
+    addForm.classList.remove("hidden");
+    return;
+  }
+  addForm.classList.add("hidden");
+  bar.classList.remove("hidden");
+  document.getElementById("adjustName").textContent = item.name;
+
+  const segs = document.querySelectorAll("#adjustToggle .seg");
+  segs.forEach(s => {
+    s.classList.toggle("active", s.dataset.dir === lastDir);
+    s.onclick = () => { lastDir = s.dataset.dir; renderAdjustBar(); };
+  });
+
+  const presetsEl = document.getElementById("adjustPresets");
+  presetsEl.innerHTML = "";
+  presetsFor(item.quantity).forEach(amt => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = amt;
+    b.onclick = () => changeQty(item.name, lastDir === "add" ? amt : -amt);
+    presetsEl.appendChild(b);
+  });
 }
 
 function changeQty(name, delta){
@@ -361,6 +409,11 @@ function addItem(name, qty){
   }
   render();
 }
+
+document.getElementById("adjustClose").onclick = () => {
+  selectedName = null;
+  render();
+};
 
 document.getElementById("add").addEventListener("submit", e => {
   e.preventDefault();
