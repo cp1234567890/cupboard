@@ -99,6 +99,12 @@
     padding:0;
   }
   .presets button:active{background:var(--herb); color:#fff; border-color:var(--herb);}
+  .presets button.custom-toggle{flex:0 0 40px; color:var(--ink-soft); font-size:1.1rem;}
+  .presets input.custom-input{
+    flex:1; min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--card);
+    color:var(--ink); font-size:0.95rem; text-align:center; padding:0 6px;
+  }
+  .presets button.custom-apply{flex:0 0 40px;}
   form#add{
     position:sticky; bottom:0; z-index:5;
     display:flex; gap:8px; padding:12px 16px calc(env(safe-area-inset-bottom,0px) + 12px);
@@ -232,6 +238,7 @@ let saveTimer = null;
 let saving = false;
 let selectedName = null;
 let lastDir = "remove";
+let customMode = false;
 let undoStack = [];
 
 function pushUndo(){
@@ -393,6 +400,7 @@ function render(){
       `;
       row.addEventListener("click", () => {
         selectedName = (selectedName === item.name) ? null : item.name;
+        customMode = false;
         render();
       });
       row.querySelector(".del").addEventListener("click", e => {
@@ -410,6 +418,7 @@ function renderAdjustBar(){
   const item = items.find(i => i.name === selectedName);
   if(!item){
     selectedName = null;
+    customMode = false;
     bar.classList.add("hidden");
     addForm.classList.remove("hidden");
     return;
@@ -435,13 +444,46 @@ function renderAdjustBar(){
 
   const presetsEl = document.getElementById("adjustPresets");
   presetsEl.innerHTML = "";
-  presetsFor(item.quantity, item.unit).forEach(amt => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = amt;
-    b.onclick = () => changeQty(item.name, lastDir === "add" ? amt : -amt);
-    presetsEl.appendChild(b);
-  });
+
+  if(customMode){
+    const input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = "numeric";
+    input.min = "1";
+    input.className = "custom-input";
+    input.placeholder = "Amount";
+    const applyBtn = document.createElement("button");
+    applyBtn.type = "button";
+    applyBtn.className = "custom-apply";
+    applyBtn.textContent = "✓";
+    applyBtn.setAttribute("aria-label", "Apply custom amount");
+    const doApply = () => {
+      const amt = parseInt(input.value, 10);
+      if(!amt || amt <= 0) return;
+      customMode = false;
+      changeQty(item.name, lastDir === "add" ? amt : -amt);
+    };
+    applyBtn.onclick = doApply;
+    input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); doApply(); } });
+    presetsEl.appendChild(input);
+    presetsEl.appendChild(applyBtn);
+    input.focus();
+  } else {
+    presetsFor(item.quantity, item.unit).forEach(amt => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = amt;
+      b.onclick = () => changeQty(item.name, lastDir === "add" ? amt : -amt);
+      presetsEl.appendChild(b);
+    });
+    const customBtn = document.createElement("button");
+    customBtn.type = "button";
+    customBtn.className = "custom-toggle";
+    customBtn.textContent = "…";
+    customBtn.setAttribute("aria-label", "Custom amount");
+    customBtn.onclick = () => { customMode = true; renderAdjustBar(); };
+    presetsEl.appendChild(customBtn);
+  }
 }
 
 function changeQty(name, delta){
@@ -504,6 +546,7 @@ document.getElementById("undoBtn").onclick = undo;
 
 document.getElementById("adjustClose").onclick = () => {
   selectedName = null;
+  customMode = false;
   render();
 };
 
