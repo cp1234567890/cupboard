@@ -169,9 +169,20 @@
   </div>
 </header>
 
+<nav class="tabs" id="tabs">
+  <button type="button" class="tab active" data-view="cupboard">Cupboard</button>
+  <button type="button" class="tab" data-view="recipes">Recipes</button>
+</nav>
+
 <main>
-  <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
-  <div id="list"></div>
+  <div id="cupboardView">
+    <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
+    <div id="list"></div>
+  </div>
+  <div id="recipesView" class="hidden">
+    <div id="recipeEmpty" class="empty hidden">No recipes yet. Add one below.</div>
+    <div id="recipeList"></div>
+  </div>
 </main>
 
 <form id="add">
@@ -202,6 +213,10 @@
   </div>
 </div>
 
+<div id="recipeFooter" class="adjust-bar hidden">
+  <button type="button" id="addRecipeBtn" class="recipe-footer-btn">+ Add recipe</button>
+</div>
+
 <div id="settingsModal" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Connect to GitHub</h2>
@@ -223,6 +238,35 @@
       <button type="button" class="btn-secondary" id="cfgCancel">Cancel</button>
       <button type="button" class="btn-primary" id="cfgSave">Save & connect</button>
     </div>
+  </div>
+</div>
+
+<div id="recipeModal" class="modal-backdrop hidden">
+  <div class="modal recipe-modal">
+    <h2 id="recipeModalTitle">Add recipe</h2>
+    <div class="field">
+      <label for="rName">Name</label>
+      <input type="text" id="rName">
+    </div>
+    <div class="field">
+      <label for="rBakeTime">Bake time</label>
+      <input type="text" id="rBakeTime" placeholder="e.g. 180°C, 45 min">
+    </div>
+    <div class="field">
+      <label>Ingredients</label>
+      <div id="rIngredients"></div>
+      <button type="button" id="rAddIngredient">+ Add ingredient</button>
+    </div>
+    <div class="field">
+      <label for="rMethod">Method (one step per line)</label>
+      <textarea id="rMethod" rows="6"></textarea>
+    </div>
+    <p class="error-text" id="rError"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="rCancel">Cancel</button>
+      <button type="button" class="btn-primary" id="rSave">Save recipe</button>
+    </div>
+    <button type="button" id="rDelete" class="hidden">Delete recipe</button>
   </div>
 </div>
 
