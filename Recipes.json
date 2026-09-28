@@ -13,17 +13,5 @@
       "Crack eggs",
       "Bake"
     ]
-  },
-  {
-    "name": "Test",
-    "bakeTime": "",
-    "ingredients": [
-      {
-        "name": "Eggs",
-        "quantity": 1,
-        "unit": "g"
-      }
-    ],
-    "method": []
   }
 ]
