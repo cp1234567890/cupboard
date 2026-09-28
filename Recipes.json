@@ -1,1 +1,17 @@
-
+[
+  {
+    "name": "Cake",
+    "bakeTime": "30 min",
+    "ingredients": [
+      {
+        "name": "Eggs",
+        "quantity": 1,
+        "unit": "pcs"
+      }
+    ],
+    "method": [
+      "Crack eggs",
+      "Bake"
+    ]
+  }
+]
