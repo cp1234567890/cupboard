@@ -187,6 +187,8 @@
   .method-list{padding-left:20px; margin:0; display:flex; flex-direction:column; gap:6px; font-size:0.94rem;}
   .recipe-actions{display:flex; gap:10px; margin-top:6px;}
   .recipe-actions button{flex:1; padding:10px; border-radius:10px; font-size:0.9rem; cursor:pointer;}
+  .recipe-actions .r-make{background:var(--herb); border:1px solid var(--herb); color:#fff;}
+  .recipe-actions .r-make:active{background:var(--herb-dark);}
   .recipe-actions .r-edit{background:var(--card); border:1px solid var(--line); color:var(--ink);}
   .recipe-actions .r-delete{background:none; border:1px solid var(--brick); color:var(--brick);}
   .recipe-footer-btn{
@@ -769,6 +771,12 @@ function renderRecipes(){
         const actions = document.createElement("div");
         actions.className = "recipe-actions";
 
+        const make = document.createElement("button");
+        make.type = "button";
+        make.className = "r-make";
+        make.textContent = "Make";
+        make.onclick = () => makeRecipe(recipe.name);
+
         const edit = document.createElement("button");
         edit.type = "button";
         edit.className = "r-edit";
@@ -781,6 +789,7 @@ function renderRecipes(){
         del.textContent = "Delete";
         del.onclick = () => deleteRecipe(recipe.name);
 
+        actions.appendChild(make);
         actions.appendChild(edit);
         actions.appendChild(del);
         details.appendChild(actions);
@@ -1114,7 +1123,51 @@ function saveRecipeFromModal(){
   pushRecipes(wasEditing ? `Update recipe: ${name}` : `Add recipe: ${name}`);
 }
 
-async function deleteRecipe(name){
+async async function makeRecipe(name){
+  const recipe = recipes.find(r => r.name === name);
+  if(!recipe) return;
+
+  const result = getRecipeAvailability(recipe);
+
+  // A recipe can only be made when every ingredient is available
+  // in the required quantity and unit.
+  if(result.colour !== "green"){
+    const reasons = [];
+    if(result.missing) reasons.push(`${result.missing} missing`);
+    if(result.low) reasons.push(`${result.low} insufficient`);
+    alert(`You don't have enough ingredients to make ${recipe.name} (${reasons.join(", ")}).`);
+    return;
+  }
+
+  if(!confirm(`Make ${recipe.name}? This will remove the required quantities from your cupboard.`)){
+    return;
+  }
+
+  // Reduce each cupboard item by the recipe requirement.
+  recipe.ingredients.forEach(ingredient => {
+    const item = items.find(
+      i => normaliseName(i.name) === normaliseName(ingredient.name)
+    );
+    if(item) item.quantity -= ingredient.quantity;
+  });
+
+  // Remove anything that has reached zero.
+  items = items.filter(i => i.quantity > 0);
+
+  // Save the cupboard immediately, then refresh recipe availability.
+  try{
+    await pushFile(`Make recipe: ${recipe.name}`);
+    selectedName = null;
+    customMode = false;
+    render();
+    renderRecipes();
+  }catch(err){
+    // pushFile handles its own status reporting; keep the UI in the
+    // current state if the request failed.
+  }
+}
+
+function deleteRecipe(name){
   if(!name) return;
   if(!confirm(`Delete ${name}?`)) return;
 
