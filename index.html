@@ -218,6 +218,9 @@
     width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
     background:var(--card); color:var(--ink); font-size:0.95rem; font-family:inherit; resize:vertical;
   }
+  .recipe-row.green{background:var(--card);}
+  .recipe-row.yellow{background:var(--card);}
+  .recipe-row.red{background:var(--card);}
   #rDelete{
     width:100%; margin-top:10px; background:none; border:none; color:var(--brick);
     padding:8px; cursor:pointer; font-size:0.92rem;
@@ -360,12 +363,14 @@ let recipesSha = null;
 let recipeSaveTimer = null;
 let expandedRecipe = null;
 let editingRecipeName = null;
+let currentView = "cupboard";
 
 function pushUndo(){
   undoStack.push(JSON.parse(JSON.stringify(items)));
   if(undoStack.length > 20) undoStack.shift();
   document.getElementById("undoBtn").classList.remove("hidden");
 }
+
 function undo(){
   if(undoStack.length === 0) return;
   items = undoStack.pop();
@@ -379,12 +384,17 @@ function loadSettings(){
 }
 function persistSettings(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
 
-function apiUrl(){
-  return `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${encodeURIComponent(PATH)}?ref=${BRANCH}`;
+function apiUrl(path = PATH){
+  return `https://api.github.com/repos/${settings.owner}/${settings.repo}/contents/${encodeURIComponent(path)}?ref=${BRANCH}`;
 }
+
 function authHeaders(){
-  return { "Authorization": `Bearer ${settings.token}`, "Accept": "application/vnd.github+json" };
+  return {
+    "Authorization": `Bearer ${settings.token}`,
+    "Accept": "application/vnd.github+json"
+  };
 }
+
 function b64EncodeUtf8(str){
   return btoa(unescape(encodeURIComponent(str)));
 }
@@ -410,12 +420,19 @@ function parseText(text){
   });
   return out;
 }
+
 function serialize(list){
   return list.map(i => `${i.name}|${i.quantity}|${i.unit}`).join("\n") + (list.length ? "\n" : "");
 }
+
 function titleCase(s){
   return s.trim().replace(/\w\S*/g, t => t[0].toUpperCase() + t.slice(1).toLowerCase());
 }
+
+function normaliseName(s){
+  return String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function presetsFor(qty, unit){
   if(unit === "pcs"){
     if(qty <= 12) return [1, 2, 3];
@@ -429,6 +446,7 @@ function presetsFor(qty, unit){
   if(qty <= 5000) return [50, 100, 250];
   return [100, 250, 500];
 }
+
 function isLowStock(item){
   return item.unit === "pcs" ? item.quantity <= 2 : item.quantity <= 100;
 }
@@ -440,20 +458,29 @@ function setStatus(state, text){
   label.textContent = text;
 }
 
+async function getGithubFile(path){
+  const res = await fetch(apiUrl(path), {headers: authHeaders()});
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+  const data = await res.json();
+  return {
+    sha: data.sha,
+    text: b64DecodeUtf8(data.content)
+  };
+}
+
 async function fetchFile(){
   setStatus("busy", "Loading…");
   try{
-    const res = await fetch(apiUrl(), { headers: authHeaders() });
-    if(res.status === 404){
-      items = []; sha = null;
-      setStatus("ok", "Synced");
-      render();
-      return;
+    const data = await getGithubFile(PATH);
+    if(!data){
+      items = [];
+      sha = null;
+    } else {
+      sha = data.sha;
+      items = parseText(data.text);
     }
-    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
-    const data = await res.json();
-    sha = data.sha;
-    items = parseText(b64DecodeUtf8(data.content));
+    await fetchRecipes(false);
     setStatus("ok", "Synced");
     render();
   }catch(err){
@@ -471,14 +498,26 @@ async function pushFile(message){
       branch: BRANCH
     };
     if(sha) body.sha = sha;
-    let res = await fetch(apiUrl(), { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
+
+    let res = await fetch(apiUrl(PATH), {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
 
     if(res.status === 409){
-      // sha out of date — refetch and retry once
-      const fresh = await fetch(apiUrl(), { headers: authHeaders() });
-      if(fresh.ok){ sha = (await fresh.json()).sha; body.sha = sha; }
-      res = await fetch(apiUrl(), { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
+      const fresh = await fetch(apiUrl(PATH), {headers: authHeaders()});
+      if(fresh.ok){
+        sha = (await fresh.json()).sha;
+        body.sha = sha;
+      }
+      res = await fetch(apiUrl(PATH), {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+      });
     }
+
     if(!res.ok) throw new Error(`GitHub error ${res.status}`);
     const data = await res.json();
     sha = data.content.sha;
@@ -495,16 +534,277 @@ function queueSave(message){
   saveTimer = setTimeout(() => pushFile(message), 700);
 }
 
+/* ---------------- Recipes ---------------- */
+
+function normaliseRecipe(recipe){
+  return {
+    name: String(recipe?.name || "").trim(),
+    bakeTime: String(recipe?.bakeTime || "").trim(),
+    ingredients: Array.isArray(recipe?.ingredients)
+      ? recipe.ingredients.map(i => ({
+          name: String(i?.name || "").trim(),
+          quantity: Number(i?.quantity) || 0,
+          unit: i?.unit === "pcs" ? "pcs" : "g"
+        })).filter(i => i.name && i.quantity > 0)
+      : [],
+    method: Array.isArray(recipe?.method)
+      ? recipe.method.map(s => String(s).trim()).filter(Boolean)
+      : []
+  };
+}
+
+function normaliseRecipes(data){
+  if(Array.isArray(data)) return data.map(normaliseRecipe).filter(r => r.name);
+  return [];
+}
+
+function recipesJson(){
+  return JSON.stringify(recipes, null, 2) + "\n";
+}
+
+async function fetchRecipes(updateStatus = true){
+  if(updateStatus) setStatus("busy", "Loading recipes…");
+  try{
+    const data = await getGithubFile(RECIPES_PATH);
+    if(!data){
+      recipes = [];
+      recipesSha = null;
+    }else{
+      recipesSha = data.sha;
+      try{
+        recipes = normaliseRecipes(JSON.parse(data.text));
+      }catch(e){
+        throw new Error("Recipes.json is not valid JSON");
+      }
+    }
+    if(updateStatus) setStatus("ok", "Synced");
+    if(currentView === "recipes") renderRecipes();
+  }catch(err){
+    if(updateStatus) setStatus("err", "Couldn't load recipes");
+    throw err;
+  }
+}
+
+async function pushRecipes(message){
+  setStatus("busy", "Saving…");
+  try{
+    const body = {
+      message,
+      content: b64EncodeUtf8(recipesJson()),
+      branch: BRANCH
+    };
+    if(recipesSha) body.sha = recipesSha;
+
+    let res = await fetch(apiUrl(RECIPES_PATH), {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    if(res.status === 409){
+      const fresh = await fetch(apiUrl(RECIPES_PATH), {headers: authHeaders()});
+      if(fresh.ok){
+        const freshData = await fresh.json();
+        recipesSha = freshData.sha;
+        body.sha = recipesSha;
+      }
+      res = await fetch(apiUrl(RECIPES_PATH), {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+      });
+    }
+
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    const data = await res.json();
+    recipesSha = data.content.sha;
+    setStatus("ok", "Synced");
+  }catch(err){
+    setStatus("err", "Recipe save failed");
+  }
+}
+
+function queueRecipeSave(message){
+  clearTimeout(recipeSaveTimer);
+  recipeSaveTimer = setTimeout(() => pushRecipes(message), 700);
+}
+
+function getRecipeAvailability(recipe){
+  let missing = 0;
+  let low = 0;
+
+  const details = recipe.ingredients.map(ingredient => {
+    const cupboard = items.find(
+      item => normaliseName(item.name) === normaliseName(ingredient.name)
+    );
+
+    const available = cupboard ? cupboard.quantity : 0;
+
+    if(!cupboard || available <= 0){
+      missing++;
+      return {...ingredient, available, status:"missing"};
+    }
+
+    if(cupboard.unit !== ingredient.unit || available < ingredient.quantity){
+      low++;
+      return {...ingredient, available, status:"low"};
+    }
+
+    return {...ingredient, available, status:"ok"};
+  });
+
+  let colour = "green";
+  if(missing >= 4) colour = "red";
+  else if(missing >= 1 || low > 0) colour = "yellow";
+
+  return {colour, missing, low, details};
+}
+
+function availabilityText(result){
+  if(result.colour === "green") return "Everything available";
+  const parts = [];
+  if(result.missing) parts.push(`${result.missing} missing`);
+  if(result.low) parts.push(`${result.low} insufficient`);
+  return parts.join(" · ");
+}
+
+function escapeHtml(value){
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderRecipes(){
+  const list = document.getElementById("recipeList");
+  const empty = document.getElementById("recipeEmpty");
+  list.innerHTML = "";
+
+  if(recipes.length === 0){
+    empty.classList.remove("hidden");
+    return;
+  }
+
+  empty.classList.add("hidden");
+
+  recipes
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .forEach(recipe => {
+      const result = getRecipeAvailability(recipe);
+      const row = document.createElement("div");
+      row.className = `recipe-row ${result.colour}`;
+
+      const summary = document.createElement("div");
+      summary.className = "recipe-summary";
+      summary.innerHTML = `
+        <div class="recipe-info">
+          <div class="recipe-name">${escapeHtml(recipe.name)}</div>
+          <div class="recipe-sub">${escapeHtml(recipe.bakeTime || "No time specified")} · ${escapeHtml(availabilityText(result))}</div>
+        </div>
+        <span aria-hidden="true">${expandedRecipe === recipe.name ? "⌃" : "⌄"}</span>
+      `;
+
+      summary.addEventListener("click", () => {
+        expandedRecipe = expandedRecipe === recipe.name ? null : recipe.name;
+        renderRecipes();
+      });
+
+      row.appendChild(summary);
+
+      if(expandedRecipe === recipe.name){
+        const details = document.createElement("div");
+        details.className = "recipe-details";
+
+        const ingBlock = document.createElement("div");
+        ingBlock.className = "recipe-block";
+        ingBlock.innerHTML = `<div class="recipe-block-title">Ingredients</div>`;
+
+        const ul = document.createElement("ul");
+        ul.className = "ri-list";
+
+        result.details.forEach(i => {
+          const li = document.createElement("li");
+          li.className = `ri-${i.status}`;
+
+          const icon = i.status === "ok" ? "✓" : i.status === "low" ? "!" : "×";
+
+          let text = `${i.name} — ${i.quantity} ${i.unit}`;
+          if(i.status === "low"){
+            text += ` (have ${i.available} ${i.unit})`;
+          }else if(i.status === "missing"){
+            text += " (missing)";
+          }
+
+          li.innerHTML = `
+            <span class="ri-icon">${icon}</span>
+            <span>${escapeHtml(text)}</span>
+          `;
+          ul.appendChild(li);
+        });
+
+        ingBlock.appendChild(ul);
+        details.appendChild(ingBlock);
+
+        if(recipe.method.length){
+          const methodBlock = document.createElement("div");
+          methodBlock.className = "recipe-block";
+          methodBlock.innerHTML = `<div class="recipe-block-title">Method</div>`;
+
+          const methodList = document.createElement("ol");
+          methodList.className = "method-list";
+
+          recipe.method.forEach(step => {
+            const li = document.createElement("li");
+            li.textContent = step;
+            methodList.appendChild(li);
+          });
+
+          methodBlock.appendChild(methodList);
+          details.appendChild(methodBlock);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "recipe-actions";
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "r-edit";
+        edit.textContent = "Edit";
+        edit.onclick = () => openRecipeModal(recipe.name);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "r-delete";
+        del.textContent = "Delete";
+        del.onclick = () => deleteRecipe(recipe.name);
+
+        actions.appendChild(edit);
+        actions.appendChild(del);
+        details.appendChild(actions);
+
+        row.appendChild(details);
+      }
+
+      list.appendChild(row);
+    });
+}
+
 function render(){
   const list = document.getElementById("list");
   const empty = document.getElementById("empty");
   list.innerHTML = "";
+
   if(items.length === 0){
     empty.classList.remove("hidden");
     renderAdjustBar();
     return;
   }
+
   empty.classList.add("hidden");
+
   items
     .slice()
     .sort((a,b) => a.name.localeCompare(b.name))
@@ -513,22 +813,27 @@ function render(){
       row.className = "row"
         + (item.name === selectedName ? " selected" : "")
         + (isLowStock(item) ? " low" : "");
+
       row.innerHTML = `
-        <span class="name">${item.name}</span>
+        <span class="name">${escapeHtml(item.name)}</span>
         <span class="qty">${item.quantity} ${item.unit}</span>
-        <button type="button" class="del" aria-label="Remove ${item.name}">✕</button>
+        <button type="button" class="del" aria-label="Remove ${escapeHtml(item.name)}">✕</button>
       `;
+
       row.addEventListener("click", () => {
         selectedName = (selectedName === item.name) ? null : item.name;
         customMode = false;
         render();
       });
+
       row.querySelector(".del").addEventListener("click", e => {
         e.stopPropagation();
         removeItem(item.name);
       });
+
       list.appendChild(row);
     });
+
   renderAdjustBar();
 }
 
@@ -536,6 +841,7 @@ function renderAdjustBar(){
   const bar = document.getElementById("adjustBar");
   const addForm = document.getElementById("add");
   const item = items.find(i => i.name === selectedName);
+
   if(!item){
     selectedName = null;
     customMode = false;
@@ -543,6 +849,7 @@ function renderAdjustBar(){
     addForm.classList.remove("hidden");
     return;
   }
+
   addForm.classList.add("hidden");
   bar.classList.remove("hidden");
   document.getElementById("adjustName").textContent = item.name;
@@ -572,23 +879,32 @@ function renderAdjustBar(){
     input.min = "1";
     input.className = "custom-input";
     input.placeholder = "Amount";
+
     const applyBtn = document.createElement("button");
     applyBtn.type = "button";
     applyBtn.className = "custom-apply";
     applyBtn.textContent = "✓";
     applyBtn.setAttribute("aria-label", "Apply custom amount");
+
     const doApply = () => {
       const amt = parseInt(input.value, 10);
       if(!amt || amt <= 0) return;
       customMode = false;
       changeQty(item.name, lastDir === "add" ? amt : -amt);
     };
+
     applyBtn.onclick = doApply;
-    input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); doApply(); } });
+    input.addEventListener("keydown", e => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        doApply();
+      }
+    });
+
     presetsEl.appendChild(input);
     presetsEl.appendChild(applyBtn);
     input.focus();
-  } else {
+  }else{
     presetsFor(item.quantity, item.unit).forEach(amt => {
       const b = document.createElement("button");
       b.type = "button";
@@ -596,6 +912,7 @@ function renderAdjustBar(){
       b.onclick = () => changeQty(item.name, lastDir === "add" ? amt : -amt);
       presetsEl.appendChild(b);
     });
+
     const customBtn = document.createElement("button");
     customBtn.type = "button";
     customBtn.className = "custom-toggle";
@@ -609,39 +926,261 @@ function renderAdjustBar(){
 function changeQty(name, delta){
   const item = items.find(i => i.name === name);
   if(!item) return;
+
   pushUndo();
   item.quantity += delta;
+
   if(item.quantity <= 0){
     items = items.filter(i => i.name !== name);
     queueSave(`Remove ${name}`);
-  } else {
+  }else{
     queueSave(`Update ${name} quantity`);
   }
+
   render();
+  if(currentView === "recipes") renderRecipes();
 }
 
 function removeItem(name){
   if(!confirm(`Remove ${name}?`)) return;
+
   pushUndo();
   items = items.filter(i => i.name !== name);
   queueSave(`Remove ${name}`);
   render();
+  if(currentView === "recipes") renderRecipes();
 }
 
 function addItem(name, qty, unit){
   name = titleCase(name);
   if(!name || qty <= 0) return;
+
   pushUndo();
-  const existing = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+
+  const existing = items.find(i => normaliseName(i.name) === normaliseName(name));
+
   if(existing){
     existing.quantity += qty;
     queueSave(`Increase ${name}`);
-  } else {
+  }else{
     items.push({name, quantity: qty, unit});
     queueSave(`Add ${name}`);
   }
+
   render();
+  if(currentView === "recipes") renderRecipes();
 }
+
+/* ---------------- Recipe editor ---------------- */
+
+function addRecipeIngredientRow(data = {name:"", quantity:1, unit:"g"}){
+  const container = document.getElementById("rIngredients");
+
+  const row = document.createElement("div");
+  row.className = "r-ing-row";
+
+  const name = document.createElement("input");
+  name.type = "text";
+  name.placeholder = "Ingredient";
+  name.value = data.name || "";
+
+  const qty = document.createElement("input");
+  qty.type = "number";
+  qty.min = "1";
+  qty.step = "1";
+  qty.value = data.quantity || 1;
+
+  const unit = document.createElement("select");
+  unit.innerHTML = `
+    <option value="g">g</option>
+    <option value="pcs">pcs</option>
+  `;
+  unit.value = data.unit === "pcs" ? "pcs" : "g";
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.textContent = "✕";
+  remove.setAttribute("aria-label", "Remove ingredient");
+  remove.onclick = () => row.remove();
+
+  row.appendChild(name);
+  row.appendChild(qty);
+  row.appendChild(unit);
+  row.appendChild(remove);
+  container.appendChild(row);
+}
+
+function openRecipeModal(name = null){
+  const modal = document.getElementById("recipeModal");
+  const recipe = name ? recipes.find(r => r.name === name) : null;
+
+  editingRecipeName = recipe ? recipe.name : null;
+
+  document.getElementById("recipeModalTitle").textContent =
+    recipe ? "Edit recipe" : "Add recipe";
+
+  document.getElementById("rName").value = recipe?.name || "";
+  document.getElementById("rBakeTime").value = recipe?.bakeTime || "";
+  document.getElementById("rMethod").value = recipe?.method?.join("\n") || "";
+  document.getElementById("rError").style.display = "none";
+
+  const ingredients = document.getElementById("rIngredients");
+  ingredients.innerHTML = "";
+
+  if(recipe && recipe.ingredients.length){
+    recipe.ingredients.forEach(i => addRecipeIngredientRow(i));
+  }else{
+    addRecipeIngredientRow();
+  }
+
+  document.getElementById("rDelete").classList.toggle("hidden", !recipe);
+  modal.classList.remove("hidden");
+}
+
+function closeRecipeModal(){
+  document.getElementById("recipeModal").classList.add("hidden");
+  editingRecipeName = null;
+}
+
+function saveRecipeFromModal(){
+  const error = document.getElementById("rError");
+
+  const name = document.getElementById("rName").value.trim();
+  const bakeTime = document.getElementById("rBakeTime").value.trim();
+  const method = document.getElementById("rMethod").value
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  const ingredients = Array.from(document.querySelectorAll("#rIngredients .r-ing-row"))
+    .map(row => {
+      const inputs = row.querySelectorAll("input");
+      const select = row.querySelector("select");
+      return {
+        name: inputs[0].value.trim(),
+        quantity: Number(inputs[1].value),
+        unit: select.value
+      };
+    })
+    .filter(i => i.name);
+
+  if(!name){
+    error.textContent = "Recipe name is required.";
+    error.style.display = "block";
+    return;
+  }
+
+  if(!ingredients.length){
+    error.textContent = "Add at least one ingredient.";
+    error.style.display = "block";
+    return;
+  }
+
+  if(ingredients.some(i => !i.quantity || i.quantity <= 0)){
+    error.textContent = "Each ingredient needs a quantity greater than zero.";
+    error.style.display = "block";
+    return;
+  }
+
+  const duplicate = recipes.some(
+    r => normaliseName(r.name) === normaliseName(name)
+      && normaliseName(r.name) !== normaliseName(editingRecipeName || "")
+  );
+
+  if(duplicate){
+    error.textContent = "A recipe with that name already exists.";
+    error.style.display = "block";
+    return;
+  }
+
+  const recipe = normaliseRecipe({
+    name,
+    bakeTime,
+    ingredients,
+    method
+  });
+
+  if(editingRecipeName){
+    const index = recipes.findIndex(r => r.name === editingRecipeName);
+    if(index >= 0) recipes[index] = recipe;
+  }else{
+    recipes.push(recipe);
+  }
+
+  const wasEditing = !!editingRecipeName;
+  expandedRecipe = recipe.name;
+  closeRecipeModal();
+  renderRecipes();
+  pushRecipes(wasEditing ? `Update recipe: ${name}` : `Add recipe: ${name}`);
+}
+
+async function deleteRecipe(name){
+  if(!name) return;
+  if(!confirm(`Delete ${name}?`)) return;
+
+  const previousRecipes = JSON.parse(JSON.stringify(recipes));
+  recipes = recipes.filter(r => normaliseName(r.name) !== normaliseName(name));
+
+  if(recipes.length === previousRecipes.length){
+    return;
+  }
+
+  if(expandedRecipe === name) expandedRecipe = null;
+  renderRecipes();
+
+  // Delete immediately so closing the modal cannot interrupt the save.
+  await pushRecipes(`Delete recipe: ${name}`);
+}
+
+/* ---------------- View / theme / settings ---------------- */
+
+function switchView(view){
+  currentView = view;
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.view === view);
+  });
+
+  document.getElementById("cupboardView").classList.toggle("hidden", view !== "cupboard");
+  document.getElementById("recipesView").classList.toggle("hidden", view !== "recipes");
+
+  document.getElementById("adjustBar").classList.toggle(
+    "hidden",
+    view !== "cupboard" || !selectedName
+  );
+  document.getElementById("add").classList.toggle("hidden", view !== "cupboard" || !!selectedName);
+  document.getElementById("recipeFooter").classList.toggle("hidden", view !== "recipes");
+
+  if(view === "recipes") renderRecipes();
+  else render();
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => switchView(tab.dataset.view));
+});
+
+document.getElementById("addRecipeBtn").onclick = () => openRecipeModal();
+document.getElementById("rAddIngredient").onclick = () => addRecipeIngredientRow();
+document.getElementById("rCancel").onclick = closeRecipeModal;
+document.getElementById("rSave").onclick = saveRecipeFromModal;
+document.getElementById("rDelete").onclick = async () => {
+  const nameToDelete = editingRecipeName;
+  if(!nameToDelete) return;
+
+  const button = document.getElementById("rDelete");
+  button.disabled = true;
+  button.textContent = "Deleting…";
+
+  await deleteRecipe(nameToDelete);
+
+  button.disabled = false;
+  button.textContent = "Delete recipe";
+  closeRecipeModal();
+};
+
+document.getElementById("recipeModal").addEventListener("click", e => {
+  if(e.target.id === "recipeModal") closeRecipeModal();
+});
 
 // theme
 const THEME_KEY = "cupboard-theme";
@@ -649,10 +1188,11 @@ function applyTheme(){
   const saved = localStorage.getItem(THEME_KEY);
   if(saved === "light" || saved === "dark"){
     document.documentElement.setAttribute("data-theme", saved);
-  } else {
+  }else{
     document.documentElement.removeAttribute("data-theme");
   }
 }
+
 document.getElementById("themeBtn").onclick = () => {
   const current = localStorage.getItem(THEME_KEY) || "auto";
   const next = current === "auto" ? "dark" : current === "dark" ? "light" : "auto";
@@ -660,8 +1200,8 @@ document.getElementById("themeBtn").onclick = () => {
   else localStorage.setItem(THEME_KEY, next);
   applyTheme();
 };
-applyTheme();
 
+applyTheme();
 document.getElementById("undoBtn").onclick = undo;
 
 document.getElementById("adjustClose").onclick = () => {
@@ -675,8 +1215,10 @@ document.getElementById("add").addEventListener("submit", e => {
   const nameEl = document.getElementById("addName");
   const qtyEl = document.getElementById("addQty");
   const unitEl = document.getElementById("addUnit");
+
   const qty = parseInt(qtyEl.value, 10) || 1;
   addItem(nameEl.value, qty, unitEl.value);
+
   nameEl.value = "";
   qtyEl.value = 1;
   nameEl.focus();
@@ -684,6 +1226,7 @@ document.getElementById("add").addEventListener("submit", e => {
 
 // settings modal
 const modal = document.getElementById("settingsModal");
+
 function openSettings(){
   document.getElementById("cfgOwner").value = settings?.owner || "";
   document.getElementById("cfgRepo").value = settings?.repo || "";
@@ -691,21 +1234,26 @@ function openSettings(){
   document.getElementById("cfgError").style.display = "none";
   modal.classList.remove("hidden");
 }
+
 document.getElementById("settingsBtn").onclick = openSettings;
+
 document.getElementById("cfgCancel").onclick = () => {
   if(settings) modal.classList.add("hidden");
 };
+
 document.getElementById("cfgSave").onclick = () => {
   const owner = document.getElementById("cfgOwner").value.trim();
   const repo = document.getElementById("cfgRepo").value.trim();
   const token = document.getElementById("cfgToken").value.trim();
   const errEl = document.getElementById("cfgError");
+
   if(!owner || !repo || !token){
     errEl.textContent = "All three fields are required.";
     errEl.style.display = "block";
     return;
   }
-  settings = { owner, repo, token };
+
+  settings = {owner, repo, token};
   persistSettings(settings);
   modal.classList.add("hidden");
   fetchFile();
@@ -713,10 +1261,11 @@ document.getElementById("cfgSave").onclick = () => {
 
 // boot
 settings = loadSettings();
+
 if(!settings){
   setStatus("err", "Not connected");
   openSettings();
-} else {
+}else{
   fetchFile();
 }
 </script>
