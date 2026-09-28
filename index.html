@@ -153,6 +153,75 @@
   .btn-secondary{background:var(--card); border:1px solid var(--line) !important; color:var(--ink);}
   .error-text{color:var(--brick); font-size:0.82rem; margin-top:8px; display:none;}
   .hidden{display:none !important;}
+
+  .tabs{display:flex; gap:8px; padding:10px 16px 0; max-width:560px; margin:0 auto;}
+  .tab{
+    flex:1; padding:9px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink-soft); font-size:0.92rem; cursor:pointer;
+  }
+  .tab.active{background:var(--herb); color:#fff; border-color:var(--herb);}
+
+  .recipe-row{
+    background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line);
+    border-radius:var(--radius); padding:12px 14px; margin-bottom:9px;
+  }
+  .recipe-row.green{border-left-color:var(--herb);}
+  .recipe-row.yellow{border-left-color:var(--paprika);}
+  .recipe-row.red{border-left-color:var(--brick);}
+  .recipe-summary{display:flex; align-items:center; gap:10px; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .recipe-info{flex:1; min-width:0;}
+  .recipe-name{font-size:1.02rem; overflow-wrap:anywhere;}
+  .recipe-sub{font-size:0.85rem; color:var(--ink-soft); margin-top:2px;}
+  .recipe-details{margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
+  .recipe-block{margin-bottom:12px;}
+  .recipe-block-title{font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;}
+  .ri-list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px;}
+  .ri-list li{display:flex; align-items:center; gap:8px; font-size:0.92rem;}
+  .ri-icon{
+    width:18px; height:18px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:0.7rem; flex-shrink:0; color:#fff;
+  }
+  .ri-ok .ri-icon{background:var(--herb);}
+  .ri-low .ri-icon{background:var(--paprika);}
+  .ri-missing .ri-icon{background:var(--brick);}
+  .method-list{padding-left:20px; margin:0; display:flex; flex-direction:column; gap:6px; font-size:0.94rem;}
+  .recipe-actions{display:flex; gap:10px; margin-top:6px;}
+  .recipe-actions button{flex:1; padding:10px; border-radius:10px; font-size:0.9rem; cursor:pointer;}
+  .recipe-actions .r-edit{background:var(--card); border:1px solid var(--line); color:var(--ink);}
+  .recipe-actions .r-delete{background:none; border:1px solid var(--brick); color:var(--brick);}
+  .recipe-footer-btn{
+    width:100%; padding:12px; border-radius:10px; background:var(--herb); color:#fff;
+    border:none; font-size:1rem; cursor:pointer;
+  }
+  .recipe-footer-btn:active{background:var(--herb-dark);}
+
+  .recipe-modal{max-height:85vh; overflow-y:auto;}
+  .r-ing-row{display:flex; gap:6px; margin-bottom:6px; align-items:center;}
+  .r-ing-row input[type=text]{
+    flex:1; min-width:0; padding:9px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.92rem;
+  }
+  .r-ing-row input[type=number]{
+    width:56px; padding:9px 4px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); text-align:center; font-size:0.92rem;
+  }
+  .r-ing-row select{
+    width:54px; padding:9px 2px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.85rem;
+  }
+  .r-ing-row button{background:none; border:none; color:var(--ink-soft); font-size:1rem; cursor:pointer; padding:2px 4px;}
+  #rAddIngredient{
+    width:100%; padding:9px; border-radius:8px; margin-top:2px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.88rem; cursor:pointer;
+  }
+  textarea#rMethod{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.95rem; font-family:inherit; resize:vertical;
+  }
+  #rDelete{
+    width:100%; margin-top:10px; background:none; border:none; color:var(--brick);
+    padding:8px; cursor:pointer; font-size:0.92rem;
+  }
 </style>
 </head>
 <body>
@@ -273,6 +342,7 @@
 <script>
 const BRANCH = "main";
 const PATH = "Ingredients.txt";
+const RECIPES_PATH = "Recipes.json";
 const STORE_KEY = "cupboard-settings-v1";
 
 let settings = null;
@@ -284,6 +354,12 @@ let selectedName = null;
 let lastDir = "remove";
 let customMode = false;
 let undoStack = [];
+
+let recipes = [];
+let recipesSha = null;
+let recipeSaveTimer = null;
+let expandedRecipe = null;
+let editingRecipeName = null;
 
 function pushUndo(){
   undoStack.push(JSON.parse(JSON.stringify(items)));
