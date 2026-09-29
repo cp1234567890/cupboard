@@ -186,5 +186,72 @@
       "Add batter to tin and scatter remaining chocolate on top.",
       "Bake for 30 minutes at 180 degrees."
     ]
+  },
+  {
+    "name": "Banana Bread",
+    "bakeTime": "55 mins",
+    "ingredients": [
+      {
+        "name": "Bananas",
+        "quantity": 4,
+        "unit": "pcs"
+      },
+      {
+        "name": "Maple Syrup (cups)",
+        "quantity": 0.5,
+        "unit": "pcs"
+      },
+      {
+        "name": "Coconut Oil (cups)",
+        "quantity": 0.5,
+        "unit": "pcs"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Vanilla (tsp)",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Plain Flour (cups)",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Whole Wheat Flour (cups)",
+        "quantity": 0.75,
+        "unit": "pcs"
+      },
+      {
+        "name": "Bicarbonate of Soda (tsp)",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Cinnamon (tsp)",
+        "quantity": 0.5,
+        "unit": "pcs"
+      },
+      {
+        "name": "Nutmeg (tsp)",
+        "quantity": 0.25,
+        "unit": "pcs"
+      },
+      {
+        "name": "Walnuts (cups)",
+        "quantity": 0.5,
+        "unit": "pcs"
+      }
+    ],
+    "method": [
+      "Whisk together mashed banana, maple syrup, coconut oil, eggs and vanilla.",
+      "Whisk together flours, bicarb, cinnamon, nutmeg and a pinch of salt.",
+      "Add dry ingredients to the wet ingredients and stir until just combined. Fold in walnuts.",
+      "Pour batter into tin and bake for 50 - 65 minutes at 180 degrees."
+    ]
   }
 ]
