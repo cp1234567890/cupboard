@@ -224,6 +224,11 @@
     width:100%; margin-top:10px; background:none; border:none; color:var(--brick);
     padding:8px; cursor:pointer; font-size:0.92rem;
   }
+  .search{margin-bottom:12px;}
+  .search input{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.95rem; background:var(--card); color:var(--ink);
+  }
 </style>
 </head>
 <body>
@@ -247,10 +252,12 @@
 
 <main>
   <div id="cupboardView">
+    <div class="search"><input type="search" id="cupboardSearch" placeholder="Search ingredients" autocomplete="off"></div>
     <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
     <div id="list"></div>
   </div>
   <div id="recipesView" class="hidden">
+    <div class="search"><input type="search" id="recipeSearch" placeholder="Search recipes or ingredients used" autocomplete="off"></div>
     <div id="recipeEmpty" class="empty hidden">No recipes yet. Add one below.</div>
     <div id="recipeList"></div>
   </div>
@@ -364,19 +371,42 @@ let expandedRecipe = null;
 let editingRecipeName = null;
 let currentView = "cupboard";
 
-function pushUndo(){
-  undoStack.push(JSON.parse(JSON.stringify(items)));
+function pushUndo(label = "last change"){
+  undoStack.push({
+    label,
+    items: JSON.parse(JSON.stringify(items)),
+    recipes: JSON.parse(JSON.stringify(recipes))
+  });
   if(undoStack.length > 20) undoStack.shift();
-  document.getElementById("undoBtn").classList.remove("hidden");
+  updateUndoBtn();
+}
+
+function updateUndoBtn(){
+  const btn = document.getElementById("undoBtn");
+  const top = undoStack[undoStack.length - 1];
+  btn.classList.toggle("hidden", !top);
+  if(top){
+    btn.title = `Undo: ${top.label}`;
+    btn.setAttribute("aria-label", `Undo: ${top.label}`);
+  }
 }
 
 function undo(){
-  if(undoStack.length === 0) return;
-  items = undoStack.pop();
-  if(undoStack.length === 0) document.getElementById("undoBtn").classList.add("hidden");
-  queueSave("Undo last change");
+  const snap = undoStack.pop();
+  if(!snap) return;
+
+  const itemsChanged = JSON.stringify(items) !== JSON.stringify(snap.items);
+  const recipesChanged = JSON.stringify(recipes) !== JSON.stringify(snap.recipes);
+
+  items = snap.items;
+  recipes = snap.recipes;
+
+  if(itemsChanged) queueSave(`Undo: ${snap.label}`);
+  if(recipesChanged) queueRecipeSave(`Undo: ${snap.label}`);
+
+  updateUndoBtn();
   render();
-  if(currentView === "recipes") renderRecipes();
+  renderRecipes();
 }
 
 function loadSettings(){
@@ -698,14 +728,22 @@ function renderRecipes(){
   const empty = document.getElementById("recipeEmpty");
   list.innerHTML = "";
 
-  if(recipes.length === 0){
+  const q = normaliseName(document.getElementById("recipeSearch").value);
+  const visible = recipes.filter(r => !q
+    || normaliseName(r.name).includes(q)
+    || r.ingredients.some(i => normaliseName(i.name).includes(q)));
+
+  if(visible.length === 0){
+    empty.textContent = recipes.length === 0
+      ? "No recipes yet. Add one below."
+      : "No recipes match your search.";
     empty.classList.remove("hidden");
     return;
   }
 
   empty.classList.add("hidden");
 
-  recipes
+  visible
     .slice()
     .sort((a,b) => a.name.localeCompare(b.name))
     .forEach(recipe => {
@@ -822,7 +860,13 @@ function render(){
   const empty = document.getElementById("empty");
   list.innerHTML = "";
 
-  if(items.length === 0){
+  const q = normaliseName(document.getElementById("cupboardSearch").value);
+  const visible = items.filter(i => !q || normaliseName(i.name).includes(q));
+
+  if(visible.length === 0){
+    empty.textContent = items.length === 0
+      ? "Nothing in the cupboard yet. Add something below."
+      : "No ingredients match your search.";
     empty.classList.remove("hidden");
     renderAdjustBar();
     return;
@@ -830,7 +874,7 @@ function render(){
 
   empty.classList.add("hidden");
 
-  items
+  visible
     .slice()
     .sort((a,b) => a.name.localeCompare(b.name))
     .forEach(item => {
@@ -1132,6 +1176,8 @@ function saveRecipeFromModal(){
     method
   });
 
+  pushUndo(editingRecipeName ? `edit ${name}` : `add ${name}`);
+
   if(editingRecipeName){
     const index = recipes.findIndex(r => r.name === editingRecipeName);
     if(index >= 0) recipes[index] = recipe;
@@ -1170,7 +1216,7 @@ async function makeRecipe(name){
   clearTimeout(saveTimer);
 
   // Make it undoable with the ↺ button.
-  pushUndo();
+  pushUndo(`make ${recipe.name}`);
 
   recipe.ingredients.forEach(ingredient => {
     const item = items.find(
@@ -1197,9 +1243,14 @@ async function deleteRecipe(name){
   if(!confirm(`Delete ${name}?`)) return false;
 
   const before = recipes.length;
+  pushUndo(`delete ${name}`);
   recipes = recipes.filter(r => normaliseName(r.name) !== normaliseName(name));
 
-  if(recipes.length === before) return false;
+  if(recipes.length === before){
+    undoStack.pop();
+    updateUndoBtn();
+    return false;
+  }
 
   if(expandedRecipe === name) expandedRecipe = null;
   renderRecipes();
@@ -1277,6 +1328,12 @@ document.getElementById("themeBtn").onclick = () => {
 
 applyTheme();
 document.getElementById("undoBtn").onclick = undo;
+
+document.getElementById("cupboardSearch").addEventListener("input", () => {
+  customMode = false;
+  render();
+});
+document.getElementById("recipeSearch").addEventListener("input", renderRecipes);
 
 document.getElementById("adjustClose").onclick = () => {
   selectedName = null;
