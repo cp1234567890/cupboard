@@ -300,5 +300,52 @@
       "Combine plain flour and cocoa powder then sift into chocolate mix. Mix until smooth.",
       "Pour half the batter into the tin and drizzle salted caramel mixture on top. Add the remaining brownie batter on top and top with remainder of caramel."
     ]
+  },
+  {
+    "name": "Lemon and Poppy Seed Loaf Cake",
+    "bakeTime": "50 mins",
+    "ingredients": [
+      {
+        "name": "Butter",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Golden Caster Sugar",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Lemons",
+        "quantity": 3,
+        "unit": "pcs"
+      },
+      {
+        "name": "Poppy Seeds (tbsp)",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Natural Yogurt",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Self-raising Flour",
+        "quantity": 175,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Beat the butter and sugar together. Beat in each egg.",
+      "Fold in lemon zest, poppy seeds and yogurt.",
+      "Fold in flour and a pinch of salt until smooth.",
+      "Add to tin and bake for 50 minutes at 180 degrees."
+    ]
   }
 ]
