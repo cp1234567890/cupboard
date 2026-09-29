@@ -1,4 +1,4 @@
-Eggs|6|pcs
+Eggs|26|pcs
 Plain Flour|500|g
 Self Raising Flour|1000|g
 Chocolate|500|g
