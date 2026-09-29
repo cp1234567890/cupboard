@@ -51,5 +51,76 @@
       "Toss the blackberries with 10g of flour, shaking off excess, and fold through batter.",
       "Bake for 50 minutes to 1 hour at 180 degrees."
     ]
+  },
+  {
+    "name": "Pistachio Stuffed Cookies",
+    "bakeTime": "20 mins",
+    "ingredients": [
+      {
+        "name": "Pistachio Spread (tbsp)",
+        "quantity": 6,
+        "unit": "pcs"
+      },
+      {
+        "name": "Butter",
+        "quantity": 120,
+        "unit": "g"
+      },
+      {
+        "name": "Caster Sugar",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Vanilla Extract (tsp)",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Plain Flour",
+        "quantity": 280,
+        "unit": "g"
+      },
+      {
+        "name": "Corn Flour (tbsp)",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Baking Powder (tsp)",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Dark Chocolate",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Pistachios",
+        "quantity": 80,
+        "unit": "g"
+      },
+      {
+        "name": "Light Soft Brown Sugar",
+        "quantity": 78,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Add 6 tbsps of pistachio spread to baking paper and freeze.",
+      "Add butter, both sugars and vanilla, beat together for 5 minutes.",
+      "Add 1 egg and 1 egg yolk and beat to combine.",
+      "Separately, mix flour, corn flour, baking powder and a pinch of salt.",
+      "Add dry ingredients to mixture with chopped chocolate and pistachios. Mix until no flour can be seen.",
+      "Divide dough into 6 pieces (~150g each).",
+      "Flatten a piece of cookie dough and wrap around frozen pistachio spread. Freeze for 1 hour.",
+      "Bake cookies for 20-22 minutes at 220 degrees."
+    ]
   }
 ]
