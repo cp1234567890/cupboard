@@ -253,5 +253,52 @@
       "Add dry ingredients to the wet ingredients and stir until just combined. Fold in walnuts.",
       "Pour batter into tin and bake for 50 - 65 minutes at 180 degrees."
     ]
+  },
+  {
+    "name": "Salted Caramel Brownies",
+    "bakeTime": "35 mins",
+    "ingredients": [
+      {
+        "name": "Butter",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Dark Chocolate",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Caramel",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Caster Sugar",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 4,
+        "unit": "pcs"
+      },
+      {
+        "name": "Plain Flour",
+        "quantity": 130,
+        "unit": "g"
+      },
+      {
+        "name": "Cocoa Powder",
+        "quantity": 50,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Melt butter and chocolate together.",
+      "Beat half the caramel with sea salt. Beat the rest of the caramel with sugar and eggs. Beat in the chocolate and butter.",
+      "Combine plain flour and cocoa powder then sift into chocolate mix. Mix until smooth.",
+      "Pour half the batter into the tin and drizzle salted caramel mixture on top. Add the remaining brownie batter on top and top with remainder of caramel."
+    ]
   }
 ]
