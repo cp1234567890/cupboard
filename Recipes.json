@@ -13,5 +13,29 @@
       "Crack eggs",
       "Bake"
     ]
+  },
+  {
+    "name": "Chocolate cake",
+    "bakeTime": "50 mins",
+    "ingredients": [
+      {
+        "name": "Chocolate",
+        "quantity": 250,
+        "unit": "g"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 10,
+        "unit": "g"
+      },
+      {
+        "name": "Plain flour",
+        "quantity": 300,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "1. Bake!"
+    ]
   }
 ]
