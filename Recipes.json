@@ -122,5 +122,69 @@
       "Flatten a piece of cookie dough and wrap around frozen pistachio spread. Freeze for 1 hour.",
       "Bake cookies for 20-22 minutes at 220 degrees."
     ]
+  },
+  {
+    "name": "Triple Chocolate Brownies",
+    "bakeTime": "30 mins",
+    "ingredients": [
+      {
+        "name": "Butter",
+        "quantity": 150,
+        "unit": "g"
+      },
+      {
+        "name": "Dark Chocolate",
+        "quantity": 350,
+        "unit": "g"
+      },
+      {
+        "name": "Espresso",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Plain Flour",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Cocoa Powder",
+        "quantity": 25,
+        "unit": "g"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 4,
+        "unit": "pcs"
+      },
+      {
+        "name": "Light Brown Soft Sugar",
+        "quantity": 300,
+        "unit": "g"
+      },
+      {
+        "name": "Vanilla (tsp)",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Milk Chocolate",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "White Chocolate",
+        "quantity": 100,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Melt dark chocolate with butter and espresso until smooth.",
+      "Mix flour, cocoa powder and a pinch of salt.",
+      "Beat eggs, sugar and vanilla. Fold in cooled chocolate mix then sift and fold in dry ingredients until just combined.",
+      "Add two thirds of milk and white chocolate, fold through briefly.",
+      "Add batter to tin and scatter remaining chocolate on top.",
+      "Bake for 30 minutes at 180 degrees."
+    ]
   }
 ]
