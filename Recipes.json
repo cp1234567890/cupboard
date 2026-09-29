@@ -15,27 +15,56 @@
     ]
   },
   {
-    "name": "Chocolate cake",
-    "bakeTime": "50 mins",
+    "name": "Pistachio and Blackberry Traybake",
+    "bakeTime": "50 mins - 1 hr",
     "ingredients": [
       {
-        "name": "Chocolate",
+        "name": "Butter",
         "quantity": 250,
         "unit": "g"
       },
       {
+        "name": "Golden Caster Sugar",
+        "quantity": 250,
+        "unit": "g"
+      },
+      {
+        "name": "Pistachios",
+        "quantity": 70,
+        "unit": "g"
+      },
+      {
         "name": "Eggs",
-        "quantity": 10,
+        "quantity": 3,
         "unit": "pcs"
       },
       {
-        "name": "Plain flour",
-        "quantity": 300,
+        "name": "Ground Almonds",
+        "quantity": 130,
+        "unit": "g"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Blackberries",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Plain Flour",
+        "quantity": 90,
         "unit": "g"
       }
     ],
     "method": [
-      "1. Bake!"
+      "Beat the butter and sugar until light and fluffy.",
+      "Add the eggs to the butter mixture one at a time, whisking after each addition.",
+      "Fold in the ground almonds, blitzed pistachios, 80g of flour and lemon zest.",
+      "Toss the blackberries with 10g of flour, shaking off excess, and fold through batter.",
+      "Bake for 50 minutes to 1 hour at 180 degrees."
     ]
   }
 ]
