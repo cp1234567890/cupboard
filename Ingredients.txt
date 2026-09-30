@@ -2,4 +2,4 @@ Eggs|16|pcs
 Plain Flour|200|g
 Self Raising Flour|1000|g
 Chocolate|250|g
-Vanilla Extract|1|pcs
+Vanilla Extract|1|pcs|staple
