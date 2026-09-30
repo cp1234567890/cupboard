@@ -237,6 +237,9 @@
     border:1px solid var(--line); background:var(--card); color:var(--ink);
     border-radius:8px; padding:4px 9px; font-size:0.8rem; cursor:pointer;
   }
+  .adjust-info .close{font-size:0.92rem; white-space:nowrap;}
+  .adjust-info .close.on{color:var(--herb); font-weight:600;}
+  .row .qty.staple-tag{font-size:0.8rem; font-style:italic;}
 </style>
 </head>
 <body>
@@ -273,21 +276,16 @@
 
 <form id="add">
   <input type="text" id="addName" placeholder="Ingredient" autocomplete="off" required>
-  <input type="number" id="addQty" value="1" min="1">
-  <select id="addUnit">
-    <option value="g">g</option>
-    <option value="pcs">pcs</option>
-  </select>
+  <input type="number" id="addQty" value="1" min="0" step="any" inputmode="decimal">
+  <select id="addUnit"></select>
   <button type="submit" aria-label="Add">+</button>
 </form>
 
 <div id="adjustBar" class="adjust-bar hidden">
   <div class="adjust-info">
     <span id="adjustName"></span>
-    <select id="adjustUnit">
-      <option value="g">g</option>
-      <option value="pcs">pcs</option>
-    </select>
+    <select id="adjustUnit"></select>
+    <button type="button" class="close" id="adjustStaple">Staple</button>
     <button type="button" class="close" id="adjustAliases">Aliases</button>
     <button type="button" class="close" id="adjustClose" aria-label="Done">Done</button>
   </div>
@@ -378,6 +376,20 @@ const PATH = "Ingredients.txt";
 const RECIPES_PATH = "Recipes.json";
 const ALIASES_PATH = "Aliases.json";
 const STORE_KEY = "cupboard-settings-v1";
+
+// Units. g and ml are treated 1:1; tsp/tbsp/cups are fixed volumes in ml.
+// pcs is a count and isn't convertible to the others.
+const UNITS = ["g", "ml", "tsp", "tbsp", "cups", "pcs"];
+const UNIT_BASE = {g: 1, ml: 1, tsp: 5, tbsp: 15, cups: 240};
+
+function convertQty(q, from, to){
+  if(from === to) return q;
+  if(!(from in UNIT_BASE) || !(to in UNIT_BASE)) return null;
+  return q * UNIT_BASE[from] / UNIT_BASE[to];
+}
+function roundQty(n){ return Math.round(n * 100) / 100; }
+function fmt(n){ return String(roundQty(n)); }
+function unitOptions(){ return UNITS.map(u => `<option value="${u}">${u}</option>`).join(""); }
 
 let settings = null;
 let items = [];
@@ -472,11 +484,14 @@ function parseText(text){
     if(!line) return;
     if(line.includes("|")){
       const parts = line.split("|");
-      const unit = (parts.length >= 3 && (parts[2] === "g" || parts[2] === "pcs")) ? parts[2] : "g";
+      const unit = (parts.length >= 3 && UNITS.includes(parts[2])) ? parts[2] : "g";
+      const staple = parts[3] === "staple";
       const name = parts[0];
-      let qty = parseInt(parts[1], 10);
+      let qty = parseFloat(parts[1]);
       if(isNaN(qty)) qty = 1;
-      out.push({name, quantity: qty, unit});
+      const entry = {name, quantity: qty, unit};
+      if(staple) entry.staple = true;
+      out.push(entry);
     } else {
       out.push({name: line, quantity: 1, unit: "g"});
     }
@@ -485,7 +500,7 @@ function parseText(text){
 }
 
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}|${i.unit}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}`).join("\n") + (list.length ? "\n" : "");
 }
 
 function titleCase(s){
@@ -648,11 +663,14 @@ function saveAliasesFromModal(){
   const item = items.find(i => normaliseName(i.name) === normCanon);
   if(item){
     const dupes = items.filter(i => i !== item && seen.has(normaliseName(i.name)));
-    const mergeable = dupes.filter(d => d.unit === item.unit);
+    const mergeable = dupes.filter(d => convertQty(1, d.unit, item.unit) !== null);
     if(mergeable.length){
       const desc = mergeable.map(d => `${d.name} (${d.quantity} ${d.unit})`).join(", ");
       if(confirm(`Merge ${desc} into ${item.name}?`)){
-        mergeable.forEach(d => { item.quantity += d.quantity; });
+        mergeable.forEach(d => {
+          item.quantity = roundQty(item.quantity + convertQty(d.quantity, d.unit, item.unit));
+          if(d.staple) item.staple = true;
+        });
         items = items.filter(i => !mergeable.includes(i));
         queueSave(`Merge duplicates into ${item.name}`);
       }
@@ -764,6 +782,12 @@ function presetsFor(qty, unit){
     if(qty <= 50) return [1, 5, 10];
     return [5, 10, 25];
   }
+  if(unit === "tsp" || unit === "tbsp"){
+    return qty <= 10 ? [0.5, 1, 2] : [1, 2, 5];
+  }
+  if(unit === "cups"){
+    return qty <= 4 ? [0.25, 0.5, 1] : [0.5, 1, 2];
+  }
   if(qty <= 10) return [1, 2, 5];
   if(qty <= 50) return [5, 10, 25];
   if(qty <= 200) return [10, 25, 50];
@@ -773,7 +797,9 @@ function presetsFor(qty, unit){
 }
 
 function isLowStock(item){
-  return item.unit === "pcs" ? item.quantity <= 2 : item.quantity <= 100;
+  if(item.staple) return false;
+  if(item.unit === "pcs") return item.quantity <= 2;
+  return convertQty(item.quantity, item.unit, "g") <= 100;
 }
 
 function setStatus(state, text){
@@ -879,7 +905,7 @@ function normaliseRecipe(recipe){
       ? recipe.ingredients.map(i => ({
           name: String(i?.name || "").trim(),
           quantity: Number(i?.quantity) || 0,
-          unit: i?.unit === "pcs" ? "pcs" : "g"
+          unit: UNITS.includes(i?.unit) ? i.unit : "g"
         })).filter(i => i.name && i.quantity > 0)
       : [],
     method: Array.isArray(recipe?.method)
@@ -973,19 +999,31 @@ function getRecipeAvailability(recipe){
   const details = recipe.ingredients.map(ingredient => {
     const cupboard = items.find(item => sameIngredient(item.name, ingredient.name));
 
-    const available = cupboard ? cupboard.quantity : 0;
+    if(!cupboard){
+      missing++;
+      return {...ingredient, available: 0, status:"missing"};
+    }
 
-    if(!cupboard || available <= 0){
+    // Staples just need to exist; how much is left doesn't matter.
+    if(cupboard.staple){
+      return {...ingredient, available: cupboard.quantity, haveUnit: cupboard.unit, status:"ok", staple:true};
+    }
+
+    const available = cupboard.quantity;
+
+    if(available <= 0){
       missing++;
       return {...ingredient, available, status:"missing"};
     }
 
-    if(cupboard.unit !== ingredient.unit){
+    const need = convertQty(ingredient.quantity, ingredient.unit, cupboard.unit);
+
+    if(need === null){
       low++;
       return {...ingredient, available, haveUnit: cupboard.unit, status:"low", mismatch:true};
     }
 
-    if(available < ingredient.quantity){
+    if(available < need - 1e-9){
       low++;
       return {...ingredient, available, haveUnit: cupboard.unit, status:"low"};
     }
@@ -1079,11 +1117,13 @@ function renderRecipes(){
 
           const icon = i.status === "ok" ? "✓" : i.status === "low" ? "!" : "×";
 
-          let text = `${i.name} — ${i.quantity} ${i.unit}`;
-          if(i.status === "low" && i.mismatch){
+          let text = `${i.name} — ${fmt(i.quantity)} ${i.unit}`;
+          if(i.staple){
+            text += " (staple)";
+          }else if(i.status === "low" && i.mismatch){
             text += ` (cupboard is in ${i.haveUnit} — unit differs)`;
           }else if(i.status === "low"){
-            text += ` (have ${i.available} ${i.haveUnit})`;
+            text += ` (have ${fmt(i.available)} ${i.haveUnit})`;
           }else if(i.status === "missing"){
             text += " (missing)";
           }
@@ -1179,7 +1219,7 @@ function render(){
 
       row.innerHTML = `
         <span class="name">${escapeHtml(item.name)}</span>
-        <span class="qty">${item.quantity} ${item.unit}</span>
+        <span class="qty${item.staple ? " staple-tag" : ""}">${item.staple ? "staple" : fmt(item.quantity) + " " + item.unit}</span>
         <button type="button" class="del" aria-label="Remove ${escapeHtml(item.name)}">✕</button>
       `;
 
@@ -1225,10 +1265,30 @@ function renderAdjustBar(){
   document.getElementById("adjustName").textContent = item.name;
   document.getElementById("adjustAliases").onclick = () => openAliasModal(item.name);
 
+  const stapleBtn = document.getElementById("adjustStaple");
+  stapleBtn.textContent = item.staple ? "Staple ✓" : "Staple";
+  stapleBtn.classList.toggle("on", !!item.staple);
+  stapleBtn.onclick = () => {
+    pushUndo(item.staple ? `unmark ${item.name} as staple` : `mark ${item.name} as staple`);
+    if(item.staple){
+      delete item.staple;
+      if(item.quantity <= 0) item.quantity = 1;
+    }else{
+      item.staple = true;
+    }
+    queueSave(`Update ${item.name} staple`);
+    render();
+  };
+  document.querySelector("#adjustBar .adjust-controls").classList.toggle("hidden", !!item.staple);
+  document.getElementById("adjustUnit").classList.toggle("hidden", !!item.staple);
+
   const unitSel = document.getElementById("adjustUnit");
   unitSel.value = item.unit;
   unitSel.onchange = () => {
     pushUndo();
+    // Convert the stored amount when the new unit is compatible (e.g. 500 g -> 2 cups).
+    const converted = convertQty(item.quantity, item.unit, unitSel.value);
+    if(converted !== null) item.quantity = roundQty(converted);
     item.unit = unitSel.value;
     queueSave(`Set ${item.name} unit`);
     render();
@@ -1247,7 +1307,9 @@ function renderAdjustBar(){
     const input = document.createElement("input");
     input.type = "number";
     input.inputMode = "numeric";
-    input.min = "1";
+    input.min = "0";
+    input.step = "any";
+    input.inputMode = "decimal";
     input.className = "custom-input";
     input.placeholder = "Amount";
 
@@ -1258,7 +1320,7 @@ function renderAdjustBar(){
     applyBtn.setAttribute("aria-label", "Apply custom amount");
 
     const doApply = () => {
-      const amt = parseInt(input.value, 10);
+      const amt = parseFloat(input.value);
       if(!amt || amt <= 0) return;
       customMode = false;
       changeQty(item.name, lastDir === "add" ? amt : -amt);
@@ -1299,7 +1361,7 @@ function changeQty(name, delta){
   if(!item) return;
 
   pushUndo();
-  item.quantity += delta;
+  item.quantity = roundQty(item.quantity + delta);
 
   if(item.quantity <= 0){
     items = items.filter(i => i.name !== name);
@@ -1331,7 +1393,10 @@ function addItem(name, qty, unit){
   const existing = items.find(i => sameIngredient(i.name, name));
 
   if(existing){
-    existing.quantity += qty;
+    if(!existing.staple){
+      const add = convertQty(qty, unit, existing.unit);
+      existing.quantity = roundQty(existing.quantity + (add ?? qty));
+    }
     queueSave(`Increase ${name}`);
   }else{
     items.push({name, quantity: qty, unit});
@@ -1357,16 +1422,14 @@ function addRecipeIngredientRow(data = {name:"", quantity:1, unit:"g"}){
 
   const qty = document.createElement("input");
   qty.type = "number";
-  qty.min = "1";
-  qty.step = "1";
+  qty.min = "0";
+  qty.step = "any";
+  qty.inputMode = "decimal";
   qty.value = data.quantity || 1;
 
   const unit = document.createElement("select");
-  unit.innerHTML = `
-    <option value="g">g</option>
-    <option value="pcs">pcs</option>
-  `;
-  unit.value = data.unit === "pcs" ? "pcs" : "g";
+  unit.innerHTML = unitOptions();
+  unit.value = UNITS.includes(data.unit) ? data.unit : "g";
 
   const remove = document.createElement("button");
   remove.type = "button";
@@ -1516,10 +1579,12 @@ async function makeRecipe(name){
 
   recipe.ingredients.forEach(ingredient => {
     const item = items.find(i => sameIngredient(i.name, ingredient.name));
-    if(item) item.quantity -= ingredient.quantity;
+    if(!item || item.staple) return; // staples aren't tracked
+    const used = convertQty(ingredient.quantity, ingredient.unit, item.unit);
+    if(used !== null) item.quantity = roundQty(item.quantity - used);
   });
 
-  items = items.filter(i => i.quantity > 0);
+  items = items.filter(i => i.staple || i.quantity > 0);
 
   selectedName = null;
   customMode = false;
@@ -1621,6 +1686,8 @@ document.getElementById("themeBtn").onclick = () => {
 };
 
 applyTheme();
+document.getElementById("addUnit").innerHTML = unitOptions();
+document.getElementById("adjustUnit").innerHTML = unitOptions();
 document.getElementById("undoBtn").onclick = undo;
 
 document.getElementById("aliasCancel").onclick = closeAliasModal;
@@ -1650,7 +1717,7 @@ document.getElementById("add").addEventListener("submit", e => {
   const qtyEl = document.getElementById("addQty");
   const unitEl = document.getElementById("addUnit");
 
-  const qty = parseInt(qtyEl.value, 10) || 1;
+  const qty = parseFloat(qtyEl.value) || 1;
   addItem(nameEl.value, qty, unitEl.value);
 
   nameEl.value = "";
