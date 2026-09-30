@@ -9,4 +9,4 @@ Golden Caster Sugar|800|g
 Light Soft Brown Sugar|390|g
 Light Muscovado Sugar|1360|g
 Wholemeal Flour|625|g
-Icing Sugar|1|pcs
+Icing Sugar|1|pcs|staple
