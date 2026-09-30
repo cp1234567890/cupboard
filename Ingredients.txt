@@ -5,3 +5,4 @@ Chocolate|250|g
 Vanilla Extract|1|pcs|staple
 Jam Sugar|500|g
 Soft Dark Brown Sugar|300|g
+Golden Caster Sugar|800|g
