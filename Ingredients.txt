@@ -8,4 +8,4 @@ Light Soft Brown Sugar|390|g
 Light Muscovado Sugar|1360|g
 Wholemeal Flour|625|g
 Icing Sugar|1|pcs|staple
-Golden Syrup|1|pcs
+Golden Syrup|1|pcs|staple
