@@ -197,14 +197,14 @@
         "unit": "pcs"
       },
       {
-        "name": "Maple Syrup (cups)",
+        "name": "Maple Syrup",
         "quantity": 0.5,
-        "unit": "pcs"
+        "unit": "cups"
       },
       {
-        "name": "Coconut Oil (cups)",
+        "name": "Coconut Oil",
         "quantity": 0.5,
-        "unit": "pcs"
+        "unit": "cups"
       },
       {
         "name": "Eggs",
@@ -212,39 +212,39 @@
         "unit": "pcs"
       },
       {
-        "name": "Vanilla (tsp)",
+        "name": "Vanilla",
         "quantity": 1,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
-        "name": "Plain Flour (cups)",
+        "name": "Plain Flour",
         "quantity": 1,
-        "unit": "pcs"
+        "unit": "cups"
       },
       {
-        "name": "Whole Wheat Flour (cups)",
+        "name": "Whole Wheat Flour",
         "quantity": 0.75,
-        "unit": "pcs"
+        "unit": "cups"
       },
       {
-        "name": "Bicarbonate of Soda (tsp)",
+        "name": "Bicarbonate of Soda",
         "quantity": 1,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
-        "name": "Cinnamon (tsp)",
+        "name": "Cinnamon",
         "quantity": 0.5,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
-        "name": "Nutmeg (tsp)",
+        "name": "Nutmeg",
         "quantity": 0.25,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
-        "name": "Walnuts (cups)",
+        "name": "Walnuts",
         "quantity": 0.5,
-        "unit": "pcs"
+        "unit": "cups"
       }
     ],
     "method": [
