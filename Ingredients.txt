@@ -10,4 +10,4 @@ Wholemeal Flour|625|g
 Icing Sugar|1|pcs|staple
 Golden Syrup|1|pcs|staple
 Oat Flour|200|g
-Demerara Sugar|280|pcs
+Demerara Sugar|280|g
