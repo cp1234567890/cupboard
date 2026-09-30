@@ -57,9 +57,9 @@
     "bakeTime": "20 mins",
     "ingredients": [
       {
-        "name": "Pistachio Spread (tbsp)",
+        "name": "Pistachio Spread",
         "quantity": 6,
-        "unit": "pcs"
+        "unit": "tbsp"
       },
       {
         "name": "Butter",
@@ -72,9 +72,9 @@
         "unit": "g"
       },
       {
-        "name": "Vanilla Extract (tsp)",
+        "name": "Vanilla Extract",
         "quantity": 2,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
         "name": "Eggs",
@@ -87,14 +87,14 @@
         "unit": "g"
       },
       {
-        "name": "Corn Flour (tbsp)",
+        "name": "Corn Flour",
         "quantity": 2,
-        "unit": "pcs"
+        "unit": "tbsp"
       },
       {
-        "name": "Baking Powder (tsp)",
+        "name": "Baking Powder",
         "quantity": 1,
-        "unit": "pcs"
+        "unit": "tsp"
       },
       {
         "name": "Dark Chocolate",
