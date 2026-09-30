@@ -229,6 +229,14 @@
     width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
     font-size:0.95rem; background:var(--card); color:var(--ink);
   }
+  .alias-suggest{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:0.82rem; color:var(--ink-soft); margin:-2px 0 8px;
+  }
+  .alias-suggest button{
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:8px; padding:4px 9px; font-size:0.8rem; cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -280,6 +288,7 @@
       <option value="g">g</option>
       <option value="pcs">pcs</option>
     </select>
+    <button type="button" class="close" id="adjustAliases">Aliases</button>
     <button type="button" class="close" id="adjustClose" aria-label="Done">Done</button>
   </div>
   <div class="adjust-controls">
@@ -319,6 +328,21 @@
   </div>
 </div>
 
+<div id="aliasModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2 id="aliasTitle">Aliases</h2>
+    <p class="hint">Other names for this ingredient, separated by commas. Recipes using any of these names will use this cupboard item.</p>
+    <div class="field">
+      <input type="text" id="aliasInput" placeholder="e.g. flour, AP flour" autocomplete="off">
+    </div>
+    <p class="error-text" id="aliasError"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn-secondary" id="aliasCancel">Cancel</button>
+      <button type="button" class="btn-primary" id="aliasSave">Save aliases</button>
+    </div>
+  </div>
+</div>
+
 <div id="recipeModal" class="modal-backdrop hidden">
   <div class="modal recipe-modal">
     <h2 id="recipeModalTitle">Add recipe</h2>
@@ -352,6 +376,7 @@
 const BRANCH = "main";
 const PATH = "Ingredients.txt";
 const RECIPES_PATH = "Recipes.json";
+const ALIASES_PATH = "Aliases.json";
 const STORE_KEY = "cupboard-settings-v1";
 
 let settings = null;
@@ -366,6 +391,10 @@ let undoStack = [];
 
 let recipes = [];
 let recipesSha = null;
+let aliases = {};
+let aliasesSha = null;
+let aliasSaveTimer = null;
+let aliasEditing = null;
 let recipeSaveTimer = null;
 let expandedRecipe = null;
 let editingRecipeName = null;
@@ -375,7 +404,8 @@ function pushUndo(label = "last change"){
   undoStack.push({
     label,
     items: JSON.parse(JSON.stringify(items)),
-    recipes: JSON.parse(JSON.stringify(recipes))
+    recipes: JSON.parse(JSON.stringify(recipes)),
+    aliases: JSON.parse(JSON.stringify(aliases))
   });
   if(undoStack.length > 20) undoStack.shift();
   updateUndoBtn();
@@ -397,12 +427,15 @@ function undo(){
 
   const itemsChanged = JSON.stringify(items) !== JSON.stringify(snap.items);
   const recipesChanged = JSON.stringify(recipes) !== JSON.stringify(snap.recipes);
+  const aliasesChanged = JSON.stringify(aliases) !== JSON.stringify(snap.aliases);
 
   items = snap.items;
   recipes = snap.recipes;
+  aliases = snap.aliases;
 
   if(itemsChanged) queueSave(`Undo: ${snap.label}`);
   if(recipesChanged) queueRecipeSave(`Undo: ${snap.label}`);
+  if(aliasesChanged) queueAliasSave(`Undo: ${snap.label}`);
 
   updateUndoBtn();
   render();
@@ -463,6 +496,268 @@ function normaliseName(s){
   return String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/* ---------------- Aliases ---------------- */
+
+// Returns the normalised canonical key that `name` belongs to (as a key or
+// an alias), or null if the name isn't part of any alias group.
+function aliasOwner(name){
+  const n = normaliseName(name);
+  for(const [key, list] of Object.entries(aliases)){
+    if(normaliseName(key) === n) return n;
+    if(list.some(a => normaliseName(a) === n)) return normaliseName(key);
+  }
+  return null;
+}
+
+function canonicalName(name){
+  return aliasOwner(name) ?? normaliseName(name);
+}
+
+function sameIngredient(a, b){
+  return canonicalName(a) === canonicalName(b);
+}
+
+// All normalised names an ingredient can go by (for searching).
+function namesFor(name){
+  const canon = canonicalName(name);
+  const key = Object.keys(aliases).find(k => normaliseName(k) === canon);
+  if(!key) return [normaliseName(name)];
+  return [canon, ...aliases[key].map(normaliseName)];
+}
+
+function normaliseAliases(data){
+  const out = {};
+  if(data && typeof data === "object" && !Array.isArray(data)){
+    Object.entries(data).forEach(([key, list]) => {
+      const k = String(key).trim();
+      const l = Array.isArray(list) ? list.map(a => String(a).trim()).filter(Boolean) : [];
+      if(k && l.length) out[k] = l;
+    });
+  }
+  return out;
+}
+
+async function fetchAliases(){
+  const data = await getGithubFile(ALIASES_PATH);
+  if(!data){
+    aliases = {};
+    aliasesSha = null;
+    return;
+  }
+  aliasesSha = data.sha;
+  let parsed;
+  try{ parsed = JSON.parse(data.text); }
+  catch(e){ throw new Error("Aliases.json is not valid JSON"); }
+  aliases = normaliseAliases(parsed);
+}
+
+async function pushAliases(message){
+  setStatus("busy", "Saving…");
+  try{
+    const body = {
+      message,
+      content: b64EncodeUtf8(JSON.stringify(aliases, null, 2) + "\n"),
+      branch: BRANCH
+    };
+    if(aliasesSha) body.sha = aliasesSha;
+
+    const send = () => fetch(apiUrl(ALIASES_PATH), {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    let res = await send();
+
+    if(res.status === 409){
+      const fresh = await fetch(apiUrl(ALIASES_PATH), {headers: authHeaders()});
+      if(fresh.ok){
+        aliasesSha = (await fresh.json()).sha;
+        body.sha = aliasesSha;
+      }
+      res = await send();
+    }
+
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    aliasesSha = (await res.json()).content.sha;
+    setStatus("ok", "Synced");
+    return true;
+  }catch(err){
+    setStatus("err", "Alias save failed");
+    return false;
+  }
+}
+
+function queueAliasSave(message){
+  clearTimeout(aliasSaveTimer);
+  aliasSaveTimer = setTimeout(() => pushAliases(message), 700);
+}
+
+function openAliasModal(name){
+  const owner = aliasOwner(name);
+  if(owner && owner !== normaliseName(name)){
+    alert(`${name} is already an alias of ${owner}. Edit aliases on that item instead.`);
+    return;
+  }
+  aliasEditing = name;
+  const key = Object.keys(aliases).find(k => normaliseName(k) === normaliseName(name));
+  document.getElementById("aliasTitle").textContent = `Aliases for ${name}`;
+  document.getElementById("aliasInput").value = key ? aliases[key].join(", ") : "";
+  document.getElementById("aliasError").style.display = "none";
+  document.getElementById("aliasModal").classList.remove("hidden");
+}
+
+function closeAliasModal(){
+  document.getElementById("aliasModal").classList.add("hidden");
+  aliasEditing = null;
+}
+
+function saveAliasesFromModal(){
+  const canon = aliasEditing;
+  if(!canon) return;
+  const error = document.getElementById("aliasError");
+  const normCanon = normaliseName(canon);
+
+  const seen = new Set();
+  const list = document.getElementById("aliasInput").value
+    .split(",")
+    .map(a => a.trim())
+    .filter(a => {
+      const n = normaliseName(a);
+      if(!n || n === normCanon || seen.has(n)) return false;
+      seen.add(n);
+      return true;
+    });
+
+  for(const a of list){
+    const owner = aliasOwner(a);
+    if(owner && owner !== normCanon){
+      error.textContent = `"${a}" is already used by ${owner}.`;
+      error.style.display = "block";
+      return;
+    }
+  }
+
+  pushUndo(`aliases for ${canon}`);
+
+  const key = Object.keys(aliases).find(k => normaliseName(k) === normCanon) || canon;
+  if(list.length) aliases[key] = list;
+  else delete aliases[key];
+
+  // If other cupboard items are now the same ingredient, offer to merge them.
+  const item = items.find(i => normaliseName(i.name) === normCanon);
+  if(item){
+    const dupes = items.filter(i => i !== item && seen.has(normaliseName(i.name)));
+    const mergeable = dupes.filter(d => d.unit === item.unit);
+    if(mergeable.length){
+      const desc = mergeable.map(d => `${d.name} (${d.quantity} ${d.unit})`).join(", ");
+      if(confirm(`Merge ${desc} into ${item.name}?`)){
+        mergeable.forEach(d => { item.quantity += d.quantity; });
+        items = items.filter(i => !mergeable.includes(i));
+        queueSave(`Merge duplicates into ${item.name}`);
+      }
+    }
+  }
+
+  queueAliasSave(`Update aliases: ${canon}`);
+  closeAliasModal();
+  render();
+  renderRecipes();
+}
+
+// Add one alias to an ingredient group (used by the "Same thing" suggestion).
+function addAlias(canon, alias){
+  const normCanon = normaliseName(canon);
+  const owner = aliasOwner(alias);
+  if(owner && owner !== normCanon){
+    alert(`"${alias}" is already used by ${owner}.`);
+    return false;
+  }
+  pushUndo(`alias ${alias}`);
+  const key = Object.keys(aliases).find(k => normaliseName(k) === normCanon) || canon;
+  if(!aliases[key]) aliases[key] = [];
+  if(!aliases[key].some(a => normaliseName(a) === normaliseName(alias))){
+    aliases[key].push(alias.trim());
+  }
+  queueAliasSave(`Add alias: ${alias}`);
+  render();
+  renderRecipes();
+  return true;
+}
+
+function editDistance(a, b){
+  const dp = Array.from({length: a.length + 1}, (_, i) => [i]);
+  for(let j = 1; j <= b.length; j++) dp[0][j] = j;
+  for(let i = 1; i <= a.length; i++){
+    for(let j = 1; j <= b.length; j++){
+      dp[i][j] = Math.min(
+        dp[i-1][j] + 1,
+        dp[i][j-1] + 1,
+        dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+// The cupboard item that a typed name is probably meant to be, or null.
+function closestItem(typed){
+  const n = normaliseName(typed);
+  if(n.length < 3) return null;
+  if(items.some(i => sameIngredient(i.name, typed))) return null;
+
+  let best = null, bestScore = Infinity;
+  items.forEach(i => {
+    const m = normaliseName(i.name);
+    let score = null;
+    if(m.includes(n) || n.includes(m)){
+      score = Math.abs(m.length - n.length) / 100;
+    }else if(n.length >= 4){
+      const d = editDistance(n, m);
+      if(d <= (n.length >= 6 ? 2 : 1)) score = d;
+    }
+    if(score !== null && score < bestScore){ best = i; bestScore = score; }
+  });
+  return best;
+}
+
+function showAliasSuggestion(row, input){
+  if(row._sugg){ row._sugg.remove(); row._sugg = null; }
+  const typed = input.value.trim();
+  if(!typed) return;
+  const match = closestItem(typed);
+  if(!match) return;
+
+  const div = document.createElement("div");
+  div.className = "alias-suggest";
+  div.innerHTML = `<span>Did you mean <b>${escapeHtml(match.name)}</b>?</span>`;
+
+  const use = document.createElement("button");
+  use.type = "button";
+  use.textContent = "Use it";
+  use.onclick = () => {
+    input.value = match.name;
+    div.remove();
+    row._sugg = null;
+  };
+
+  const same = document.createElement("button");
+  same.type = "button";
+  same.textContent = "Same thing";
+  same.title = `Save "${typed}" as another name for ${match.name}`;
+  same.onclick = () => {
+    if(addAlias(match.name, typed)){
+      div.remove();
+      row._sugg = null;
+    }
+  };
+
+  div.appendChild(use);
+  div.appendChild(same);
+  row.after(div);
+  row._sugg = div;
+}
+
 function presetsFor(qty, unit){
   if(unit === "pcs"){
     if(qty <= 12) return [1, 2, 3];
@@ -512,8 +807,9 @@ async function fetchFile(){
     }
     try{
       await fetchRecipes(false);
+      await fetchAliases();
     }catch(e){
-      setStatus("err", "Cupboard loaded — recipes failed");
+      setStatus("err", "Cupboard loaded — recipes or aliases failed");
       render();
       return;
     }
@@ -675,9 +971,7 @@ function getRecipeAvailability(recipe){
   let low = 0;
 
   const details = recipe.ingredients.map(ingredient => {
-    const cupboard = items.find(
-      item => normaliseName(item.name) === normaliseName(ingredient.name)
-    );
+    const cupboard = items.find(item => sameIngredient(item.name, ingredient.name));
 
     const available = cupboard ? cupboard.quantity : 0;
 
@@ -731,7 +1025,7 @@ function renderRecipes(){
   const q = normaliseName(document.getElementById("recipeSearch").value);
   const visible = recipes.filter(r => !q
     || normaliseName(r.name).includes(q)
-    || r.ingredients.some(i => normaliseName(i.name).includes(q)));
+    || r.ingredients.some(i => namesFor(i.name).some(n => n.includes(q))));
 
   if(visible.length === 0){
     empty.textContent = recipes.length === 0
@@ -861,7 +1155,7 @@ function render(){
   list.innerHTML = "";
 
   const q = normaliseName(document.getElementById("cupboardSearch").value);
-  const visible = items.filter(i => !q || normaliseName(i.name).includes(q));
+  const visible = items.filter(i => !q || namesFor(i.name).some(n => n.includes(q)));
 
   if(visible.length === 0){
     empty.textContent = items.length === 0
@@ -929,6 +1223,7 @@ function renderAdjustBar(){
   addForm.classList.add("hidden");
   bar.classList.remove("hidden");
   document.getElementById("adjustName").textContent = item.name;
+  document.getElementById("adjustAliases").onclick = () => openAliasModal(item.name);
 
   const unitSel = document.getElementById("adjustUnit");
   unitSel.value = item.unit;
@@ -1033,7 +1328,7 @@ function addItem(name, qty, unit){
 
   pushUndo();
 
-  const existing = items.find(i => normaliseName(i.name) === normaliseName(name));
+  const existing = items.find(i => sameIngredient(i.name, name));
 
   if(existing){
     existing.quantity += qty;
@@ -1077,7 +1372,8 @@ function addRecipeIngredientRow(data = {name:"", quantity:1, unit:"g"}){
   remove.type = "button";
   remove.textContent = "✕";
   remove.setAttribute("aria-label", "Remove ingredient");
-  remove.onclick = () => row.remove();
+  remove.onclick = () => { if(row._sugg) row._sugg.remove(); row.remove(); };
+  name.addEventListener("change", () => showAliasSuggestion(row, name));
 
   row.appendChild(name);
   row.appendChild(qty);
@@ -1219,9 +1515,7 @@ async function makeRecipe(name){
   pushUndo(`make ${recipe.name}`);
 
   recipe.ingredients.forEach(ingredient => {
-    const item = items.find(
-      i => normaliseName(i.name) === normaliseName(ingredient.name)
-    );
+    const item = items.find(i => sameIngredient(i.name, ingredient.name));
     if(item) item.quantity -= ingredient.quantity;
   });
 
@@ -1328,6 +1622,15 @@ document.getElementById("themeBtn").onclick = () => {
 
 applyTheme();
 document.getElementById("undoBtn").onclick = undo;
+
+document.getElementById("aliasCancel").onclick = closeAliasModal;
+document.getElementById("aliasSave").onclick = saveAliasesFromModal;
+document.getElementById("aliasInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){ e.preventDefault(); saveAliasesFromModal(); }
+});
+document.getElementById("aliasModal").addEventListener("click", e => {
+  if(e.target.id === "aliasModal") closeAliasModal();
+});
 
 document.getElementById("cupboardSearch").addEventListener("input", () => {
   customMode = false;
