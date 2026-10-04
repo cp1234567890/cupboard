@@ -5,7 +5,7 @@ Jam Sugar|500|g
 Soft Dark Brown Sugar|240|g
 Golden Caster Sugar|700|g
 Light Soft Brown Sugar|390|g
-Light Muscovado Sugar|1360|g
+Light Muscovado Sugar|1185|g
 Wholemeal Flour|625|g
 Icing Sugar|1|pcs|staple
 Golden Syrup|1|pcs|staple
@@ -15,9 +15,9 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|400|g
+Butter|225|g
 Baking Powder|1|g|staple
 Bicarbonate Of Soda|1|g|staple
 Cocoa Powder|1|g|staple
 Sea Salt|1|g|staple
-Oats|600|g
+Oats|250|g
