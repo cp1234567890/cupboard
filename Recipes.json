@@ -347,5 +347,68 @@
       "Fold in flour and a pinch of salt until smooth.",
       "Add to tin and bake for 50 minutes at 180 degrees."
     ]
+  },
+  {
+    "name": "Nigella Chocolate Cookies",
+    "bakeTime": "12 mins",
+    "ingredients": [
+      {
+        "name": "Plain Flour",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Cocoa Powder",
+        "quantity": 40,
+        "unit": "g"
+      },
+      {
+        "name": "Baking Powder",
+        "quantity": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "name": "Sea Salt",
+        "quantity": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "name": "Butter",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Caster Sugar",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Soft Dark Brown Sugar",
+        "quantity": 60,
+        "unit": "g"
+      },
+      {
+        "name": "Vanilla Extract",
+        "quantity": 1,
+        "unit": "tsp"
+      },
+      {
+        "name": "Dark Chocolate Chips",
+        "quantity": 100,
+        "unit": "g"
+      },
+      {
+        "name": "Bicarbonate of Soda",
+        "quantity": 0.5,
+        "unit": "tsp"
+      }
+    ],
+    "method": [
+      "Stir flour, cocoa powder, baking powder, bicarbonate and sea salt together.",
+      "Beat butter, sugars and vanilla until creamy.",
+      "Add spoonful of dry ingredients and beat with spoon, in 3 batches add in the rest of the ingredients. Beat vigorously then stir in chocolate chips.",
+      "Divide into 8 and sprinkle sea salt on top.",
+      "Bake for 12 minutes at 180 degrees."
+    ]
   }
 ]
