@@ -19,4 +19,4 @@ Butter|600|g
 Baking Powder|1|g|staple
 Bicarbonate Of Soda|1|g|staple
 Cocoa Powder|1|g|staple
-Sea Salt|1|g
+Sea Salt|1|g|staple
