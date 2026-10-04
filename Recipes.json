@@ -410,5 +410,37 @@
       "Divide into 8 and sprinkle sea salt on top.",
       "Bake for 12 minutes at 180 degrees."
     ]
+  },
+  {
+    "name": "Flapjacks",
+    "bakeTime": "40 mins",
+    "ingredients": [
+      {
+        "name": "Butter",
+        "quantity": 175,
+        "unit": "g"
+      },
+      {
+        "name": "Golden Syrup",
+        "quantity": 175,
+        "unit": "g"
+      },
+      {
+        "name": "Light Muscovado Sugar",
+        "quantity": 175,
+        "unit": "g"
+      },
+      {
+        "name": "Oats",
+        "quantity": 350,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Melt butter in a pan.",
+      "Add golden syrup and sugar to the butter.",
+      "Once sugar dissolved, stir in oats.",
+      "Pack into baking tin and bake for 40 minutes at 150 degrees."
+    ]
   }
 ]
