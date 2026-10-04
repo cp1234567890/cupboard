@@ -1,9 +1,9 @@
 Eggs|5|pcs
-Plain Flour|1950|g
+Plain Flour|1750|g
 Vanilla Extract|1|pcs|staple
 Jam Sugar|500|g
-Soft Dark Brown Sugar|300|g
-Golden Caster Sugar|800|g
+Soft Dark Brown Sugar|240|g
+Golden Caster Sugar|700|g
 Light Soft Brown Sugar|390|g
 Light Muscovado Sugar|1360|g
 Wholemeal Flour|625|g
@@ -15,9 +15,8 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|600|g
+Butter|400|g
 Baking Powder|1|g|staple
 Bicarbonate Of Soda|1|g|staple
 Cocoa Powder|1|g|staple
 Sea Salt|1|g|staple
-Chocolate Chips|100|g
