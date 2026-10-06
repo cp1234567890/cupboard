@@ -246,6 +246,10 @@
     font-size:0.85rem; color:var(--ink-soft); cursor:pointer;
   }
   form#add .staple-opt input{width:18px; height:18px; margin:0; accent-color:var(--herb);}
+  .row .name small{display:block; font-size:0.78rem; color:var(--paprika); margin-top:2px;}
+  .row .name small.over{color:var(--brick);}
+  .recipe-actions .r-reserve{background:var(--card); border:1px solid var(--paprika); color:var(--paprika);}
+  .recipe-actions .r-reserve.on{background:var(--paprika); color:#fff;}
 </style>
 </head>
 <body>
@@ -906,6 +910,7 @@ function queueSave(message){
 
 function normaliseRecipe(recipe){
   return {
+    ...(recipe?.reserved ? {reserved: true} : {}),
     name: String(recipe?.name || "").trim(),
     bakeTime: String(recipe?.bakeTime || "").trim(),
     ingredients: Array.isArray(recipe?.ingredients)
@@ -999,6 +1004,33 @@ function queueRecipeSave(message){
   recipeSaveTimer = setTimeout(() => pushRecipes(message), 700);
 }
 
+// How much of a cupboard item is set aside by reserved recipes (in the item's unit),
+// optionally ignoring one recipe (so a recipe doesn't compete with itself).
+function reservedAmount(item, excludeRecipe){
+  if(item.staple) return 0;
+  let total = 0;
+  recipes.forEach(r => {
+    if(!r.reserved || r === excludeRecipe) return;
+    r.ingredients.forEach(ing => {
+      if(!sameIngredient(ing.name, item.name)) return;
+      const need = convertQty(ing.quantity, ing.unit, item.unit);
+      if(need !== null) total += need;
+    });
+  });
+  return total;
+}
+
+function toggleReserve(name){
+  const r = recipes.find(x => x.name === name);
+  if(!r) return;
+  const releasing = !!r.reserved;
+  pushUndo(releasing ? `release ${name}` : `reserve ${name}`);
+  if(releasing) delete r.reserved; else r.reserved = true;
+  queueRecipeSave(`${releasing ? "Release" : "Reserve"} recipe: ${name}`);
+  render();
+  renderRecipes();
+}
+
 function getRecipeAvailability(recipe){
   let missing = 0;
   let low = 0;
@@ -1024,15 +1056,16 @@ function getRecipeAvailability(recipe){
     }
 
     const need = convertQty(ingredient.quantity, ingredient.unit, cupboard.unit);
+    const held = reservedAmount(cupboard, recipe); // set aside by other reserved recipes
 
     if(need === null){
       low++;
       return {...ingredient, available, haveUnit: cupboard.unit, status:"low", mismatch:true};
     }
 
-    if(available < need - 1e-9){
+    if(available - held < need - 1e-9){
       low++;
-      return {...ingredient, available, haveUnit: cupboard.unit, status:"low"};
+      return {...ingredient, available, held, haveUnit: cupboard.unit, status:"low"};
     }
 
     return {...ingredient, available, haveUnit: cupboard.unit, status:"ok"};
@@ -1095,7 +1128,7 @@ function renderRecipes(){
       summary.innerHTML = `
         <div class="recipe-info">
           <div class="recipe-name">${escapeHtml(recipe.name)}</div>
-          <div class="recipe-sub">${escapeHtml(recipe.bakeTime || "No time specified")} · ${escapeHtml(availabilityText(result))}</div>
+          <div class="recipe-sub">${escapeHtml(recipe.bakeTime || "No time specified")} · ${escapeHtml(availabilityText(result))}${recipe.reserved ? " · Reserved" : ""}</div>
         </div>
         <span aria-hidden="true">${expandedRecipe === recipe.name ? "⌃" : "⌄"}</span>
       `;
@@ -1130,7 +1163,9 @@ function renderRecipes(){
           }else if(i.status === "low" && i.mismatch){
             text += ` (cupboard is in ${i.haveUnit} — unit differs)`;
           }else if(i.status === "low"){
-            text += ` (have ${fmt(i.available)} ${i.haveUnit})`;
+            text += i.held > 0
+              ? ` (have ${fmt(i.available)} ${i.haveUnit}, ${fmt(i.held)} reserved for other recipes)`
+              : ` (have ${fmt(i.available)} ${i.haveUnit})`;
           }else if(i.status === "missing"){
             text += " (missing)";
           }
@@ -1172,6 +1207,12 @@ function renderRecipes(){
         make.textContent = "Make";
         make.onclick = () => makeRecipe(recipe.name);
 
+        const reserve = document.createElement("button");
+        reserve.type = "button";
+        reserve.className = "r-reserve" + (recipe.reserved ? " on" : "");
+        reserve.textContent = recipe.reserved ? "Release" : "Reserve";
+        reserve.onclick = () => toggleReserve(recipe.name);
+
         const edit = document.createElement("button");
         edit.type = "button";
         edit.className = "r-edit";
@@ -1185,6 +1226,7 @@ function renderRecipes(){
         del.onclick = () => deleteRecipe(recipe.name);
 
         actions.appendChild(make);
+        actions.appendChild(reserve);
         actions.appendChild(edit);
         actions.appendChild(del);
         details.appendChild(actions);
@@ -1224,8 +1266,17 @@ function render(){
         + (item.name === selectedName ? " selected" : "")
         + (isLowStock(item) ? " low" : "");
 
+      const held = reservedAmount(item, null);
+      let resHtml = "";
+      if(held > 0){
+        const free = item.quantity - held;
+        resHtml = free >= 0
+          ? `<small>${fmt(held)} ${item.unit} reserved · ${fmt(free)} ${item.unit} free</small>`
+          : `<small class="over">${fmt(held)} ${item.unit} reserved · short by ${fmt(-free)} ${item.unit}</small>`;
+      }
+
       row.innerHTML = `
-        <span class="name">${escapeHtml(item.name)}</span>
+        <span class="name">${escapeHtml(item.name)}${resHtml}</span>
         <span class="qty${item.staple ? " staple-tag" : ""}">${item.staple ? "staple" : fmt(item.quantity) + " " + item.unit}</span>
         <button type="button" class="del" aria-label="Remove ${escapeHtml(item.name)}">✕</button>
       `;
@@ -1544,11 +1595,14 @@ function saveRecipeFromModal(){
     return;
   }
 
+  const prev = editingRecipeName ? recipes.find(r => r.name === editingRecipeName) : null;
+
   const recipe = normaliseRecipe({
     name,
     bakeTime,
     ingredients,
-    method
+    method,
+    reserved: prev?.reserved
   });
 
   pushUndo(editingRecipeName ? `edit ${name}` : `add ${name}`);
@@ -1601,6 +1655,12 @@ async function makeRecipe(name){
   });
 
   items = items.filter(i => i.staple || i.quantity > 0);
+
+  // Once it's made, the reservation is used up.
+  if(recipe.reserved){
+    delete recipe.reserved;
+    queueRecipeSave(`Release recipe after making: ${recipe.name}`);
+  }
 
   selectedName = null;
   customMode = false;
