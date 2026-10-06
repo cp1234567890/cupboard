@@ -413,7 +413,7 @@
   },
   {
     "name": "Flapjacks",
-    "bakeTime": "40 mins",
+    "bakeTime": "25 mins",
     "ingredients": [
       {
         "name": "Butter",
@@ -440,7 +440,7 @@
       "Melt butter in a pan.",
       "Add golden syrup and sugar to the butter.",
       "Once sugar dissolved, stir in oats.",
-      "Pack into baking tin and bake for 40 minutes at 150 degrees."
+      "Pack into baking tin and bake for 25 minutes at 150 degrees."
     ]
   }
 ]
