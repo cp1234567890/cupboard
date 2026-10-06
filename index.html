@@ -240,6 +240,12 @@
   .adjust-info .close{font-size:0.92rem; white-space:nowrap;}
   .adjust-info .close.on{color:var(--herb); font-weight:600;}
   .row .qty.staple-tag{font-size:0.8rem; font-style:italic;}
+  form#add{flex-wrap:wrap;}
+  form#add .staple-opt{
+    flex-basis:100%; display:flex; align-items:center; gap:8px;
+    font-size:0.85rem; color:var(--ink-soft); cursor:pointer;
+  }
+  form#add .staple-opt input{width:18px; height:18px; margin:0; accent-color:var(--herb);}
 </style>
 </head>
 <body>
@@ -279,6 +285,7 @@
   <input type="number" id="addQty" value="1" min="0" step="any" inputmode="decimal">
   <select id="addUnit"></select>
   <button type="submit" aria-label="Add">+</button>
+  <label class="staple-opt"><input type="checkbox" id="addStaple"> Staple (don't track the amount)</label>
 </form>
 
 <div id="adjustBar" class="adjust-bar hidden">
@@ -380,7 +387,7 @@ const STORE_KEY = "cupboard-settings-v1";
 // Units. g and ml are treated 1:1; tsp/tbsp/cups are fixed volumes in ml.
 // pcs is a count and isn't convertible to the others.
 const UNITS = ["g", "ml", "tsp", "tbsp", "cups", "pcs"];
-const UNIT_BASE = {g: 1, ml: 1, tsp: 5, tbsp: 15, cups: 240};
+const UNIT_BASE = {g: 1, ml: 1, tsp: 5, tbsp: 15, cups: 250};
 
 function convertQty(q, from, to){
   if(from === to) return q;
@@ -1384,22 +1391,31 @@ function removeItem(name){
   if(currentView === "recipes") renderRecipes();
 }
 
-function addItem(name, qty, unit){
+function addItem(name, qty, unit, staple = false){
   name = titleCase(name);
   if(!name || qty <= 0) return;
 
-  pushUndo();
+  pushUndo(staple ? `add ${name} (staple)` : `add ${name}`);
 
   const existing = items.find(i => sameIngredient(i.name, name));
 
   if(existing){
-    if(!existing.staple){
+    if(staple){
+      // Adding something that's already there as a staple just marks it as one.
+      if(!existing.staple){
+        existing.staple = true;
+        queueSave(`Mark ${existing.name} as staple`);
+      }
+    }else if(!existing.staple){
       const add = convertQty(qty, unit, existing.unit);
       existing.quantity = roundQty(existing.quantity + (add ?? qty));
+      queueSave(`Increase ${existing.name}`);
     }
-    queueSave(`Increase ${name}`);
   }else{
-    items.push({name, quantity: qty, unit});
+    const entry = staple
+      ? {name, quantity: 1, unit: "g", staple: true}
+      : {name, quantity: qty, unit};
+    items.push(entry);
     queueSave(`Add ${name}`);
   }
 
@@ -1690,6 +1706,11 @@ document.getElementById("addUnit").innerHTML = unitOptions();
 document.getElementById("adjustUnit").innerHTML = unitOptions();
 document.getElementById("undoBtn").onclick = undo;
 
+document.getElementById("addStaple").addEventListener("change", e => {
+  document.getElementById("addQty").classList.toggle("hidden", e.target.checked);
+  document.getElementById("addUnit").classList.toggle("hidden", e.target.checked);
+});
+
 document.getElementById("aliasCancel").onclick = closeAliasModal;
 document.getElementById("aliasSave").onclick = saveAliasesFromModal;
 document.getElementById("aliasInput").addEventListener("keydown", e => {
@@ -1718,7 +1739,7 @@ document.getElementById("add").addEventListener("submit", e => {
   const unitEl = document.getElementById("addUnit");
 
   const qty = parseFloat(qtyEl.value) || 1;
-  addItem(nameEl.value, qty, unitEl.value);
+  addItem(nameEl.value, qty, unitEl.value, document.getElementById("addStaple").checked);
 
   nameEl.value = "";
   qtyEl.value = 1;
