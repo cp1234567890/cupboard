@@ -20,4 +20,4 @@ Baking Powder|1|g|staple
 Bicarbonate Of Soda|1|g|staple
 Cocoa Powder|1|g|staple
 Sea Salt|1|g|staple
-Oats|250|g
+Oats|200|g
