@@ -1,4 +1,4 @@
-Eggs|5|pcs
+Eggs|3|pcs
 Plain Flour|1750|g
 Vanilla Extract|1|pcs|staple
 Jam Sugar|500|g
