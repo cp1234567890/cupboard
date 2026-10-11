@@ -274,6 +274,27 @@
   .ideas-title{font-size:0.8rem; color:var(--ink-soft); margin:8px 2px 8px;}
   .idea{cursor:pointer;}
   .idea .recipe-sub + .recipe-sub{margin-top:4px;}
+  .tab{font-size:0.85rem; padding:9px 4px;}
+  .shop-add{display:flex; gap:8px; margin-bottom:14px;}
+  .shop-add input[type=text]{
+    flex:1; min-width:0; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.95rem; background:var(--card); color:var(--ink);
+  }
+  .shop-add input[type=number]{
+    width:58px; padding:10px 6px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.95rem; background:var(--card); color:var(--ink); text-align:center;
+  }
+  .shop-add select{
+    width:62px; padding:10px 2px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.88rem; background:var(--card); color:var(--ink);
+  }
+  .shop-add button{
+    background:var(--herb); color:#fff; border:none; border-radius:10px;
+    padding:0 16px; font-size:1.3rem; cursor:pointer;
+  }
+  .row input[type=checkbox]{width:20px; height:20px; margin:0; flex-shrink:0; accent-color:var(--herb);}
+  .row.checked .name{text-decoration:line-through; color:var(--ink-soft);}
+  .row.checked .qty{color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -294,6 +315,7 @@
   <button type="button" class="tab active" data-view="cupboard">Cupboard</button>
   <button type="button" class="tab" data-view="recipes">Recipes</button>
   <button type="button" class="tab" data-view="ideas">Ideas</button>
+  <button type="button" class="tab" data-view="shopping">Shopping</button>
 </nav>
 
 <main>
@@ -327,6 +349,16 @@
   <div id="ideasView" class="hidden">
     <div id="ideasEmpty" class="empty hidden"></div>
     <div id="ideasList"></div>
+  </div>
+  <div id="shoppingView" class="hidden">
+    <form id="shopAdd" class="shop-add">
+      <input type="text" id="shopName" placeholder="Add something else" autocomplete="off" required>
+      <input type="number" id="shopQty" value="1" min="0" step="any" inputmode="decimal">
+      <select id="shopUnit"></select>
+      <button type="submit" aria-label="Add to list">+</button>
+    </form>
+    <div id="shopEmpty" class="empty hidden"></div>
+    <div id="shopList"></div>
   </div>
 </main>
 
@@ -432,6 +464,7 @@ const BRANCH = "main";
 const PATH = "Ingredients.txt";
 const RECIPES_PATH = "Recipes.json";
 const ALIASES_PATH = "Aliases.json";
+const SHOPPING_PATH = "Shopping.json";
 const STORE_KEY = "cupboard-settings-v1";
 
 // Units. g and ml are treated 1:1; tsp/tbsp/cups are fixed volumes in ml.
@@ -479,6 +512,9 @@ let aliases = {};
 let aliasesSha = null;
 let aliasSaveTimer = null;
 let aliasEditing = null;
+let shopping = {manual: [], checked: {}};
+let shoppingSha = null;
+let shopSaveTimer = null;
 let recipeSaveTimer = null;
 let expandedRecipe = null;
 let editingRecipeName = null;
@@ -494,7 +530,8 @@ function pushUndo(label = "last change"){
     label,
     items: JSON.parse(JSON.stringify(items)),
     recipes: JSON.parse(JSON.stringify(recipes)),
-    aliases: JSON.parse(JSON.stringify(aliases))
+    aliases: JSON.parse(JSON.stringify(aliases)),
+    shopping: JSON.parse(JSON.stringify(shopping))
   });
   if(undoStack.length > 20) undoStack.shift();
   updateUndoBtn();
@@ -517,19 +554,23 @@ function undo(){
   const itemsChanged = JSON.stringify(items) !== JSON.stringify(snap.items);
   const recipesChanged = JSON.stringify(recipes) !== JSON.stringify(snap.recipes);
   const aliasesChanged = JSON.stringify(aliases) !== JSON.stringify(snap.aliases);
+  const shoppingChanged = JSON.stringify(shopping) !== JSON.stringify(snap.shopping);
 
   items = snap.items;
   recipes = snap.recipes;
   aliases = snap.aliases;
+  shopping = snap.shopping;
 
   if(itemsChanged) queueSave(`Undo: ${snap.label}`);
   if(recipesChanged) queueRecipeSave(`Undo: ${snap.label}`);
   if(aliasesChanged) queueAliasSave(`Undo: ${snap.label}`);
+  if(shoppingChanged) queueShoppingSave(`Undo: ${snap.label}`);
 
   updateUndoBtn();
   render();
   renderRecipes();
   if(currentView === "ideas") renderIdeas();
+  if(currentView === "shopping") renderShopping();
 }
 
 function loadSettings(){
@@ -922,8 +963,9 @@ async function fetchFile(){
     try{
       await fetchRecipes(false);
       await fetchAliases();
+      await fetchShopping();
     }catch(e){
-      setStatus("err", "Cupboard loaded — recipes or aliases failed");
+      setStatus("err", "Cupboard loaded — recipes, aliases or shopping failed");
       render();
       return;
     }
@@ -1089,6 +1131,7 @@ function reservedAmount(item, excludeRecipe){
   let total = 0;
   recipes.forEach(r => {
     if(!r.reserved || r === excludeRecipe) return;
+    if(excludeRecipe instanceof Set && excludeRecipe.has(r)) return;
     r.ingredients.forEach(ing => {
       if(!sameIngredient(ing.name, item.name)) return;
       const need = convertQty(ing.quantity, ing.unit, item.unit);
@@ -1171,6 +1214,237 @@ function escapeHtml(value){
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+/* ---------------- Shopping list ---------------- */
+
+function normaliseShopping(data){
+  const out = {manual: [], checked: {}};
+  if(data && typeof data === "object"){
+    if(Array.isArray(data.manual)){
+      data.manual.forEach(m => {
+        const name = String(m?.name || "").trim();
+        const quantity = Number(m?.quantity) || 0;
+        if(name && quantity > 0){
+          out.manual.push({
+            name, quantity,
+            unit: UNITS.includes(m?.unit) ? m.unit : "g",
+            ...(m?.checked ? {checked: true} : {})
+          });
+        }
+      });
+    }
+    if(data.checked && typeof data.checked === "object"){
+      Object.keys(data.checked).forEach(k => { if(data.checked[k]) out.checked[k] = true; });
+    }
+  }
+  return out;
+}
+
+async function fetchShopping(){
+  const data = await getGithubFile(SHOPPING_PATH);
+  if(!data){
+    shopping = {manual: [], checked: {}};
+    shoppingSha = null;
+    return;
+  }
+  shoppingSha = data.sha;
+  let parsed;
+  try{ parsed = JSON.parse(data.text); }
+  catch(e){ throw new Error("Shopping.json is not valid JSON"); }
+  shopping = normaliseShopping(parsed);
+}
+
+async function pushShopping(message){
+  setStatus("busy", "Saving…");
+  try{
+    const body = {
+      message,
+      content: b64EncodeUtf8(JSON.stringify(shopping, null, 2) + "\n"),
+      branch: BRANCH
+    };
+    if(shoppingSha) body.sha = shoppingSha;
+
+    const send = () => fetch(apiUrl(SHOPPING_PATH), {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    let res = await send();
+
+    if(res.status === 409){
+      const fresh = await fetch(apiUrl(SHOPPING_PATH), {headers: authHeaders()});
+      if(fresh.ok){
+        shoppingSha = (await fresh.json()).sha;
+        body.sha = shoppingSha;
+      }
+      res = await send();
+    }
+
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    shoppingSha = (await res.json()).content.sha;
+    setStatus("ok", "Synced");
+    return true;
+  }catch(err){
+    setStatus("err", "Shopping list save failed");
+    return false;
+  }
+}
+
+function queueShoppingSave(message){
+  clearTimeout(shopSaveTimer);
+  shopSaveTimer = setTimeout(() => pushShopping(message), 700);
+}
+
+// What the cupboard is short of if all recipes in `list` were made together.
+// Stock that other (non-listed) reserved recipes hold is not counted as available.
+function shortfallFor(list){
+  const exclude = new Set(list);
+  const groups = new Map();
+
+  list.forEach(r => {
+    r.ingredients.forEach(ing => {
+      const family = ing.unit === "pcs" ? "pcs" : "measure";
+      const key = canonicalName(ing.name) + "|" + family;
+      let g = groups.get(key);
+      if(!g){
+        g = {key, name: ing.name, unit: ing.unit, total: 0, recipes: []};
+        groups.set(key, g);
+      }
+      g.total += convertQty(ing.quantity, ing.unit, g.unit);
+      if(!g.recipes.includes(r.name)) g.recipes.push(r.name);
+    });
+  });
+
+  const out = [];
+  groups.forEach(g => {
+    const stock = items.find(i => sameIngredient(i.name, g.name));
+    let have = 0;
+    let label = titleCase(g.name);
+    if(stock){
+      label = stock.name;
+      if(stock.staple) return; // staples never need buying
+      const free = stock.quantity - reservedAmount(stock, exclude);
+      const converted = convertQty(free, stock.unit, g.unit);
+      have = converted === null ? 0 : Math.max(converted, 0);
+    }
+    const short = roundQty(g.total - have);
+    if(short > 0.001){
+      out.push({key: g.key, name: label, quantity: short, unit: g.unit, recipes: g.recipes});
+    }
+  });
+
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function shoppingNeeds(){
+  return shortfallFor(recipes.filter(r => r.reserved));
+}
+
+function updateShopBadge(){
+  const n = shoppingNeeds().length + shopping.manual.length;
+  const tab = document.querySelector('.tab[data-view="shopping"]');
+  if(tab) tab.textContent = n ? `Shopping (${n})` : "Shopping";
+}
+
+function shopRow({name, qtyText, sub, checked, onToggle, onDelete}){
+  const row = document.createElement("div");
+  row.className = "row" + (checked ? " checked" : "");
+  row.innerHTML = `
+    <input type="checkbox" ${checked ? "checked" : ""} aria-label="Got ${escapeHtml(name)}">
+    <span class="name">${escapeHtml(name)}${sub ? `<small class="used">${escapeHtml(sub)}</small>` : ""}</span>
+    <span class="qty">${escapeHtml(qtyText)}</span>
+    ${onDelete ? `<button type="button" class="del" aria-label="Remove ${escapeHtml(name)}">✕</button>` : ""}
+  `;
+  row.addEventListener("click", onToggle);
+  if(onDelete){
+    row.querySelector(".del").addEventListener("click", e => {
+      e.stopPropagation();
+      onDelete();
+    });
+  }
+  return row;
+}
+
+function renderShopping(){
+  const list = document.getElementById("shopList");
+  const empty = document.getElementById("shopEmpty");
+  list.innerHTML = "";
+
+  const needs = shoppingNeeds();
+
+  // Forget ticks for things that are no longer needed.
+  const valid = new Set(needs.map(n => n.key));
+  Object.keys(shopping.checked).forEach(k => { if(!valid.has(k)) delete shopping.checked[k]; });
+
+  if(needs.length === 0 && shopping.manual.length === 0){
+    empty.textContent = "Nothing to buy. Reserve a recipe and whatever it's missing will appear here, or add something yourself above.";
+    empty.classList.remove("hidden");
+  }else{
+    empty.classList.add("hidden");
+  }
+
+  if(needs.length){
+    const h = document.createElement("div");
+    h.className = "ideas-title";
+    h.textContent = "For reserved recipes";
+    list.appendChild(h);
+
+    needs.forEach(n => {
+      list.appendChild(shopRow({
+        name: n.name,
+        qtyText: fmtQty(n.quantity, n.unit),
+        sub: "for " + n.recipes.join(", "),
+        checked: !!shopping.checked[n.key],
+        onToggle: () => {
+          if(shopping.checked[n.key]) delete shopping.checked[n.key];
+          else shopping.checked[n.key] = true;
+          queueShoppingSave("Update shopping list");
+          renderShopping();
+        }
+      }));
+    });
+  }
+
+  if(shopping.manual.length){
+    const h = document.createElement("div");
+    h.className = "ideas-title";
+    h.textContent = "Added by you";
+    list.appendChild(h);
+
+    shopping.manual.forEach(m => {
+      list.appendChild(shopRow({
+        name: m.name,
+        qtyText: fmtQty(m.quantity, m.unit),
+        checked: !!m.checked,
+        onToggle: () => {
+          if(m.checked) delete m.checked; else m.checked = true;
+          queueShoppingSave("Update shopping list");
+          renderShopping();
+        },
+        onDelete: () => {
+          pushUndo(`remove ${m.name} from shopping list`);
+          shopping.manual = shopping.manual.filter(x => x !== m);
+          queueShoppingSave("Update shopping list");
+          renderShopping();
+          updateShopBadge();
+        }
+      }));
+    });
+  }
+
+  updateShopBadge();
+}
+
+function reserveCombo(list){
+  const allReserved = list.every(r => r.reserved);
+  pushUndo(`${allReserved ? "release" : "reserve"} ${list.length} recipes`);
+  list.forEach(r => { if(allReserved) delete r.reserved; else r.reserved = true; });
+  queueRecipeSave(`${allReserved ? "Release" : "Reserve"} recipes: ${list.map(r => r.name).join(", ")}`);
+  render();
+  renderRecipes();
+  renderIdeas();
 }
 
 function compareRecipes(a, b, avail){
@@ -1268,10 +1542,11 @@ function renderIdeas(){
   list.innerHTML = "";
 
   const stale = staleItems();
+  const usesStale = r => stale.filter(it => r.ingredients.some(ing => sameIngredient(ing.name, it.name)));
+
   const ranked = recipes.map(r => {
     const a = getRecipeAvailability(r);
-    const uses = stale.filter(it => r.ingredients.some(ing => sameIngredient(ing.name, it.name)));
-    return {r, a, short: a.missing + a.low, uses};
+    return {r, a, short: a.missing + a.low, uses: usesStale(r)};
   }).filter(x => x.short <= 2);
 
   // Fewest shortfalls first, then recipes that use up neglected ingredients,
@@ -1291,42 +1566,115 @@ function renderIdeas(){
   }
   empty.classList.add("hidden");
 
+  // Combinations of 2-3 recipes, pooling the cupboard between them.
+  const cand = ranked.slice(0, 12).map(x => x.r);
+  const readyCombos = [];
+  const almostCombos = [];
+  const consider = recipeList => {
+    const need = shortfallFor(recipeList);
+    if(need.length === 0) readyCombos.push({list: recipeList, need});
+    else if(need.length <= 2) almostCombos.push({list: recipeList, need});
+  };
+  for(let i = 0; i < cand.length; i++){
+    for(let j = i + 1; j < cand.length; j++){
+      consider([cand[i], cand[j]]);
+      for(let k = j + 1; k < cand.length; k++) consider([cand[i], cand[j], cand[k]]);
+    }
+  }
+
+  const comboUses = c => stale.filter(it =>
+    c.list.some(r => r.ingredients.some(ing => sameIngredient(ing.name, it.name)))).length;
+  const comboName = c => c.list.map(r => r.name).join(" + ");
+
+  // Only show a ready set if it isn't contained in a bigger ready set.
+  const maximal = readyCombos
+    .filter(c => !readyCombos.some(o => o !== c && o.list.length > c.list.length
+      && c.list.every(r => o.list.includes(r))))
+    .sort((a, b) =>
+      (b.list.length - a.list.length)
+      || (comboUses(b) - comboUses(a))
+      || comboName(a).localeCompare(comboName(b)))
+    .slice(0, 6);
+
+  const almost = almostCombos
+    .sort((a, b) =>
+      (b.list.length - a.list.length)
+      || (a.need.length - b.need.length)
+      || comboName(a).localeCompare(comboName(b)))
+    .slice(0, 6);
+
+  const singleCard = x => {
+    const row = document.createElement("div");
+    row.className = `recipe-row idea ${x.a.colour}`;
+
+    const lines = [];
+    if(x.short > 0){
+      lines.push("Short: " + x.a.details.filter(d => d.status !== "ok").map(shortfallText).join(", "));
+    }
+    if(x.uses.length){
+      lines.push("Uses up: " + x.uses.map(u => `${u.name} (${timeAgo(u.used)})`).join(", "));
+    }
+    lines.push(x.r.lastMade ? `Last made ${timeAgo(x.r.lastMade)}` : "Not made yet");
+
+    row.innerHTML = `
+      <div class="recipe-name">${escapeHtml(x.r.name)}</div>
+      ${lines.map(l => `<div class="recipe-sub">${escapeHtml(l)}</div>`).join("")}
+    `;
+    row.onclick = () => goToRecipe(x.r.name);
+    return row;
+  };
+
+  const comboCard = c => {
+    const row = document.createElement("div");
+    row.className = `recipe-row ${c.need.length ? "yellow" : "green"}`;
+
+    const lines = [];
+    lines.push(c.need.length
+      ? "Short: " + c.need.map(n => `${n.name} (need ${fmtQty(n.quantity, n.unit)} more)`).join(", ")
+      : "Everything is there for all of them together");
+    const uses = stale.filter(it =>
+      c.list.some(r => r.ingredients.some(ing => sameIngredient(ing.name, it.name))));
+    if(uses.length){
+      lines.push("Uses up: " + uses.map(u => `${u.name} (${timeAgo(u.used)})`).join(", "));
+    }
+
+    row.innerHTML = `
+      <div class="recipe-name">${escapeHtml(comboName(c))}</div>
+      ${lines.map(l => `<div class="recipe-sub">${escapeHtml(l)}</div>`).join("")}
+    `;
+
+    const allReserved = c.list.every(r => r.reserved);
+    const actions = document.createElement("div");
+    actions.className = "recipe-actions";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "r-reserve" + (allReserved ? " on" : "");
+    btn.textContent = allReserved ? "Release all" : "Reserve all";
+    btn.onclick = () => reserveCombo(c.list);
+    actions.appendChild(btn);
+    row.appendChild(actions);
+    return row;
+  };
+
   const sections = [
-    ["Ready to make", ranked.filter(x => x.short === 0).slice(0, 10)],
-    ["Almost there", ranked.filter(x => x.short > 0).slice(0, 10)]
+    ["Ready to make", ranked.filter(x => x.short === 0).slice(0, 10).map(singleCard)],
+    ["Make together", maximal.map(comboCard)],
+    ["Almost there", ranked.filter(x => x.short > 0).slice(0, 10).map(singleCard)],
+    ["Together, with a little shopping", almost.map(comboCard)]
   ];
 
-  sections.forEach(([title, group]) => {
-    if(!group.length) return;
+  sections.forEach(([title, cards]) => {
+    if(!cards.length) return;
     const h = document.createElement("div");
     h.className = "ideas-title";
     h.textContent = title;
     list.appendChild(h);
-
-    group.forEach(x => {
-      const row = document.createElement("div");
-      row.className = `recipe-row idea ${x.a.colour}`;
-
-      const lines = [];
-      if(x.short > 0){
-        lines.push("Short: " + x.a.details.filter(d => d.status !== "ok").map(shortfallText).join(", "));
-      }
-      if(x.uses.length){
-        lines.push("Uses up: " + x.uses.map(u => `${u.name} (${timeAgo(u.used)})`).join(", "));
-      }
-      lines.push(x.r.lastMade ? `Last made ${timeAgo(x.r.lastMade)}` : "Not made yet");
-
-      row.innerHTML = `
-        <div class="recipe-name">${escapeHtml(x.r.name)}</div>
-        ${lines.map(l => `<div class="recipe-sub">${escapeHtml(l)}</div>`).join("")}
-      `;
-      row.onclick = () => goToRecipe(x.r.name);
-      list.appendChild(row);
-    });
+    cards.forEach(card => list.appendChild(card));
   });
 }
 
 function renderRecipes(){
+  updateShopBadge();
   const list = document.getElementById("recipeList");
   const empty = document.getElementById("recipeEmpty");
   list.innerHTML = "";
@@ -1513,6 +1861,7 @@ function timeAgo(ts){
 
 function render(){
   renderStale();
+  updateShopBadge();
   const list = document.getElementById("list");
   const empty = document.getElementById("empty");
   list.innerHTML = "";
@@ -1986,6 +2335,7 @@ function switchView(view){
   document.getElementById("cupboardView").classList.toggle("hidden", view !== "cupboard");
   document.getElementById("recipesView").classList.toggle("hidden", view !== "recipes");
   document.getElementById("ideasView").classList.toggle("hidden", view !== "ideas");
+  document.getElementById("shoppingView").classList.toggle("hidden", view !== "shopping");
   document.getElementById("recipeFooter").classList.toggle("hidden", view !== "recipes");
 
   if(view === "recipes"){
@@ -1994,6 +2344,9 @@ function switchView(view){
   }else if(view === "ideas"){
     renderAdjustBar();
     renderIdeas();
+  }else if(view === "shopping"){
+    renderAdjustBar();
+    renderShopping();
   }else{
     render();
   }
@@ -2136,6 +2489,33 @@ document.getElementById("cfgSave").onclick = () => {
   modal.classList.add("hidden");
   fetchFile();
 };
+
+// shopping list
+document.getElementById("shopUnit").innerHTML = unitOptions();
+document.getElementById("shopAdd").addEventListener("submit", e => {
+  e.preventDefault();
+  const nameEl = document.getElementById("shopName");
+  const qtyEl = document.getElementById("shopQty");
+  const unit = document.getElementById("shopUnit").value;
+  const name = titleCase(nameEl.value);
+  const qty = parseFloat(qtyEl.value) || 1;
+  if(!name || qty <= 0) return;
+
+  pushUndo(`add ${name} to shopping list`);
+  const existing = shopping.manual.find(m =>
+    sameIngredient(m.name, name) && convertQty(1, m.unit, unit) !== null);
+  if(existing){
+    existing.quantity = roundQty(existing.quantity + convertQty(qty, unit, existing.unit));
+  }else{
+    shopping.manual.push({name, quantity: qty, unit});
+  }
+  queueShoppingSave(`Add ${name} to shopping list`);
+
+  nameEl.value = "";
+  qtyEl.value = 1;
+  renderShopping();
+  nameEl.focus();
+});
 
 // recipe sort
 try{
