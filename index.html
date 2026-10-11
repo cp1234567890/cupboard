@@ -250,6 +250,13 @@
   .row .name small.over{color:var(--brick);}
   .recipe-actions .r-reserve{background:var(--card); border:1px solid var(--paprika); color:var(--paprika);}
   .recipe-actions .r-reserve.on{background:var(--paprika); color:#fff;}
+  .search.with-sort{display:flex; gap:8px;}
+  .search.with-sort input{flex:1; min-width:0; width:auto;}
+  .search select{
+    max-width:44%; padding:10px 8px; border-radius:10px; border:1px solid var(--line);
+    font-size:0.88rem; background:var(--card); color:var(--ink);
+  }
+  .row .name small.used{color:var(--ink-soft);}
 </style>
 </head>
 <body>
@@ -273,7 +280,15 @@
 
 <main>
   <div id="cupboardView">
-    <div class="search"><input type="search" id="cupboardSearch" placeholder="Search ingredients" autocomplete="off"></div>
+    <div class="search with-sort">
+      <input type="search" id="cupboardSearch" placeholder="Search ingredients" autocomplete="off">
+      <select id="cupboardSort" aria-label="Sort ingredients">
+        <option value="az">A–Z</option>
+        <option value="low">Lowest stock first</option>
+        <option value="high">Most stock first</option>
+        <option value="recent">Recently used</option>
+      </select>
+    </div>
     <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
     <div id="list"></div>
   </div>
@@ -422,6 +437,8 @@ let recipeSaveTimer = null;
 let expandedRecipe = null;
 let editingRecipeName = null;
 let currentView = "cupboard";
+let sortMode = "az";
+const SORT_KEY = "cupboard-sort";
 
 function pushUndo(label = "last change"){
   undoStack.push({
@@ -496,12 +513,16 @@ function parseText(text){
     if(line.includes("|")){
       const parts = line.split("|");
       const unit = (parts.length >= 3 && UNITS.includes(parts[2])) ? parts[2] : "g";
-      const staple = parts[3] === "staple";
+      const extras = parts.slice(3);
+      const staple = extras.includes("staple");
+      const usedTok = extras.find(t => t.startsWith("used:"));
+      const used = usedTok ? parseInt(usedTok.slice(5), 10) : 0;
       const name = parts[0];
       let qty = parseFloat(parts[1]);
       if(isNaN(qty)) qty = 1;
       const entry = {name, quantity: qty, unit};
       if(staple) entry.staple = true;
+      if(used > 0) entry.used = used;
       out.push(entry);
     } else {
       out.push({name: line, quantity: 1, unit: "g"});
@@ -511,7 +532,7 @@ function parseText(text){
 }
 
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}`).join("\n") + (list.length ? "\n" : "");
 }
 
 function titleCase(s){
@@ -681,6 +702,7 @@ function saveAliasesFromModal(){
         mergeable.forEach(d => {
           item.quantity = roundQty(item.quantity + convertQty(d.quantity, d.unit, item.unit));
           if(d.staple) item.staple = true;
+          if((d.used || 0) > (item.used || 0)) item.used = d.used;
         });
         items = items.filter(i => !mergeable.includes(i));
         queueSave(`Merge duplicates into ${item.name}`);
@@ -1238,6 +1260,46 @@ function renderRecipes(){
     });
 }
 
+// How close an item is to running out, comparable across units
+// (100 g/ml or 2 pcs = 1.0, the low-stock line).
+function stockLevel(item){
+  if(item.unit === "pcs") return item.quantity / 2;
+  return convertQty(item.quantity, item.unit, "g") / 100;
+}
+
+function compareItems(a, b){
+  const byName = a.name.localeCompare(b.name);
+
+  if(sortMode === "recent"){
+    const ua = a.used || 0, ub = b.used || 0;
+    if(ua !== ub) return ub - ua; // never-used items (0) fall to the bottom
+    return byName;
+  }
+
+  if(sortMode === "low" || sortMode === "high"){
+    if(!!a.staple !== !!b.staple) return a.staple ? 1 : -1; // staples last
+    if(a.staple) return byName;
+    const d = stockLevel(a) - stockLevel(b);
+    if(Math.abs(d) > 1e-9) return sortMode === "low" ? d : -d;
+    return byName;
+  }
+
+  return byName;
+}
+
+function timeAgo(ts){
+  const mins = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if(mins < 1) return "just now";
+  if(mins < 60) return `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if(hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  if(days < 14) return `${days} d ago`;
+  const weeks = Math.round(days / 7);
+  if(days < 60) return `${weeks} wk ago`;
+  return `${Math.round(days / 30)} mo ago`;
+}
+
 function render(){
   const list = document.getElementById("list");
   const empty = document.getElementById("empty");
@@ -1259,7 +1321,7 @@ function render(){
 
   visible
     .slice()
-    .sort((a,b) => a.name.localeCompare(b.name))
+    .sort(compareItems)
     .forEach(item => {
       const row = document.createElement("div");
       row.className = "row"
@@ -1268,9 +1330,12 @@ function render(){
 
       const held = reservedAmount(item, null);
       let resHtml = "";
+      if(sortMode === "recent" && item.used){
+        resHtml += `<small class="used">used ${timeAgo(item.used)}</small>`;
+      }
       if(held > 0){
         const free = item.quantity - held;
-        resHtml = free >= 0
+        resHtml += free >= 0
           ? `<small>${fmt(held)} ${item.unit} reserved · ${fmt(free)} ${item.unit} free</small>`
           : `<small class="over">${fmt(held)} ${item.unit} reserved · short by ${fmt(-free)} ${item.unit}</small>`;
       }
@@ -1419,6 +1484,7 @@ function changeQty(name, delta){
   if(!item) return;
 
   pushUndo();
+  if(delta < 0) item.used = Date.now();
   item.quantity = roundQty(item.quantity + delta);
 
   if(item.quantity <= 0){
@@ -1649,7 +1715,9 @@ async function makeRecipe(name){
 
   recipe.ingredients.forEach(ingredient => {
     const item = items.find(i => sameIngredient(i.name, ingredient.name));
-    if(!item || item.staple) return; // staples aren't tracked
+    if(!item) return;
+    item.used = Date.now();
+    if(item.staple) return; // staples aren't tracked
     const used = convertQty(ingredient.quantity, ingredient.unit, item.unit);
     if(used !== null) item.quantity = roundQty(item.quantity - used);
   });
@@ -1764,6 +1832,18 @@ document.getElementById("themeBtn").onclick = () => {
 applyTheme();
 document.getElementById("addUnit").innerHTML = unitOptions();
 document.getElementById("adjustUnit").innerHTML = unitOptions();
+
+try{
+  const saved = localStorage.getItem(SORT_KEY);
+  if(["az", "low", "high", "recent"].includes(saved)) sortMode = saved;
+}catch(e){}
+const sortEl = document.getElementById("cupboardSort");
+sortEl.value = sortMode;
+sortEl.addEventListener("change", () => {
+  sortMode = sortEl.value;
+  try{ localStorage.setItem(SORT_KEY, sortMode); }catch(e){}
+  render();
+});
 document.getElementById("undoBtn").onclick = undo;
 
 document.getElementById("addStaple").addEventListener("change", e => {
