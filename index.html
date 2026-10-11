@@ -257,6 +257,23 @@
     font-size:0.88rem; background:var(--card); color:var(--ink);
   }
   .row .name small.used{color:var(--ink-soft);}
+  .stale{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:4px 14px; margin-bottom:12px;
+  }
+  .stale-head{
+    width:100%; background:none; border:none; color:var(--ink); font-size:0.92rem;
+    padding:9px 0; text-align:left; cursor:pointer; display:flex; justify-content:space-between;
+  }
+  .stale-row{
+    display:flex; justify-content:space-between; gap:10px; padding:7px 0;
+    border-top:1px solid var(--line); font-size:0.9rem; cursor:pointer;
+  }
+  .stale-row small{display:block; color:var(--ink-soft); font-size:0.78rem; margin-top:1px;}
+  .stale-row .when{color:var(--ink-soft); white-space:nowrap; font-size:0.82rem;}
+  .ideas-title{font-size:0.8rem; color:var(--ink-soft); margin:8px 2px 8px;}
+  .idea{cursor:pointer;}
+  .idea .recipe-sub + .recipe-sub{margin-top:4px;}
 </style>
 </head>
 <body>
@@ -276,6 +293,7 @@
 <nav class="tabs" id="tabs">
   <button type="button" class="tab active" data-view="cupboard">Cupboard</button>
   <button type="button" class="tab" data-view="recipes">Recipes</button>
+  <button type="button" class="tab" data-view="ideas">Ideas</button>
 </nav>
 
 <main>
@@ -289,13 +307,26 @@
         <option value="recent">Recently used</option>
       </select>
     </div>
+    <div id="staleBox" class="stale hidden"></div>
     <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
     <div id="list"></div>
   </div>
   <div id="recipesView" class="hidden">
-    <div class="search"><input type="search" id="recipeSearch" placeholder="Search recipes or ingredients used" autocomplete="off"></div>
+    <div class="search with-sort">
+      <input type="search" id="recipeSearch" placeholder="Search recipes or ingredients used" autocomplete="off">
+      <select id="recipeSort" aria-label="Sort recipes">
+        <option value="az">A–Z</option>
+        <option value="makeable">Most makeable</option>
+        <option value="made">Recently made</option>
+        <option value="reserved">Reserved first</option>
+      </select>
+    </div>
     <div id="recipeEmpty" class="empty hidden">No recipes yet. Add one below.</div>
     <div id="recipeList"></div>
+  </div>
+  <div id="ideasView" class="hidden">
+    <div id="ideasEmpty" class="empty hidden"></div>
+    <div id="ideasList"></div>
   </div>
 </main>
 
@@ -405,8 +436,9 @@ const STORE_KEY = "cupboard-settings-v1";
 
 // Units. g and ml are treated 1:1; tsp/tbsp/cups are fixed volumes in ml.
 // pcs is a count and isn't convertible to the others.
-const UNITS = ["g", "ml", "tsp", "tbsp", "cups", "pcs"];
-const UNIT_BASE = {g: 1, ml: 1, tsp: 5, tbsp: 15, cups: 250};
+const UNITS = ["g", "kg", "ml", "l", "tsp", "tbsp", "cups", "pcs"];
+const UNIT_BASE = {g: 1, kg: 1000, ml: 1, l: 1000, tsp: 5, tbsp: 15, cups: 250};
+const STALE_DAYS = 30; // "not used in a while" threshold
 
 function convertQty(q, from, to){
   if(from === to) return q;
@@ -415,6 +447,20 @@ function convertQty(q, from, to){
 }
 function roundQty(n){ return Math.round(n * 100) / 100; }
 function fmt(n){ return String(roundQty(n)); }
+
+// Display an amount with its unit. g/kg and ml/l switch at 1000 and show one
+// decimal place for the larger unit (1500 g -> "1.5 kg"); the stored value is unchanged.
+function fmtQty(q, unit){
+  if(unit === "g" || unit === "kg"){
+    const g = unit === "kg" ? q * 1000 : q;
+    return Math.abs(g) >= 1000 ? `${(g / 1000).toFixed(1)} kg` : `${fmt(g)} g`;
+  }
+  if(unit === "ml" || unit === "l"){
+    const ml = unit === "l" ? q * 1000 : q;
+    return Math.abs(ml) >= 1000 ? `${(ml / 1000).toFixed(1)} l` : `${fmt(ml)} ml`;
+  }
+  return `${fmt(q)} ${unit}`;
+}
 function unitOptions(){ return UNITS.map(u => `<option value="${u}">${u}</option>`).join(""); }
 
 let settings = null;
@@ -438,6 +484,9 @@ let expandedRecipe = null;
 let editingRecipeName = null;
 let currentView = "cupboard";
 let sortMode = "az";
+let recipeSortMode = "az";
+let staleOpen = false;
+const RECIPE_SORT_KEY = "recipe-sort";
 const SORT_KEY = "cupboard-sort";
 
 function pushUndo(label = "last change"){
@@ -480,6 +529,7 @@ function undo(){
   updateUndoBtn();
   render();
   renderRecipes();
+  if(currentView === "ideas") renderIdeas();
 }
 
 function loadSettings(){
@@ -815,6 +865,11 @@ function presetsFor(qty, unit){
     if(qty <= 50) return [1, 5, 10];
     return [5, 10, 25];
   }
+  if(unit === "kg" || unit === "l"){
+    if(qty <= 1) return [0.05, 0.1, 0.25];
+    if(qty <= 5) return [0.1, 0.25, 0.5];
+    return [0.25, 0.5, 1];
+  }
   if(unit === "tsp" || unit === "tbsp"){
     return qty <= 10 ? [0.5, 1, 2] : [1, 2, 5];
   }
@@ -933,6 +988,7 @@ function queueSave(message){
 function normaliseRecipe(recipe){
   return {
     ...(recipe?.reserved ? {reserved: true} : {}),
+    ...(Number(recipe?.lastMade) > 0 ? {lastMade: Number(recipe.lastMade)} : {}),
     name: String(recipe?.name || "").trim(),
     bakeTime: String(recipe?.bakeTime || "").trim(),
     ingredients: Array.isArray(recipe?.ingredients)
@@ -1117,6 +1173,159 @@ function escapeHtml(value){
     .replace(/'/g, "&#039;");
 }
 
+function compareRecipes(a, b, avail){
+  const byName = a.name.localeCompare(b.name);
+  if(recipeSortMode === "makeable"){
+    const sa = avail.get(a), sb = avail.get(b);
+    return ((sa.missing + sa.low) - (sb.missing + sb.low)) || byName;
+  }
+  if(recipeSortMode === "made"){
+    return ((b.lastMade || 0) - (a.lastMade || 0)) || byName; // never made last
+  }
+  if(recipeSortMode === "reserved"){
+    if(!!a.reserved !== !!b.reserved) return a.reserved ? -1 : 1;
+    return byName;
+  }
+  return byName;
+}
+
+/* ---------------- Not used in a while ---------------- */
+
+function staleItems(){
+  const cutoff = Date.now() - STALE_DAYS * 86400000;
+  return items
+    .filter(i => !i.staple && i.used && i.used < cutoff)
+    .sort((a, b) => a.used - b.used);
+}
+
+function recipesUsing(item){
+  return recipes
+    .filter(r => r.ingredients.some(ing => sameIngredient(ing.name, item.name)))
+    .map(r => r.name);
+}
+
+function renderStale(){
+  const box = document.getElementById("staleBox");
+  const list = staleItems();
+  const searching = !!document.getElementById("cupboardSearch").value.trim();
+
+  if(!list.length || searching){
+    box.classList.add("hidden");
+    return;
+  }
+
+  box.classList.remove("hidden");
+  box.innerHTML = "";
+
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "stale-head";
+  head.innerHTML = `<span>Not used in a while (${list.length})</span><span aria-hidden="true">${staleOpen ? "⌃" : "⌄"}</span>`;
+  head.onclick = () => { staleOpen = !staleOpen; renderStale(); };
+  box.appendChild(head);
+
+  if(!staleOpen) return;
+
+  list.forEach(item => {
+    const uses = recipesUsing(item);
+    const useText = uses.length
+      ? "in " + uses.slice(0, 2).join(", ") + (uses.length > 2 ? ` +${uses.length - 2} more` : "")
+      : "";
+    const row = document.createElement("div");
+    row.className = "stale-row";
+    row.innerHTML = `
+      <span>${escapeHtml(item.name)}${useText ? `<small>${escapeHtml(useText)}</small>` : ""}</span>
+      <span class="when">${escapeHtml(timeAgo(item.used))}</span>
+    `;
+    row.onclick = () => {
+      selectedName = item.name;
+      customMode = false;
+      render();
+    };
+    box.appendChild(row);
+  });
+}
+
+/* ---------------- Ideas (what can I bake?) ---------------- */
+
+function shortfallText(d){
+  if(d.status === "missing") return `${d.name} (missing)`;
+  if(d.mismatch) return `${d.name} (unit differs)`;
+  let t = `${d.name} (need ${fmtQty(d.quantity, d.unit)}, have ${fmtQty(d.available, d.haveUnit)}`;
+  if(d.held > 0) t += `, ${fmtQty(d.held, d.haveUnit)} reserved`;
+  return t + ")";
+}
+
+function goToRecipe(name){
+  expandedRecipe = name;
+  document.getElementById("recipeSearch").value = "";
+  switchView("recipes");
+}
+
+function renderIdeas(){
+  const list = document.getElementById("ideasList");
+  const empty = document.getElementById("ideasEmpty");
+  list.innerHTML = "";
+
+  const stale = staleItems();
+  const ranked = recipes.map(r => {
+    const a = getRecipeAvailability(r);
+    const uses = stale.filter(it => r.ingredients.some(ing => sameIngredient(ing.name, it.name)));
+    return {r, a, short: a.missing + a.low, uses};
+  }).filter(x => x.short <= 2);
+
+  // Fewest shortfalls first, then recipes that use up neglected ingredients,
+  // then the ones made longest ago (or never), then by name.
+  ranked.sort((x, y) =>
+    (x.short - y.short)
+    || (y.uses.length - x.uses.length)
+    || ((x.r.lastMade || 0) - (y.r.lastMade || 0))
+    || x.r.name.localeCompare(y.r.name));
+
+  if(ranked.length === 0){
+    empty.textContent = recipes.length === 0
+      ? "No recipes yet. Add some on the Recipes tab."
+      : "Nothing is close right now. Restock a few things or check the Recipes tab.";
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+
+  const sections = [
+    ["Ready to make", ranked.filter(x => x.short === 0).slice(0, 10)],
+    ["Almost there", ranked.filter(x => x.short > 0).slice(0, 10)]
+  ];
+
+  sections.forEach(([title, group]) => {
+    if(!group.length) return;
+    const h = document.createElement("div");
+    h.className = "ideas-title";
+    h.textContent = title;
+    list.appendChild(h);
+
+    group.forEach(x => {
+      const row = document.createElement("div");
+      row.className = `recipe-row idea ${x.a.colour}`;
+
+      const lines = [];
+      if(x.short > 0){
+        lines.push("Short: " + x.a.details.filter(d => d.status !== "ok").map(shortfallText).join(", "));
+      }
+      if(x.uses.length){
+        lines.push("Uses up: " + x.uses.map(u => `${u.name} (${timeAgo(u.used)})`).join(", "));
+      }
+      lines.push(x.r.lastMade ? `Last made ${timeAgo(x.r.lastMade)}` : "Not made yet");
+
+      row.innerHTML = `
+        <div class="recipe-name">${escapeHtml(x.r.name)}</div>
+        ${lines.map(l => `<div class="recipe-sub">${escapeHtml(l)}</div>`).join("")}
+      `;
+      row.onclick = () => goToRecipe(x.r.name);
+      list.appendChild(row);
+    });
+  });
+}
+
 function renderRecipes(){
   const list = document.getElementById("recipeList");
   const empty = document.getElementById("recipeEmpty");
@@ -1137,11 +1346,13 @@ function renderRecipes(){
 
   empty.classList.add("hidden");
 
+  const avail = new Map(visible.map(r => [r, getRecipeAvailability(r)]));
+
   visible
     .slice()
-    .sort((a,b) => a.name.localeCompare(b.name))
+    .sort((a, b) => compareRecipes(a, b, avail))
     .forEach(recipe => {
-      const result = getRecipeAvailability(recipe);
+      const result = avail.get(recipe);
       const row = document.createElement("div");
       row.className = `recipe-row ${result.colour}`;
 
@@ -1150,7 +1361,7 @@ function renderRecipes(){
       summary.innerHTML = `
         <div class="recipe-info">
           <div class="recipe-name">${escapeHtml(recipe.name)}</div>
-          <div class="recipe-sub">${escapeHtml(recipe.bakeTime || "No time specified")} · ${escapeHtml(availabilityText(result))}${recipe.reserved ? " · Reserved" : ""}</div>
+          <div class="recipe-sub">${escapeHtml(recipe.bakeTime || "No time specified")} · ${escapeHtml(availabilityText(result))}${recipe.reserved ? " · Reserved" : ""}${recipeSortMode === "made" ? (recipe.lastMade ? " · made " + escapeHtml(timeAgo(recipe.lastMade)) : " · never made") : ""}</div>
         </div>
         <span aria-hidden="true">${expandedRecipe === recipe.name ? "⌃" : "⌄"}</span>
       `;
@@ -1179,15 +1390,15 @@ function renderRecipes(){
 
           const icon = i.status === "ok" ? "✓" : i.status === "low" ? "!" : "×";
 
-          let text = `${i.name} — ${fmt(i.quantity)} ${i.unit}`;
+          let text = `${i.name} — ${fmtQty(i.quantity, i.unit)}`;
           if(i.staple){
             text += " (staple)";
           }else if(i.status === "low" && i.mismatch){
             text += ` (cupboard is in ${i.haveUnit} — unit differs)`;
           }else if(i.status === "low"){
             text += i.held > 0
-              ? ` (have ${fmt(i.available)} ${i.haveUnit}, ${fmt(i.held)} reserved for other recipes)`
-              : ` (have ${fmt(i.available)} ${i.haveUnit})`;
+              ? ` (have ${fmtQty(i.available, i.haveUnit)}, ${fmtQty(i.held, i.haveUnit)} reserved for other recipes)`
+              : ` (have ${fmtQty(i.available, i.haveUnit)})`;
           }else if(i.status === "missing"){
             text += " (missing)";
           }
@@ -1301,6 +1512,7 @@ function timeAgo(ts){
 }
 
 function render(){
+  renderStale();
   const list = document.getElementById("list");
   const empty = document.getElementById("empty");
   list.innerHTML = "";
@@ -1336,13 +1548,13 @@ function render(){
       if(held > 0){
         const free = item.quantity - held;
         resHtml += free >= 0
-          ? `<small>${fmt(held)} ${item.unit} reserved · ${fmt(free)} ${item.unit} free</small>`
-          : `<small class="over">${fmt(held)} ${item.unit} reserved · short by ${fmt(-free)} ${item.unit}</small>`;
+          ? `<small>${fmtQty(held, item.unit)} reserved · ${fmtQty(free, item.unit)} free</small>`
+          : `<small class="over">${fmtQty(held, item.unit)} reserved · short by ${fmtQty(-free, item.unit)}</small>`;
       }
 
       row.innerHTML = `
         <span class="name">${escapeHtml(item.name)}${resHtml}</span>
-        <span class="qty${item.staple ? " staple-tag" : ""}">${item.staple ? "staple" : fmt(item.quantity) + " " + item.unit}</span>
+        <span class="qty${item.staple ? " staple-tag" : ""}">${item.staple ? "staple" : fmtQty(item.quantity, item.unit)}</span>
         <button type="button" class="del" aria-label="Remove ${escapeHtml(item.name)}">✕</button>
       `;
 
@@ -1668,7 +1880,8 @@ function saveRecipeFromModal(){
     bakeTime,
     ingredients,
     method,
-    reserved: prev?.reserved
+    reserved: prev?.reserved,
+    lastMade: prev?.lastMade
   });
 
   pushUndo(editingRecipeName ? `edit ${name}` : `add ${name}`);
@@ -1724,11 +1937,10 @@ async function makeRecipe(name){
 
   items = items.filter(i => i.staple || i.quantity > 0);
 
-  // Once it's made, the reservation is used up.
-  if(recipe.reserved){
-    delete recipe.reserved;
-    queueRecipeSave(`Release recipe after making: ${recipe.name}`);
-  }
+  // Record when it was made; any reservation for it is now used up.
+  recipe.lastMade = Date.now();
+  delete recipe.reserved;
+  queueRecipeSave(`Made recipe: ${recipe.name}`);
 
   selectedName = null;
   customMode = false;
@@ -1773,11 +1985,15 @@ function switchView(view){
 
   document.getElementById("cupboardView").classList.toggle("hidden", view !== "cupboard");
   document.getElementById("recipesView").classList.toggle("hidden", view !== "recipes");
+  document.getElementById("ideasView").classList.toggle("hidden", view !== "ideas");
   document.getElementById("recipeFooter").classList.toggle("hidden", view !== "recipes");
 
   if(view === "recipes"){
     renderAdjustBar(); // hides the cupboard bars
     renderRecipes();
+  }else if(view === "ideas"){
+    renderAdjustBar();
+    renderIdeas();
   }else{
     render();
   }
@@ -1920,6 +2136,19 @@ document.getElementById("cfgSave").onclick = () => {
   modal.classList.add("hidden");
   fetchFile();
 };
+
+// recipe sort
+try{
+  const savedRs = localStorage.getItem(RECIPE_SORT_KEY);
+  if(["az", "makeable", "made", "reserved"].includes(savedRs)) recipeSortMode = savedRs;
+}catch(e){}
+const recipeSortEl = document.getElementById("recipeSort");
+recipeSortEl.value = recipeSortMode;
+recipeSortEl.addEventListener("change", () => {
+  recipeSortMode = recipeSortEl.value;
+  try{ localStorage.setItem(RECIPE_SORT_KEY, recipeSortMode); }catch(e){}
+  renderRecipes();
+});
 
 // boot
 settings = loadSettings();
