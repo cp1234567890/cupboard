@@ -15,7 +15,7 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|570|g|used:1791998074699|loc:fridge
+Butter|570|g|staple|used:1791998074699|loc:fridge
 Baking Powder|1|g|staple
 Bicarbonate Of Soda|1|g|staple
 Cocoa Powder|1|g|staple
