@@ -23,4 +23,4 @@ Sea Salt|1|g|staple
 Oats|1000|g
 Greek Yogurt|1|g|staple|loc:fridge
 Ginger|1|g|staple|loc:freezer
-Milk|1|g|staple|loc:unsorted
+Milk|1|g|staple|loc:fridge
