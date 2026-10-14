@@ -361,6 +361,49 @@
   .adjust-loc{flex-direction:column; gap:6px;}
   .adjust-loc-row{display:flex; gap:6px; align-items:center;}
   .adjust-loc-row > span{font-size:0.78rem; color:var(--ink-soft); width:52px; flex-shrink:0;}
+  /* ---- location colours ---- */
+  :root{--fridge:#3b7ea1; --freezer:#6a6fb5; --cupboard:#a8742f; --unsorted:#8a8478;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){--fridge:#4f93b8; --freezer:#7b80cc; --cupboard:#b9813f; --unsorted:#a89f8c;}
+  }
+  :root[data-theme="dark"]{--fridge:#4f93b8; --freezer:#7b80cc; --cupboard:#b9813f; --unsorted:#a89f8c;}
+
+  .row.loc-fridge,.row.loc-freezer,.row.loc-cupboard,.row.loc-unsorted{border-left-width:4px;}
+  .row.loc-fridge{border-left-color:var(--fridge);}
+  .row.loc-freezer{border-left-color:var(--freezer);}
+  .row.loc-cupboard{border-left-color:var(--cupboard);}
+  .row.loc-unsorted{border-left-color:var(--unsorted);}
+
+  .chip[class*="chip-"]:not(.chip-all)::before{
+    content:""; display:inline-block; width:8px; height:8px; border-radius:50%;
+    margin-right:6px; vertical-align:middle;
+  }
+  .chip-fridge::before{background:var(--fridge);}
+  .chip-freezer::before{background:var(--freezer);}
+  .chip-cupboard::before{background:var(--cupboard);}
+  .chip.active.chip-fridge{background:var(--fridge); border-color:var(--fridge);}
+  .chip.active.chip-freezer{background:var(--freezer); border-color:var(--freezer);}
+  .chip.active.chip-cupboard{background:var(--cupboard); border-color:var(--cupboard);}
+  .chip.active:not(.chip-all)::before{background:#fff;}
+
+  .loc-head{font-weight:600;}
+  .loc-head.loc-fridge{color:var(--fridge);}
+  .loc-head.loc-freezer{color:var(--freezer);}
+  .loc-head.loc-cupboard{color:var(--cupboard);}
+  .loc-head.loc-unsorted{color:var(--unsorted);}
+
+  .loc-tag.loc-fridge{color:var(--fridge) !important;}
+  .loc-tag.loc-freezer{color:var(--freezer) !important;}
+  .loc-tag.loc-cupboard{color:var(--cupboard) !important;}
+  .loc-tag.loc-unsorted{color:var(--unsorted) !important;}
+
+  .uns-btns button.l-fridge,.adjust-loc button.l-fridge{border-color:var(--fridge); color:var(--fridge);}
+  .uns-btns button.l-freezer,.adjust-loc button.l-freezer{border-color:var(--freezer); color:var(--freezer);}
+  .uns-btns button.l-cupboard,.adjust-loc button.l-cupboard{border-color:var(--cupboard); color:var(--cupboard);}
+  .adjust-loc button.on.l-fridge{background:var(--fridge); color:#fff;}
+  .adjust-loc button.on.l-freezer{background:var(--freezer); color:#fff;}
+  .adjust-loc button.on.l-cupboard{background:var(--cupboard); color:#fff;}
+  #unsortedBox{border-left:4px solid var(--paprika);}
 </style>
 </head>
 <body>
@@ -1469,7 +1512,7 @@ function renderChips(){
       : items.filter(i => locOf(i) === key || i.loc2 === key).length;
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "chip" + (locFilter === key ? " active" : "");
+    b.className = "chip chip-" + key + (locFilter === key ? " active" : "");
     b.textContent = `${label} ${n}`;
     b.onclick = () => {
       locFilter = key;
@@ -1507,6 +1550,7 @@ function renderUnsorted(){
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = LOC_LABEL[loc];
+      b.className = "l-" + loc;
       b.onclick = () => setItemLoc(item.name, loc);
       btns.appendChild(b);
     });
@@ -2521,7 +2565,7 @@ function render(){
       if(sortMode === "location" && locOf(item) !== lastGroup){
         lastGroup = locOf(item);
         const h = document.createElement("div");
-        h.className = "ideas-title";
+        h.className = "ideas-title loc-head loc-" + lastGroup;
         h.textContent = LOC_LABEL[lastGroup];
         list.appendChild(h);
       }
@@ -2529,14 +2573,15 @@ function render(){
       const row = document.createElement("div");
       row.className = "row"
         + (item.name === selectedName ? " selected" : "")
-        + (isLowStock(item) ? " low" : "");
+        + (isLowStock(item) ? " low" : "")
+        + " loc-" + locOf(item);
 
       const held = reservedAmount(item, null);
       let resHtml = "";
       if(item.loc2){
-        resHtml += `<small class="used">${LOC_LABEL[locOf(item)]} + ${LOC_LABEL[item.loc2]}</small>`;
+        resHtml += `<small class="used loc-tag loc-${locOf(item)}">${LOC_LABEL[locOf(item)]} + ${LOC_LABEL[item.loc2]}</small>`;
       }else if((locFilter === "all" || searching) && locOf(item) !== "cupboard" && sortMode !== "location"){
-        resHtml += `<small class="used">${LOC_LABEL[locOf(item)]}</small>`;
+        resHtml += `<small class="used loc-tag loc-${locOf(item)}">${LOC_LABEL[locOf(item)]}</small>`;
       }
       if(sortMode === "recent" && item.used){
         resHtml += `<small class="used">used ${timeAgo(item.used)}</small>`;
@@ -2626,7 +2671,7 @@ function renderAdjustBar(){
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = LOC_LABEL[loc];
-      if(isOn(loc)) b.className = "on";
+      b.className = (isOn(loc) ? "on " : "") + "l-" + loc;
       b.onclick = () => onTap(loc);
       row.appendChild(b);
     });
