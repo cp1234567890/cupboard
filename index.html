@@ -295,6 +295,72 @@
   .row input[type=checkbox]{width:20px; height:20px; margin:0; flex-shrink:0; accent-color:var(--herb);}
   .row.checked .name{text-decoration:line-through; color:var(--ink-soft);}
   .row.checked .qty{color:var(--ink-soft);}
+  .quick-btn{
+    width:100%; margin-bottom:10px; padding:10px; border-radius:10px;
+    border:1px dashed var(--line); background:none; color:var(--ink-soft);
+    font-size:0.9rem; cursor:pointer;
+  }
+  #quickText{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.95rem; font-family:inherit; resize:vertical;
+  }
+  .qa-row{
+    border:1px solid var(--line); border-radius:12px; padding:8px 10px; margin-bottom:8px;
+    background:var(--card);
+  }
+  .qa-top{display:flex; gap:6px; align-items:center;}
+  .qa-top input[type=checkbox]{width:20px; height:20px; margin:0; flex-shrink:0; accent-color:var(--herb);}
+  .qa-top input[type=text]{
+    flex:1; min-width:0; padding:9px 10px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.92rem;
+  }
+  .qa-top input[type=number]{
+    width:64px; padding:9px 4px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); text-align:center; font-size:0.92rem;
+  }
+  .qa-top select{
+    width:58px; padding:9px 2px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.85rem;
+  }
+  .qa-status{
+    font-size:0.78rem; color:var(--ink-soft); margin:5px 0 0 26px;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  }
+  .qa-status.warn{color:var(--brick);}
+  .qa-status button{
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:8px; padding:3px 8px; font-size:0.78rem; cursor:pointer;
+  }
+  #qaApply:disabled{opacity:0.45;}
+  .chips{display:flex; gap:6px; margin-bottom:12px; overflow-x:auto;}
+  .chip{
+    flex:1 0 auto; padding:7px 10px; border-radius:999px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink-soft); font-size:0.82rem; cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{background:var(--herb); color:#fff; border-color:var(--herb);}
+  .uns-head{font-size:0.92rem; padding:9px 0 4px;}
+  .uns-head small{display:block; color:var(--ink-soft); font-size:0.78rem; margin-top:2px;}
+  .uns-row{padding:8px 0; border-top:1px solid var(--line);}
+  .uns-top{display:flex; justify-content:space-between; gap:10px; font-size:0.92rem;}
+  .uns-top .q{color:var(--ink-soft); white-space:nowrap; font-size:0.85rem;}
+  .uns-btns{display:flex; gap:6px; margin-top:6px;}
+  .uns-btns button, .adjust-loc button{
+    flex:1; padding:7px 4px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.82rem; cursor:pointer;
+  }
+  .adjust-loc{display:flex; gap:6px; margin-top:10px;}
+  .adjust-loc button.on{background:var(--herb); color:#fff; border-color:var(--herb);}
+  .qa-loc{
+    margin:5px 0 0 26px; font-size:0.78rem; color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px;
+  }
+  .qa-loc select{
+    padding:4px 6px; border-radius:8px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink); font-size:0.8rem;
+  }
+  .adjust-loc{flex-direction:column; gap:6px;}
+  .adjust-loc-row{display:flex; gap:6px; align-items:center;}
+  .adjust-loc-row > span{font-size:0.78rem; color:var(--ink-soft); width:52px; flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -320,6 +386,7 @@
 
 <main>
   <div id="cupboardView">
+    <button type="button" id="quickBtn" class="quick-btn">+ Paste a list or receipt</button>
     <div class="search with-sort">
       <input type="search" id="cupboardSearch" placeholder="Search ingredients" autocomplete="off">
       <select id="cupboardSort" aria-label="Sort ingredients">
@@ -327,9 +394,12 @@
         <option value="low">Lowest stock first</option>
         <option value="high">Most stock first</option>
         <option value="recent">Recently used</option>
+        <option value="location">Location</option>
       </select>
     </div>
+    <div id="unsortedBox" class="stale hidden"></div>
     <div id="staleBox" class="stale hidden"></div>
+    <div id="locChips" class="chips"></div>
     <div id="empty" class="empty hidden">Nothing in the cupboard yet. Add something below.</div>
     <div id="list"></div>
   </div>
@@ -385,6 +455,7 @@
     </div>
     <div class="presets" id="adjustPresets"></div>
   </div>
+  <div class="adjust-loc" id="adjustLoc"></div>
 </div>
 
 <div id="recipeFooter" class="adjust-bar hidden">
@@ -426,6 +497,29 @@
     <div class="modal-actions">
       <button type="button" class="btn-secondary" id="aliasCancel">Cancel</button>
       <button type="button" class="btn-primary" id="aliasSave">Save aliases</button>
+    </div>
+  </div>
+</div>
+
+<div id="quickModal" class="modal-backdrop hidden">
+  <div class="modal recipe-modal">
+    <h2>Quick add</h2>
+    <div id="qaStep1">
+      <p class="hint">Paste a receipt or type a list, e.g. "flour 1kg, 2 eggs, milk 2l". You'll check everything before it's added.</p>
+      <textarea id="quickText" rows="9" placeholder="Paste here…"></textarea>
+      <p class="error-text" id="quickError"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="quickCancel">Cancel</button>
+        <button type="button" class="btn-primary" id="quickParse">Review</button>
+      </div>
+    </div>
+    <div id="qaStep2" class="hidden">
+      <p class="hint" id="qaHint"></p>
+      <div id="qaRows"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="qaBack">Back</button>
+        <button type="button" class="btn-primary" id="qaApply">Add items</button>
+      </div>
     </div>
   </div>
 </div>
@@ -472,6 +566,11 @@ const STORE_KEY = "cupboard-settings-v1";
 const UNITS = ["g", "kg", "ml", "l", "tsp", "tbsp", "cups", "pcs"];
 const UNIT_BASE = {g: 1, kg: 1000, ml: 1, l: 1000, tsp: 5, tbsp: 15, cups: 250};
 const STALE_DAYS = 30; // "not used in a while" threshold
+const LOCS = ["cupboard", "fridge", "freezer"];
+const LOC_LABEL = {cupboard: "Cupboard", fridge: "Fridge", freezer: "Freezer", unsorted: "Unsorted"};
+const LOCATIONS_PATH = "Locations.json";
+const LOC_KEY = "cupboard-loc";
+function locOf(item){ return item.loc || "cupboard"; }
 
 function convertQty(q, from, to){
   if(from === to) return q;
@@ -515,6 +614,10 @@ let aliasEditing = null;
 let shopping = {manual: [], checked: {}};
 let shoppingSha = null;
 let shopSaveTimer = null;
+let locMemory = {};
+let locSha = null;
+let locSaveTimer = null;
+let locFilter = "all";
 let recipeSaveTimer = null;
 let expandedRecipe = null;
 let editingRecipeName = null;
@@ -531,7 +634,8 @@ function pushUndo(label = "last change"){
     items: JSON.parse(JSON.stringify(items)),
     recipes: JSON.parse(JSON.stringify(recipes)),
     aliases: JSON.parse(JSON.stringify(aliases)),
-    shopping: JSON.parse(JSON.stringify(shopping))
+    shopping: JSON.parse(JSON.stringify(shopping)),
+    locMemory: JSON.parse(JSON.stringify(locMemory))
   });
   if(undoStack.length > 20) undoStack.shift();
   updateUndoBtn();
@@ -555,16 +659,19 @@ function undo(){
   const recipesChanged = JSON.stringify(recipes) !== JSON.stringify(snap.recipes);
   const aliasesChanged = JSON.stringify(aliases) !== JSON.stringify(snap.aliases);
   const shoppingChanged = JSON.stringify(shopping) !== JSON.stringify(snap.shopping);
+  const locChanged = JSON.stringify(locMemory) !== JSON.stringify(snap.locMemory);
 
   items = snap.items;
   recipes = snap.recipes;
   aliases = snap.aliases;
   shopping = snap.shopping;
+  locMemory = snap.locMemory;
 
   if(itemsChanged) queueSave(`Undo: ${snap.label}`);
   if(recipesChanged) queueRecipeSave(`Undo: ${snap.label}`);
   if(aliasesChanged) queueAliasSave(`Undo: ${snap.label}`);
   if(shoppingChanged) queueShoppingSave(`Undo: ${snap.label}`);
+  if(locChanged) queueLocSave(`Undo: ${snap.label}`);
 
   updateUndoBtn();
   render();
@@ -606,24 +713,30 @@ function parseText(text){
       const unit = (parts.length >= 3 && UNITS.includes(parts[2])) ? parts[2] : "g";
       const extras = parts.slice(3);
       const staple = extras.includes("staple");
+      const locTok = extras.find(t => t.startsWith("loc:"));
+      const locVal = locTok ? locTok.slice(4) : "cupboard";
+      const loc = (LOCS.includes(locVal) || locVal === "unsorted") ? locVal : "cupboard";
+      const alsoTok = extras.find(t => t.startsWith("also:"));
+      const also = alsoTok ? alsoTok.slice(5) : "";
       const usedTok = extras.find(t => t.startsWith("used:"));
       const used = usedTok ? parseInt(usedTok.slice(5), 10) : 0;
       const name = parts[0];
       let qty = parseFloat(parts[1]);
       if(isNaN(qty)) qty = 1;
-      const entry = {name, quantity: qty, unit};
+      const entry = {name, quantity: qty, unit, loc};
       if(staple) entry.staple = true;
       if(used > 0) entry.used = used;
+      if(LOCS.includes(also) && also !== loc && loc !== "unsorted") entry.loc2 = also;
       out.push(entry);
     } else {
-      out.push({name: line, quantity: 1, unit: "g"});
+      out.push({name: line, quantity: 1, unit: "g", loc: "cupboard"});
     }
   });
   return out;
 }
 
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}${i.loc && i.loc !== "cupboard" ? "|loc:" + i.loc : ""}${i.loc2 ? "|also:" + i.loc2 : ""}`).join("\n") + (list.length ? "\n" : "");
 }
 
 function titleCase(s){
@@ -793,6 +906,7 @@ function saveAliasesFromModal(){
         mergeable.forEach(d => {
           item.quantity = roundQty(item.quantity + convertQty(d.quantity, d.unit, item.unit));
           if(d.staple) item.staple = true;
+          if(locOf(item) === "unsorted" && locOf(d) !== "unsorted") item.loc = d.loc;
           if((d.used || 0) > (item.used || 0)) item.used = d.used;
         });
         items = items.filter(i => !mergeable.includes(i));
@@ -964,8 +1078,9 @@ async function fetchFile(){
       await fetchRecipes(false);
       await fetchAliases();
       await fetchShopping();
+      await fetchLocations();
     }catch(e){
-      setStatus("err", "Cupboard loaded — recipes, aliases or shopping failed");
+      setStatus("err", "Cupboard loaded — some extra files failed to load");
       render();
       return;
     }
@@ -1214,6 +1329,508 @@ function escapeHtml(value){
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+/* ---------------- Locations ---------------- */
+
+function normaliseLocations(data){
+  const out = {};
+  if(data && typeof data === "object" && !Array.isArray(data)){
+    Object.entries(data).forEach(([k, v]) => {
+      const [a, b] = String(v).split("+");
+      if(LOCS.includes(a) && (b === undefined || (LOCS.includes(b) && b !== a))){
+        out[normaliseName(k)] = b === undefined ? a : `${a}+${b}`;
+      }
+    });
+  }
+  return out;
+}
+
+async function fetchLocations(){
+  const data = await getGithubFile(LOCATIONS_PATH);
+  if(!data){
+    locMemory = {};
+    locSha = null;
+    return;
+  }
+  locSha = data.sha;
+  let parsed;
+  try{ parsed = JSON.parse(data.text); }
+  catch(e){ throw new Error("Locations.json is not valid JSON"); }
+  locMemory = normaliseLocations(parsed);
+}
+
+async function pushLocations(message){
+  setStatus("busy", "Saving…");
+  try{
+    const body = {
+      message,
+      content: b64EncodeUtf8(JSON.stringify(locMemory, null, 2) + "\n"),
+      branch: BRANCH
+    };
+    if(locSha) body.sha = locSha;
+
+    const send = () => fetch(apiUrl(LOCATIONS_PATH), {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(body)
+    });
+
+    let res = await send();
+
+    if(res.status === 409){
+      const fresh = await fetch(apiUrl(LOCATIONS_PATH), {headers: authHeaders()});
+      if(fresh.ok){
+        locSha = (await fresh.json()).sha;
+        body.sha = locSha;
+      }
+      res = await send();
+    }
+
+    if(!res.ok) throw new Error(`GitHub error ${res.status}`);
+    locSha = (await res.json()).content.sha;
+    setStatus("ok", "Synced");
+    return true;
+  }catch(err){
+    setStatus("err", "Location save failed");
+    return false;
+  }
+}
+
+function queueLocSave(message){
+  clearTimeout(locSaveTimer);
+  locSaveTimer = setTimeout(() => pushLocations(message), 700);
+}
+
+function memFor(name){
+  const v = locMemory[canonicalName(name)];
+  if(!v) return null;
+  const [loc, loc2] = v.split("+");
+  return {loc, loc2: loc2 || undefined};
+}
+
+// Where a brand-new item should go: the tab you're viewing if it's a specific
+// place, otherwise wherever that item went last time, otherwise Unsorted.
+function defaultLocFor(name){
+  if(locFilter !== "all") return locFilter;
+  const mem = memFor(name);
+  return mem ? mem.loc : "unsorted";
+}
+
+// {loc, loc2?} for a new item. The second place is only carried over when the
+// item is going to the same first place it had before.
+function newItemPlace(name){
+  const loc = defaultLocFor(name);
+  const mem = memFor(name);
+  return mem && mem.loc === loc && mem.loc2 ? {loc, loc2: mem.loc2} : {loc};
+}
+
+function rememberLoc(name, loc, loc2){
+  if(!LOCS.includes(loc)) return;
+  locMemory[canonicalName(name)] = loc2 ? `${loc}+${loc2}` : loc;
+}
+
+function setItemLoc(name, loc){
+  const item = items.find(i => i.name === name);
+  if(!item || locOf(item) === loc) return;
+  pushUndo(`move ${name} to ${LOC_LABEL[loc].toLowerCase()}`);
+  const old = locOf(item);
+  item.loc = loc;
+  // Moving to the place it was "also" in swaps the two around.
+  if(item.loc2 === loc){
+    if(old !== "unsorted") item.loc2 = old; else delete item.loc2;
+  }
+  rememberLoc(name, loc, item.loc2);
+  queueSave(`Move ${name} to ${loc}`);
+  queueLocSave(`Remember ${name} lives in ${loc}`);
+  render();
+}
+
+// Toggle a second place for an item (tap the same one again to clear it).
+function setItemAlso(name, loc2){
+  const item = items.find(i => i.name === name);
+  if(!item || locOf(item) === "unsorted" || locOf(item) === loc2) return;
+  const clearing = item.loc2 === loc2;
+  pushUndo(clearing ? `${name} only in ${LOC_LABEL[locOf(item)].toLowerCase()}` : `${name} also in ${LOC_LABEL[loc2].toLowerCase()}`);
+  if(clearing) delete item.loc2; else item.loc2 = loc2;
+  rememberLoc(name, locOf(item), item.loc2);
+  queueSave(`Update ${name} places`);
+  queueLocSave(`Remember ${name} places`);
+  render();
+}
+
+function renderChips(){
+  const box = document.getElementById("locChips");
+  box.innerHTML = "";
+  const defs = [["all", "All"], ...LOCS.map(l => [l, LOC_LABEL[l]])];
+  defs.forEach(([key, label]) => {
+    const n = key === "all"
+      ? items.filter(i => locOf(i) !== "unsorted").length
+      : items.filter(i => locOf(i) === key || i.loc2 === key).length;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (locFilter === key ? " active" : "");
+    b.textContent = `${label} ${n}`;
+    b.onclick = () => {
+      locFilter = key;
+      selectedName = null;
+      try{ localStorage.setItem(LOC_KEY, key); }catch(e){}
+      render();
+    };
+    box.appendChild(b);
+  });
+}
+
+function renderUnsorted(){
+  const box = document.getElementById("unsortedBox");
+  const list = items.filter(i => locOf(i) === "unsorted")
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const searching = !!document.getElementById("cupboardSearch").value.trim();
+
+  if(!list.length || searching){
+    box.classList.add("hidden");
+    return;
+  }
+
+  box.classList.remove("hidden");
+  box.innerHTML = `<div class="uns-head">New items to sort (${list.length})<small>Tap where each one lives. It'll go there automatically next time.</small></div>`;
+
+  list.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "uns-row";
+    row.innerHTML = `
+      <div class="uns-top"><span>${escapeHtml(item.name)}</span><span class="q">${item.staple ? "staple" : escapeHtml(fmtQty(item.quantity, item.unit))}</span></div>
+      <div class="uns-btns"></div>
+    `;
+    const btns = row.querySelector(".uns-btns");
+    LOCS.forEach(loc => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = LOC_LABEL[loc];
+      b.onclick = () => setItemLoc(item.name, loc);
+      btns.appendChild(b);
+    });
+    box.appendChild(row);
+  });
+}
+
+/* ---------------- Quick add ---------------- */
+
+const UNIT_WORDS = {
+  kg:"kg", g:"g", ml:"ml", l:"l", ltr:"l", ltrs:"l", litre:"l", litres:"l",
+  liter:"l", liters:"l", tsp:"tsp", tbsp:"tbsp", cup:"cups", cups:"cups"
+};
+const MEASURE_RE = "(kg|g|ml|cl|ltrs?|litres?|liters?|l|tsp|tbsp|cups?)";
+const PINT_ML = 568;
+let qaRows = [];
+
+function measureToBase(n, word){
+  const w = word.toLowerCase();
+  if(w === "cl") return {qty: n * 10, unit: "ml"};
+  return {qty: n, unit: UNIT_WORDS[w]};
+}
+
+function cleanItemName(text){
+  const t = text.replace(/[()]/g, " ").replace(/\s+/g, " ").trim()
+    .replace(/^[-–•*·.,:;]+\s*|\s*[-–•*·.,:;]+$/g, "")
+    .replace(/^(of|x)\s+/i, "")
+    .trim();
+  return titleCase(t);
+}
+
+// Pulls an amount out of a line: "COURGETTES 325G", "KIWI X4", "2 x 400g tomatoes",
+// "SEMI 4 PTS", or (free text only) "2 eggs" / "eggs 2".
+function parseAmount(text, allowBare){
+  let rest = text;
+  let qty = null, unit = null, m;
+
+  if((m = rest.match(new RegExp(`(\\d+)\\s*x\\s*(\\d+(?:\\.\\d+)?)\\s*${MEASURE_RE}\\b`, "i")))){
+    const b = measureToBase(parseFloat(m[2]), m[3]);
+    qty = b.qty * parseInt(m[1], 10);
+    unit = b.unit;
+    rest = rest.replace(m[0], " ");
+  }else if((m = rest.match(new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${MEASURE_RE}\\b`, "i")))){
+    const b = measureToBase(parseFloat(m[1]), m[2]);
+    qty = b.qty;
+    unit = b.unit;
+    rest = rest.replace(m[0], " ");
+  }else if((m = rest.match(/(\d+(?:\.\d+)?)\s*(?:pints?|pts?)\b/i))){
+    qty = parseFloat(m[1]) * PINT_ML;
+    unit = "ml";
+    rest = rest.replace(m[0], " ");
+  }else if((m = rest.match(/\bx\s*(\d+)\b/i)) || (m = rest.match(/\b(\d+)\s*(?:pk|pack)\b/i))){
+    qty = parseInt(m[1], 10);
+    unit = "pcs";
+    rest = rest.replace(m[0], " ");
+  }else if(allowBare){
+    if((m = rest.match(/^\s*(\d+(?:\.\d+)?)\s+(.+)$/))){
+      qty = parseFloat(m[1]);
+      unit = "pcs";
+      rest = m[2];
+    }else if((m = rest.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*$/))){
+      qty = parseFloat(m[2]);
+      unit = "pcs";
+      rest = m[1];
+    }
+  }
+
+  return {qty, unit, name: cleanItemName(rest)};
+}
+
+// If the name is already known (an item or one of its aliases), use the cupboard's name.
+function resolveName(raw){
+  const item = items.find(i => sameIngredient(i.name, raw));
+  if(item) return item.name;
+  const owner = aliasOwner(raw);
+  if(owner){
+    const key = Object.keys(aliases).find(k => normaliseName(k) === owner);
+    if(key) return key;
+  }
+  return raw;
+}
+
+function parseQuickText(text){
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const isReceipt = lines.filter(l => /^\d{6,}$/.test(l)).length >= 2;
+  const entries = [];
+
+  if(isReceipt){
+    // Receipt copied from an app: name / product code / count / price, repeated.
+    let lastText = null;
+    for(let i = 0; i < lines.length; i++){
+      const ln = lines[i];
+      if(/^\d{6,}$/.test(ln)){
+        if(lastText){
+          const next = lines[i + 1];
+          const count = next && /^\d{1,3}$/.test(next) ? parseInt(next, 10) : 1;
+          entries.push({text: lastText, count, free: false});
+        }
+        lastText = null;
+        continue;
+      }
+      if(/^[£€$]/.test(ln) || /^\d+(?:\.\d+)?$/.test(ln)) continue; // prices and counts
+      lastText = ln;
+    }
+  }else{
+    text.split(/[\n;,]+/).forEach(tok => {
+      const t = tok.replace(/^\s*(?:[-•*]|[☐☑✓✔])\s*/, "").trim();
+      if(t) entries.push({text: t, count: 1, free: true});
+    });
+  }
+
+  const merged = new Map();
+  const rows = [];
+  entries.forEach(e => {
+    const a = parseAmount(e.text, e.free);
+    if(!a.name) return;
+    let qty = a.qty, unit = a.unit, noAmount = false;
+    if(qty === null){
+      qty = e.count;
+      unit = "pcs";
+      noAmount = e.free;
+    }else{
+      qty = qty * e.count;
+    }
+    const name = resolveName(a.name);
+    const key = canonicalName(name) + "|" + unit;
+    const prev = merged.get(key);
+    if(prev){
+      prev.qty = roundQty(prev.qty + qty);
+      prev.lines++;
+    }else{
+      const row = {raw: a.name, name, qty: roundQty(qty), unit, noAmount, lines: 1, loc: defaultLocFor(name), locTouched: false};
+      merged.set(key, row);
+      rows.push(row);
+    }
+  });
+
+  return {rows, isReceipt};
+}
+
+function qaEval(r){
+  const name = r.name.trim();
+  if(!name || !(r.qty > 0)) return {blocked: true, warn: true, text: "Needs a name and an amount"};
+
+  const existing = items.find(i => sameIngredient(i.name, name));
+  if(existing){
+    if(existing.staple){
+      return {blocked: true, warn: false, text: `${existing.name} is a staple, so there's nothing to add`};
+    }
+    const conv = convertQty(r.qty, r.unit, existing.unit);
+    if(conv === null){
+      return {blocked: true, warn: true,
+        text: `Cupboard has ${existing.name} in ${existing.unit}. Change the unit or amount to match.`};
+    }
+    return {blocked: false, existing: true, text: `Adds to ${existing.name} (have ${fmtQty(existing.quantity, existing.unit)})`};
+  }
+
+  const sugg = closestItem(name);
+  return {
+    blocked: false,
+    text: r.noAmount ? "New item, no amount given so please check" : "New item",
+    suggest: sugg ? sugg.name : null
+  };
+}
+
+function updateQuickCount(){
+  const n = qaRows.filter(r => r.include && !r.blocked).length;
+  const btn = document.getElementById("qaApply");
+  btn.textContent = `Add ${n} item${n === 1 ? "" : "s"}`;
+  btn.disabled = n === 0;
+}
+
+function renderQuickRows(){
+  const box = document.getElementById("qaRows");
+  box.innerHTML = "";
+
+  qaRows.forEach(r => {
+    const el = document.createElement("div");
+    el.className = "qa-row";
+    el.innerHTML = `
+      <div class="qa-top">
+        <input type="checkbox" class="qa-inc" aria-label="Include">
+        <input type="text" class="qa-name" placeholder="Name">
+        <input type="number" class="qa-qty" min="0" step="any" inputmode="decimal">
+        <select class="qa-unit"></select>
+      </div>
+      <div class="qa-status"></div>
+      <div class="qa-loc">Where: <select class="qa-locsel"></select></div>
+    `;
+    const inc = el.querySelector(".qa-inc");
+    const nameEl = el.querySelector(".qa-name");
+    const qtyEl = el.querySelector(".qa-qty");
+    const unitEl = el.querySelector(".qa-unit");
+    const status = el.querySelector(".qa-status");
+    const locLine = el.querySelector(".qa-loc");
+    const locSel = el.querySelector(".qa-locsel");
+    locSel.innerHTML = ["unsorted", ...LOCS].map(l => `<option value="${l}">${LOC_LABEL[l]}</option>`).join("");
+    locSel.value = r.loc;
+
+    nameEl.value = r.name;
+    qtyEl.value = r.qty;
+    unitEl.innerHTML = unitOptions();
+    unitEl.value = r.unit;
+
+    const refresh = fromEdit => {
+      const ev = qaEval(r);
+      const wasBlocked = r.blocked;
+      r.blocked = ev.blocked;
+      if(ev.blocked) r.include = false;
+      else if(fromEdit && wasBlocked) r.include = true;
+
+      // Only brand-new items need a location; existing ones keep theirs.
+      if(!ev.existing && fromEdit && !r.locTouched){
+        r.loc = defaultLocFor(r.name.trim());
+        locSel.value = r.loc;
+      }
+      locLine.classList.toggle("hidden", !!ev.existing);
+
+      inc.checked = r.include;
+      inc.disabled = ev.blocked;
+      status.className = "qa-status" + (ev.warn ? " warn" : "");
+      status.textContent = ev.text + (r.lines > 1 ? ` · ${r.lines} lines combined` : "");
+      if(ev.suggest){
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = `Use "${ev.suggest}"`;
+        b.onclick = () => {
+          r.name = ev.suggest;
+          nameEl.value = r.name;
+          refresh(true);
+        };
+        status.appendChild(b);
+      }
+      updateQuickCount();
+    };
+
+    const first = qaEval(r);
+    r.blocked = first.blocked;
+    r.include = !first.blocked;
+
+    nameEl.addEventListener("input", () => { r.name = nameEl.value; refresh(true); });
+    qtyEl.addEventListener("input", () => { r.qty = parseFloat(qtyEl.value) || 0; refresh(true); });
+    unitEl.addEventListener("change", () => { r.unit = unitEl.value; refresh(true); });
+    inc.addEventListener("change", () => { r.include = inc.checked; updateQuickCount(); });
+    locSel.addEventListener("change", () => { r.loc = locSel.value; r.locTouched = true; });
+
+    refresh(false);
+    box.appendChild(el);
+  });
+}
+
+function openQuickAdd(){
+  document.getElementById("quickText").value = "";
+  document.getElementById("quickError").style.display = "none";
+  document.getElementById("qaStep1").classList.remove("hidden");
+  document.getElementById("qaStep2").classList.add("hidden");
+  document.getElementById("quickModal").classList.remove("hidden");
+}
+
+function closeQuickAdd(){
+  document.getElementById("quickModal").classList.add("hidden");
+  qaRows = [];
+}
+
+function reviewQuickAdd(){
+  const err = document.getElementById("quickError");
+  const text = document.getElementById("quickText").value;
+  const {rows, isReceipt} = parseQuickText(text);
+
+  if(rows.length === 0){
+    err.textContent = "Couldn't find any items in that text.";
+    err.style.display = "block";
+    return;
+  }
+
+  qaRows = rows;
+  document.getElementById("qaHint").textContent =
+    `${isReceipt ? "Looks like a receipt. " : ""}${rows.length} item${rows.length === 1 ? "" : "s"} found. `
+    + "Check the names and amounts. Names you change are remembered for next time.";
+  document.getElementById("qaStep1").classList.add("hidden");
+  document.getElementById("qaStep2").classList.remove("hidden");
+  renderQuickRows();
+}
+
+function applyQuickAdd(){
+  const chosen = qaRows.filter(r => r.include && !r.blocked);
+  if(!chosen.length) return;
+
+  pushUndo(`quick add (${chosen.length} item${chosen.length === 1 ? "" : "s"})`);
+  const aliasesBefore = JSON.stringify(aliases);
+  const locBefore = JSON.stringify(locMemory);
+
+  chosen.forEach(r => {
+    const name = titleCase(r.name);
+    const existing = items.find(i => sameIngredient(i.name, name));
+
+    // Remember the receipt's wording as another name for the item you chose.
+    if(r.raw && canonicalName(r.raw) !== canonicalName(name)
+       && aliasOwner(r.raw) === null
+       && !items.some(i => sameIngredient(i.name, r.raw))){
+      const target = canonicalName(name);
+      const key = Object.keys(aliases).find(k => normaliseName(k) === target)
+        || (existing ? existing.name : name);
+      if(!aliases[key]) aliases[key] = [];
+      aliases[key].push(r.raw);
+    }
+
+    if(existing){
+      existing.quantity = roundQty(existing.quantity + convertQty(r.qty, r.unit, existing.unit));
+    }else{
+      const mem = memFor(name);
+      const loc2 = mem && mem.loc === r.loc && mem.loc2 ? mem.loc2 : undefined;
+      items.push({name, quantity: r.qty, unit: r.unit, loc: r.loc, ...(loc2 ? {loc2} : {})});
+      rememberLoc(name, r.loc, loc2);
+    }
+  });
+
+  queueSave(`Quick add ${chosen.length} item${chosen.length === 1 ? "" : "s"}`);
+  if(JSON.stringify(aliases) !== aliasesBefore) queueAliasSave("Learn names from quick add");
+  if(JSON.stringify(locMemory) !== locBefore) queueLocSave("Remember locations from quick add");
+
+  closeQuickAdd();
+  render();
+  renderRecipes();
 }
 
 /* ---------------- Shopping list ---------------- */
@@ -1826,8 +2443,14 @@ function stockLevel(item){
   return convertQty(item.quantity, item.unit, "g") / 100;
 }
 
+const LOC_ORDER = {fridge: 0, freezer: 1, cupboard: 2, unsorted: 3};
+
 function compareItems(a, b){
   const byName = a.name.localeCompare(b.name);
+
+  if(sortMode === "location"){
+    return (LOC_ORDER[locOf(a)] - LOC_ORDER[locOf(b)]) || byName;
+  }
 
   if(sortMode === "recent"){
     const ua = a.used || 0, ub = b.used || 0;
@@ -1860,19 +2483,27 @@ function timeAgo(ts){
 }
 
 function render(){
+  renderUnsorted();
   renderStale();
+  renderChips();
   updateShopBadge();
   const list = document.getElementById("list");
   const empty = document.getElementById("empty");
   list.innerHTML = "";
 
   const q = normaliseName(document.getElementById("cupboardSearch").value);
-  const visible = items.filter(i => !q || namesFor(i.name).some(n => n.includes(q)));
+  const searching = !!q;
+  let visible = items.filter(i => !q || namesFor(i.name).some(n => n.includes(q)));
+  // Unsorted items live in their own box above, unless you're searching.
+  if(!searching){
+    visible = visible.filter(i => locOf(i) !== "unsorted" && (locFilter === "all" || locOf(i) === locFilter || i.loc2 === locFilter));
+  }
 
   if(visible.length === 0){
-    empty.textContent = items.length === 0
-      ? "Nothing in the cupboard yet. Add something below."
-      : "No ingredients match your search.";
+    if(items.length === 0) empty.textContent = "Nothing in the cupboard yet. Add something below.";
+    else if(searching) empty.textContent = "No ingredients match your search.";
+    else if(locFilter !== "all") empty.textContent = `Nothing in the ${LOC_LABEL[locFilter].toLowerCase()} yet.`;
+    else empty.textContent = "Sort the new items above to see them here.";
     empty.classList.remove("hidden");
     renderAdjustBar();
     return;
@@ -1880,10 +2511,21 @@ function render(){
 
   empty.classList.add("hidden");
 
+  let lastGroup = null;
+
   visible
     .slice()
     .sort(compareItems)
     .forEach(item => {
+      // Location sort: a small heading at the start of each group.
+      if(sortMode === "location" && locOf(item) !== lastGroup){
+        lastGroup = locOf(item);
+        const h = document.createElement("div");
+        h.className = "ideas-title";
+        h.textContent = LOC_LABEL[lastGroup];
+        list.appendChild(h);
+      }
+
       const row = document.createElement("div");
       row.className = "row"
         + (item.name === selectedName ? " selected" : "")
@@ -1891,6 +2533,11 @@ function render(){
 
       const held = reservedAmount(item, null);
       let resHtml = "";
+      if(item.loc2){
+        resHtml += `<small class="used">${LOC_LABEL[locOf(item)]} + ${LOC_LABEL[item.loc2]}</small>`;
+      }else if((locFilter === "all" || searching) && locOf(item) !== "cupboard" && sortMode !== "location"){
+        resHtml += `<small class="used">${LOC_LABEL[locOf(item)]}</small>`;
+      }
       if(sortMode === "recent" && item.used){
         resHtml += `<small class="used">used ${timeAgo(item.used)}</small>`;
       }
@@ -1965,6 +2612,32 @@ function renderAdjustBar(){
   };
   document.querySelector("#adjustBar .adjust-controls").classList.toggle("hidden", !!item.staple);
   document.getElementById("adjustUnit").classList.toggle("hidden", !!item.staple);
+
+  const locBox = document.getElementById("adjustLoc");
+  locBox.innerHTML = "";
+
+  const makeRow = (label, locs, isOn, onTap) => {
+    const row = document.createElement("div");
+    row.className = "adjust-loc-row";
+    const lab = document.createElement("span");
+    lab.textContent = label;
+    row.appendChild(lab);
+    locs.forEach(loc => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = LOC_LABEL[loc];
+      if(isOn(loc)) b.className = "on";
+      b.onclick = () => onTap(loc);
+      row.appendChild(b);
+    });
+    locBox.appendChild(row);
+  };
+
+  makeRow("Lives in", LOCS, loc => locOf(item) === loc, loc => setItemLoc(item.name, loc));
+  if(locOf(item) !== "unsorted"){
+    makeRow("Also in", LOCS.filter(l => l !== locOf(item)),
+      loc => item.loc2 === loc, loc => setItemAlso(item.name, loc));
+  }
 
   const unitSel = document.getElementById("adjustUnit");
   unitSel.value = item.unit;
@@ -2091,8 +2764,8 @@ function addItem(name, qty, unit, staple = false){
     }
   }else{
     const entry = staple
-      ? {name, quantity: 1, unit: "g", staple: true}
-      : {name, quantity: qty, unit};
+      ? {name, quantity: 1, unit: "g", staple: true, ...newItemPlace(name)}
+      : {name, quantity: qty, unit, ...newItemPlace(name)};
     items.push(entry);
     queueSave(`Add ${name}`);
   }
@@ -2404,7 +3077,7 @@ document.getElementById("adjustUnit").innerHTML = unitOptions();
 
 try{
   const saved = localStorage.getItem(SORT_KEY);
-  if(["az", "low", "high", "recent"].includes(saved)) sortMode = saved;
+  if(["az", "low", "high", "recent", "location"].includes(saved)) sortMode = saved;
 }catch(e){}
 const sortEl = document.getElementById("cupboardSort");
 sortEl.value = sortMode;
@@ -2489,6 +3162,25 @@ document.getElementById("cfgSave").onclick = () => {
   modal.classList.add("hidden");
   fetchFile();
 };
+
+// location filter
+try{
+  const savedLoc = localStorage.getItem(LOC_KEY);
+  if(savedLoc === "all" || LOCS.includes(savedLoc)) locFilter = savedLoc;
+}catch(e){}
+
+// quick add
+document.getElementById("quickBtn").onclick = openQuickAdd;
+document.getElementById("quickCancel").onclick = closeQuickAdd;
+document.getElementById("quickParse").onclick = reviewQuickAdd;
+document.getElementById("qaBack").onclick = () => {
+  document.getElementById("qaStep1").classList.remove("hidden");
+  document.getElementById("qaStep2").classList.add("hidden");
+};
+document.getElementById("qaApply").onclick = applyQuickAdd;
+document.getElementById("quickModal").addEventListener("click", e => {
+  if(e.target.id === "quickModal") closeQuickAdd();
+});
 
 // shopping list
 document.getElementById("shopUnit").innerHTML = unitOptions();
