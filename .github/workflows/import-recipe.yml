@@ -1,6 +1,6 @@
 
 name: Import recipe
-
+run-name: Import recipe ${{ inputs.request_id }}
 on:
   workflow_dispatch:
     inputs:
