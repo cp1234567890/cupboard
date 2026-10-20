@@ -8,9 +8,13 @@ on:
         description: "URL of the recipe to import"
         required: true
         type: string
+      request_id:
+        description: "Unique ID for this import request"
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   import:
@@ -35,9 +39,43 @@ jobs:
           RECIPE_URL: ${{ inputs.recipe_url }}
         run: python scripts/import_recipe.py
 
-      - name: Upload extracted recipe
-        uses: actions/upload-artifact@v4
-        with:
-          name: imported-recipe
-          path: recipe-import.json
-          retention-days: 1
+      - name: Publish import result
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+
+          request_id = os.environ["REQUEST_ID"]
+
+          if not re.fullmatch(r"[a-f0-9-]{36}", request_id):
+              raise SystemExit("Invalid request ID")
+
+          source = Path("recipe-import.json")
+          if not source.is_file():
+              raise SystemExit("Recipe output file was not created")
+
+          # Validate the JSON before publishing it.
+          with source.open(encoding="utf-8") as f:
+              json.load(f)
+
+          destination = Path("recipe-imports") / f"{request_id}.json"
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(source, destination)
+
+          print(f"Published import result: {destination}")
+          PY
+
+      - name: Commit import result
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "recipe-imports/${REQUEST_ID}.json"
+          git commit -m "Add recipe import result"
+          git push
