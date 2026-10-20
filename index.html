@@ -231,6 +231,13 @@
   .import-ing-controls input{width:78px;}
   .import-ing-controls select{flex:1;width:70px;}
   .import-ing-row button{background:none;border:none;color:var(--ink-soft);font-size:1rem;cursor:pointer;padding:4px;}
+  .import-match{font-size:.82rem;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:7px;margin-top:2px;}
+  .import-match strong{color:var(--ink);font-weight:650;}
+  .import-match-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;align-items:center;}
+  .import-match-actions button{border:1px solid var(--line);border-radius:7px;padding:5px 8px;background:var(--card);color:var(--ink);font-size:.78rem;}
+  .import-match-actions button.match-confirm{background:var(--herb);border-color:var(--herb);color:white;}
+  .import-match-actions select{min-width:0;max-width:100%;padding:6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);font-size:.78rem;}
+  .import-match-status{font-size:.78rem;margin-top:5px;color:var(--herb-dark);}
   #importAddIngredient{width:100%;padding:9px;border-radius:8px;margin-top:2px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.88rem;cursor:pointer;}
   .search{margin-bottom:12px;}
   .search input{
@@ -3219,6 +3226,10 @@ function addImportedIngredient(raw = ""){
   name.placeholder = "Ingredient name";
   name.value = parsed.name;
 
+  const matchPanel = document.createElement("div");
+  matchPanel.className = "import-match";
+  matchPanel.setAttribute("aria-live", "polite");
+
   const controls = document.createElement("div");
   controls.className = "import-ing-controls";
   const quantity = document.createElement("input");
@@ -3234,7 +3245,8 @@ function addImportedIngredient(raw = ""){
   unit.innerHTML = unitOptions();
   unit.value = UNITS.includes(parsed.unit) ? parsed.unit : "pcs";
   controls.append(quantity, unit);
-  fields.append(name, controls);
+  fields.append(name, matchPanel, controls);
+  name.addEventListener("input", () => renderImportedIngredientMatch(row));
 
   const remove = document.createElement("button");
   remove.type = "button";
@@ -3243,6 +3255,180 @@ function addImportedIngredient(raw = ""){
   remove.onclick = () => row.remove();
   row.append(fields, remove);
   document.getElementById("importIngredients").appendChild(row);
+  renderImportedIngredientMatch(row);
+}
+
+/* ---------------- Cautious ingredient matching ----------------
+   Suggestions never change recipe data until the user confirms them.
+   Confirmed/rejected preferences are kept in this browser for future imports. */
+const IMPORT_MATCH_PREFS_KEY = "cupboardIngredientMatchPrefsV1";
+
+function readImportMatchPrefs(){
+  try{
+    const value = JSON.parse(localStorage.getItem(IMPORT_MATCH_PREFS_KEY) || "{}");
+    return {accepted: value.accepted && typeof value.accepted === "object" ? value.accepted : {}, rejected: Array.isArray(value.rejected) ? value.rejected : []};
+  }catch(e){ return {accepted:{}, rejected:[]}; }
+}
+
+function writeImportMatchPrefs(prefs){
+  try{ localStorage.setItem(IMPORT_MATCH_PREFS_KEY, JSON.stringify(prefs)); }catch(e){}
+}
+
+function ingredientMatchKey(name){
+  return normaliseName(name).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function singularIngredientWords(name){
+  return ingredientMatchKey(name).split(" ").filter(Boolean).map(word => {
+    if(word.length > 4 && word.endsWith("ies")) return word.slice(0,-3) + "y";
+    if(word.length > 3 && word.endsWith("s") && !word.endsWith("ss")) return word.slice(0,-1);
+    return word;
+  });
+}
+
+function ingredientLevenshtein(a,b){
+  const prev = Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    let diagonal = prev[0]; prev[0] = i;
+    for(let j=1;j<=b.length;j++){
+      const above = prev[j];
+      prev[j] = Math.min(prev[j]+1, prev[j-1]+1, diagonal+(a[i-1] === b[j-1] ? 0 : 1));
+      diagonal = above;
+    }
+  }
+  return prev[b.length];
+}
+
+const INGREDIENT_DISTINCTION_GROUPS = [
+  ["chicken","beef","pork","turkey","lamb","duck","salmon","tuna","cod","prawn","tofu"],
+  ["breast","thigh","drumstick","wing","mince","minced","steak","fillet","leg"],
+  ["fresh","dried","frozen","canned","tinned"],
+  ["plain","self raising","self-raising","bread","wholemeal","wholewheat"],
+  ["red","white","yellow","spring","shallot"],
+  ["light","dark","low sodium","reduced salt","sweet","salted","unsalted"],
+  ["whole","ground","crushed","powder","powdered","flakes","flaked"],
+  ["cherry","plum","passata","sun dried","sun-dried"],
+  ["oat","almond","soya","soy","coconut","whole milk","skimmed","semi skimmed","semi-skimmed"]
+];
+
+function ingredientDistinctionConflict(a,b){
+  const aa = ingredientMatchKey(a), bb = ingredientMatchKey(b);
+  for(const group of INGREDIENT_DISTINCTION_GROUPS){
+    const inA = group.filter(term => new RegExp(`(^| )${term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}( |$)`).test(aa));
+    const inB = group.filter(term => new RegExp(`(^| )${term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}( |$)`).test(bb));
+    if(inA.length && inB.length && !inA.some(x => inB.includes(x))) return true;
+  }
+  return false;
+}
+
+function ingredientSimilarity(a,b){
+  const aa = ingredientMatchKey(a), bb = ingredientMatchKey(b);
+  if(!aa || !bb || ingredientDistinctionConflict(a,b)) return 0;
+  if(aa === bb || sameIngredient(a,b)) return 1;
+  const aw = singularIngredientWords(aa), bw = singularIngredientWords(bb);
+  const aset = new Set(aw), bset = new Set(bw);
+  const overlap = [...aset].filter(x => bset.has(x)).length;
+  const union = new Set([...aw,...bw]).size;
+  const jaccard = union ? overlap / union : 0;
+  const aCompact = aw.join(" "), bCompact = bw.join(" ");
+  const edit = 1 - ingredientLevenshtein(aCompact,bCompact) / Math.max(aCompact.length,bCompact.length,1);
+  // Shared meaningful words matter more than a short edit-distance coincidence.
+  const meaningful = [...aset].filter(x => bset.has(x) && x.length > 2).length;
+  return meaningful ? Math.max(jaccard, edit * .82) : 0;
+}
+
+function cupboardIngredientNames(){
+  return [...new Set((Array.isArray(items) ? items : []).map(item => String(item?.name || "").trim()).filter(Boolean))];
+}
+
+function findIngredientMatch(name){
+  const prefs = readImportMatchPrefs();
+  const key = ingredientMatchKey(name);
+  const acceptedName = prefs.accepted[key];
+  if(acceptedName){
+    const existing = cupboardIngredientNames().find(n => ingredientMatchKey(n) === ingredientMatchKey(acceptedName));
+    if(existing && !ingredientDistinctionConflict(name, existing)) return {name:existing, score:1, remembered:true};
+  }
+  const candidates = cupboardIngredientNames()
+    .filter(candidate => !prefs.rejected.includes(`${key}=>${ingredientMatchKey(candidate)}`))
+    .map(candidate => ({name:candidate, score:ingredientSimilarity(name,candidate)}))
+    .filter(candidate => candidate.score >= .66)
+    .sort((a,b) => b.score - a.score);
+  if(!candidates.length) return null;
+  // Avoid offering an arbitrary choice where the top two are effectively tied.
+  if(candidates.length > 1 && candidates[0].score < 1 && candidates[0].score - candidates[1].score < .08) return null;
+  return candidates[0];
+}
+
+function renderImportedIngredientMatch(row){
+  const panel = row.querySelector(".import-match");
+  const nameInput = row.querySelector(".import-ing-name");
+  if(!panel || !nameInput) return;
+  const name = nameInput.value.trim();
+  panel.innerHTML = "";
+  if(!name){ panel.textContent = "Enter an ingredient name to check for cupboard matches."; return; }
+  const suggested = findIngredientMatch(name);
+  if(!suggested){ panel.textContent = "No confident match — this will stay as a separate ingredient unless you choose otherwise."; return; }
+
+  const text = document.createElement("div");
+  text.append("Possible cupboard match: ");
+  const strong = document.createElement("strong"); strong.textContent = suggested.name;
+  text.appendChild(strong);
+  if(suggested.remembered){
+    const note = document.createElement("span"); note.textContent = " · previously confirmed in this browser"; text.appendChild(note);
+  }else if(suggested.score < .82){
+    const note = document.createElement("span"); note.textContent = " · uncertain suggestion"; text.appendChild(note);
+  }
+  panel.appendChild(text);
+
+  const actions = document.createElement("div"); actions.className = "import-match-actions";
+  const confirm = document.createElement("button"); confirm.type = "button"; confirm.className = "match-confirm"; confirm.textContent = "Use this match";
+  confirm.onclick = () => {
+    const prefs = readImportMatchPrefs();
+    prefs.accepted[ingredientMatchKey(name)] = suggested.name;
+    prefs.rejected = prefs.rejected.filter(pair => !pair.startsWith(`${ingredientMatchKey(name)}=>`));
+    writeImportMatchPrefs(prefs);
+    nameInput.value = suggested.name;
+    panel.innerHTML = "";
+    const status = document.createElement("div"); status.className = "import-match-status"; status.textContent = `Matched to cupboard ingredient: ${suggested.name}. Quantity and stock have not been changed.`;
+    panel.appendChild(status);
+  };
+  actions.appendChild(confirm);
+
+  const choose = document.createElement("select");
+  choose.setAttribute("aria-label", "Choose a different cupboard ingredient");
+  const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "Choose another…"; choose.appendChild(placeholder);
+  cupboardIngredientNames().forEach(candidate => {
+    if(ingredientDistinctionConflict(name,candidate)) return;
+    const option = document.createElement("option"); option.value = candidate; option.textContent = candidate; choose.appendChild(option);
+  });
+  const chooseButton = document.createElement("button"); chooseButton.type = "button"; chooseButton.textContent = "Use selected";
+  chooseButton.onclick = () => {
+    if(!choose.value) return;
+    const prefs = readImportMatchPrefs();
+    prefs.accepted[ingredientMatchKey(name)] = choose.value;
+    prefs.rejected = prefs.rejected.filter(pair => !pair.startsWith(`${ingredientMatchKey(name)}=>`));
+    writeImportMatchPrefs(prefs);
+    nameInput.value = choose.value;
+    panel.innerHTML = "";
+    const status = document.createElement("div"); status.className = "import-match-status"; status.textContent = `Matched to cupboard ingredient: ${choose.value}. Quantity and stock have not been changed.`;
+    panel.appendChild(status);
+  };
+  actions.append(choose, chooseButton);
+
+  const separate = document.createElement("button"); separate.type = "button"; separate.textContent = "Keep separate";
+  separate.onclick = () => {
+    const prefs = readImportMatchPrefs();
+    const pair = `${ingredientMatchKey(name)}=>${ingredientMatchKey(suggested.name)}`;
+    if(!prefs.rejected.includes(pair)) prefs.rejected.push(pair);
+    delete prefs.accepted[ingredientMatchKey(name)];
+    writeImportMatchPrefs(prefs);
+    panel.innerHTML = "";
+    const status = document.createElement("div"); status.className = "import-match-status"; status.textContent = "Kept separate. This suggestion will be suppressed for future imports in this browser.";
+    panel.appendChild(status);
+  };
+  actions.appendChild(separate);
+  panel.appendChild(actions);
 }
 
 function showImportedRecipe(data, sourceUrl){
