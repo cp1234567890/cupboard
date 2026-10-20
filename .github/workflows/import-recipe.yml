@@ -1,0 +1,43 @@
+
+name: Import recipe
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipe_url:
+        description: "URL of the recipe to import"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Extract recipe
+        env:
+          RECIPE_URL: ${{ inputs.recipe_url }}
+        run: python scripts/import_recipe.py
+
+      - name: Upload extracted recipe
+        uses: actions/upload-artifact@v4
+        with:
+          name: imported-recipe
+          path: recipe-import.json
+          retention-days: 1
