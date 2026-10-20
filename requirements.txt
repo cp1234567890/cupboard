@@ -1,0 +1,2 @@
+
+recipe-scrapers>=15,<16
