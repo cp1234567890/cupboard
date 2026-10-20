@@ -26,4 +26,4 @@ Ginger|1|g|staple|loc:freezer
 Milk|1|g|staple|loc:fridge
 Gochujang|1|g|staple|loc:fridge
 Cornflour|1|g|staple
-Garlic|1|g|staple|loc:unsorted
+Garlic|1|g|staple|loc:fridge
