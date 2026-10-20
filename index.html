@@ -224,6 +224,14 @@
     width:100%; margin-top:10px; background:none; border:none; color:var(--brick);
     padding:8px; cursor:pointer; font-size:0.92rem;
   }
+  .import-ing-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;padding:10px;border:1px solid var(--line);border-radius:10px;}
+  .import-ing-fields{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+  .import-ing-fields input,.import-ing-controls input,.import-ing-controls select{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);min-width:0;}
+  .import-ing-controls{display:flex;gap:6px;}
+  .import-ing-controls input{width:78px;}
+  .import-ing-controls select{flex:1;width:70px;}
+  .import-ing-row button{background:none;border:none;color:var(--ink-soft);font-size:1rem;cursor:pointer;padding:4px;}
+  #importAddIngredient{width:100%;padding:9px;border-radius:8px;margin-top:2px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:.88rem;cursor:pointer;}
   .search{margin-bottom:12px;}
   .search input{
     width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
@@ -502,6 +510,7 @@
 </div>
 
 <div id="recipeFooter" class="adjust-bar hidden">
+  <button type="button" id="importRecipeBtn" class="recipe-footer-btn">Import from URL</button>
   <button type="button" id="addRecipeBtn" class="recipe-footer-btn">+ Add recipe</button>
 </div>
 
@@ -562,6 +571,50 @@
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="qaBack">Back</button>
         <button type="button" class="btn-primary" id="qaApply">Add items</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="importRecipeModal" class="modal-backdrop hidden">
+  <div class="modal recipe-modal">
+    <h2>Import recipe</h2>
+    <div id="importStep1">
+      <p class="hint">Paste a recipe URL. Cupboard will fetch the recipe and let you review it before saving.</p>
+      <div class="field">
+        <label for="importUrl">Recipe URL</label>
+        <input type="url" id="importUrl" placeholder="https://www.bbcgoodfood.com/recipes/..." autocomplete="url">
+      </div>
+      <p class="error-text" id="importError"></p>
+      <p class="hint" id="importProgress"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="importCancel">Cancel</button>
+        <button type="button" class="btn-primary" id="importStart">Import recipe</button>
+      </div>
+    </div>
+    <div id="importStep2" class="hidden">
+      <p class="hint" id="importDetails"></p>
+      <div class="field">
+        <label for="importName">Recipe name</label>
+        <input type="text" id="importName">
+      </div>
+      <div class="field">
+        <label for="importTime">Cooking time (optional)</label>
+        <input type="text" id="importTime" placeholder="e.g. 30 min">
+      </div>
+      <div class="field">
+        <label>Ingredients — check quantities and units</label>
+        <div id="importIngredients"></div>
+        <button type="button" id="importAddIngredient">+ Add ingredient</button>
+      </div>
+      <div class="field">
+        <label for="importMethod">Method (one step per line)</label>
+        <textarea id="importMethod" rows="7"></textarea>
+      </div>
+      <p class="error-text" id="importReviewError"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="importBack">Back</button>
+        <button type="button" class="btn-primary" id="importSave">Save recipe</button>
       </div>
     </div>
   </div>
@@ -3040,6 +3093,271 @@ async function deleteRecipe(name){
   await pushRecipes(`Delete recipe: ${name}`);
   return true;
 }
+
+/* ---------------- Recipe URL importer ---------------- */
+
+let importedRecipeData = null;
+const IMPORT_WORKFLOW = "import-recipe.yml";
+const IMPORT_RESULTS_DIR = "recipe-imports";
+
+function importApiRoot(){
+  return `https://api.github.com/repos/${settings.owner}/${settings.repo}`;
+}
+
+function importError(message){
+  document.getElementById("importError").textContent = message;
+}
+
+function openImportModal(){
+  document.getElementById("importUrl").value = "";
+  document.getElementById("importError").textContent = "";
+  document.getElementById("importProgress").textContent = "";
+  document.getElementById("importReviewError").textContent = "";
+  document.getElementById("importStep1").classList.remove("hidden");
+  document.getElementById("importStep2").classList.add("hidden");
+  document.getElementById("importStart").disabled = false;
+  document.getElementById("importStart").textContent = "Import recipe";
+  document.getElementById("importRecipeModal").classList.remove("hidden");
+  document.getElementById("importUrl").focus();
+}
+
+function closeImportModal(){
+  document.getElementById("importRecipeModal").classList.add("hidden");
+  importedRecipeData = null;
+}
+
+function importDelay(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function githubImportRequest(url, options = {}){
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...authHeaders(),
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(options.headers || {})
+    }
+  });
+  if(!response.ok){
+    let detail = "";
+    try{ detail = (await response.json()).message || ""; }catch(e){}
+    throw new Error(`GitHub error ${response.status}${detail ? `: ${detail}` : ""}`);
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+async function waitForImportRun(requestId){
+  const runsUrl = `${importApiRoot()}/actions/workflows/${IMPORT_WORKFLOW}/runs?event=workflow_dispatch&branch=${BRANCH}&per_page=20`;
+  for(let attempt = 0; attempt < 120; attempt++){
+    const data = await githubImportRequest(runsUrl);
+    const run = data.workflow_runs.find(item => item.display_title === `Import recipe ${requestId}`);
+    if(run && run.status === "completed"){
+      if(run.conclusion !== "success"){
+        throw new Error("The recipe import workflow failed. Check GitHub Actions for its logs.");
+      }
+      const resultUrl = `${importApiRoot()}/contents/${IMPORT_RESULTS_DIR}/${requestId}.json?ref=${BRANCH}`;
+      const result = await githubImportRequest(resultUrl);
+      return JSON.parse(b64DecodeUtf8(result.content));
+    }
+    document.getElementById("importProgress").textContent = `Waiting for GitHub Actions… (${attempt + 1}/120)`;
+    await importDelay(2000);
+  }
+  throw new Error("The import took too long. Check the run in GitHub Actions.");
+}
+
+function parseImportedIngredient(raw){
+  const original = String(raw || "").trim();
+  const match = original.match(/^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s+(.+)$/);
+  if(!match) return {raw: original, name: original, quantity: "", unit: "pcs"};
+
+  const amount = match[1].trim();
+  let quantity;
+  if(amount.includes(" ")){
+    const parts = amount.split(/\s+/);
+    const fraction = parts[1].split("/");
+    quantity = Number(parts[0]) + Number(fraction[0]) / Number(fraction[1]);
+  }else if(amount.includes("/")){
+    const parts = amount.split("/");
+    quantity = Number(parts[0]) / Number(parts[1]);
+  }else quantity = Number(amount);
+
+  let name = match[2].trim();
+  let unit = "pcs";
+  const unitMatch = name.match(/^(kg|g|ml|l|tsp|teaspoons?|tbsp|tablespoons?|cups?)\b\.?\s*(.*)$/i);
+  if(unitMatch){
+    const unitName = unitMatch[1].toLowerCase();
+    if(unitName === "kg") unit = "kg";
+    else if(unitName === "g") unit = "g";
+    else if(unitName === "ml") unit = "ml";
+    else if(unitName === "l") unit = "l";
+    else if(unitName === "tsp" || unitName.startsWith("teaspoon")) unit = "tsp";
+    else if(unitName === "tbsp" || unitName.startsWith("tablespoon")) unit = "tbsp";
+    else if(unitName.startsWith("cup")) unit = "cups";
+    name = unitMatch[2].trim();
+  }
+  return {raw: original, name, quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : "", unit};
+}
+
+function addImportedIngredient(raw = ""){
+  const parsed = parseImportedIngredient(raw);
+  const row = document.createElement("div");
+  row.className = "import-ing-row";
+
+  const fields = document.createElement("div");
+  fields.className = "import-ing-fields";
+  if(parsed.raw){
+    const original = document.createElement("small");
+    original.className = "hint";
+    original.textContent = `Imported text: ${parsed.raw}`;
+    fields.appendChild(original);
+  }
+
+  const name = document.createElement("input");
+  name.type = "text";
+  name.className = "import-ing-name";
+  name.placeholder = "Ingredient name";
+  name.value = parsed.name;
+
+  const controls = document.createElement("div");
+  controls.className = "import-ing-controls";
+  const quantity = document.createElement("input");
+  quantity.type = "number";
+  quantity.className = "import-ing-quantity";
+  quantity.min = "0";
+  quantity.step = "any";
+  quantity.placeholder = "Qty";
+  quantity.value = parsed.quantity;
+
+  const unit = document.createElement("select");
+  unit.className = "import-ing-unit";
+  unit.innerHTML = unitOptions();
+  unit.value = UNITS.includes(parsed.unit) ? parsed.unit : "pcs";
+  controls.append(quantity, unit);
+  fields.append(name, controls);
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.textContent = "✕";
+  remove.setAttribute("aria-label", "Remove ingredient");
+  remove.onclick = () => row.remove();
+  row.append(fields, remove);
+  document.getElementById("importIngredients").appendChild(row);
+}
+
+function showImportedRecipe(data, sourceUrl){
+  importedRecipeData = data;
+  document.getElementById("importName").value = data.name || "";
+  document.getElementById("importTime").value = data.total_time ? `${data.total_time} min` : "";
+  const details = [];
+  if(data.servings) details.push(`Servings: ${data.servings}`);
+  details.push(`Source: ${sourceUrl}`);
+  document.getElementById("importDetails").textContent = details.join(" · ");
+  document.getElementById("importMethod").value = Array.isArray(data.method) ? data.method.join("\n") : "";
+  document.getElementById("importIngredients").innerHTML = "";
+  (Array.isArray(data.ingredients) ? data.ingredients : []).forEach(addImportedIngredient);
+  document.getElementById("importStep1").classList.add("hidden");
+  document.getElementById("importStep2").classList.remove("hidden");
+}
+
+async function startRecipeImport(){
+  const url = document.getElementById("importUrl").value.trim();
+  const button = document.getElementById("importStart");
+  let parsedUrl;
+  try{
+    parsedUrl = new URL(url);
+    if(!["https:", "http:"].includes(parsedUrl.protocol)) throw new Error();
+  }catch(e){
+    importError("Please enter a valid recipe URL.");
+    return;
+  }
+  if(!settings?.owner || !settings?.repo || !settings?.token){
+    importError("Connect to GitHub in Settings first.");
+    return;
+  }
+
+  const requestId = crypto.randomUUID();
+  button.disabled = true;
+  button.textContent = "Importing…";
+  importError("");
+  document.getElementById("importProgress").textContent = "Starting GitHub Actions…";
+  try{
+    await githubImportRequest(`${importApiRoot()}/actions/workflows/${IMPORT_WORKFLOW}/dispatches`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ref: BRANCH, inputs: {recipe_url: parsedUrl.href, request_id: requestId}})
+    });
+    const data = await waitForImportRun(requestId);
+    if(!data || !Array.isArray(data.ingredients)) throw new Error("The importer returned an unexpected result.");
+    showImportedRecipe(data, parsedUrl.href);
+  }catch(error){
+    importError(error.message || "Recipe import failed.");
+  }finally{
+    button.disabled = false;
+    button.textContent = "Import recipe";
+    document.getElementById("importProgress").textContent = "";
+  }
+}
+
+async function saveImportedRecipe(){
+  const error = document.getElementById("importReviewError");
+  error.textContent = "";
+  const name = document.getElementById("importName").value.trim();
+  const bakeTime = document.getElementById("importTime").value.trim();
+  const method = document.getElementById("importMethod").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  const ingredients = Array.from(document.querySelectorAll("#importIngredients .import-ing-row")).map(row => ({
+    name: row.querySelector(".import-ing-name").value.trim(),
+    quantity: Number(row.querySelector(".import-ing-quantity").value),
+    unit: row.querySelector(".import-ing-unit").value
+  }));
+
+  if(!name){ error.textContent = "Recipe name is required."; return; }
+  if(!ingredients.length || ingredients.some(i => !i.name || !Number.isFinite(i.quantity) || i.quantity <= 0)){
+    error.textContent = "Every ingredient needs a name and a quantity greater than zero. Remove or correct any uncertain ingredients.";
+    return;
+  }
+  if(recipes.some(recipe => normaliseName(recipe.name) === normaliseName(name))){
+    error.textContent = "A recipe with that name already exists. Change the name or edit the existing recipe.";
+    return;
+  }
+
+  const recipe = normaliseRecipe({name, bakeTime, ingredients, method});
+  const button = document.getElementById("importSave");
+  button.disabled = true;
+  button.textContent = "Saving…";
+  try{
+    pushUndo(`import ${name}`);
+    recipes.push(recipe);
+    expandedRecipe = recipe.name;
+    renderRecipes();
+    const saved = await pushRecipes(`Import recipe: ${name}`);
+    if(!saved){
+      recipes = recipes.filter(r => r !== recipe);
+      renderRecipes();
+      error.textContent = "Couldn't save to GitHub. Check your connection and try again.";
+      return;
+    }
+    closeImportModal();
+  }finally{
+    button.disabled = false;
+    button.textContent = "Save recipe";
+  }
+}
+
+function addBlankImportedIngredient(){ addImportedIngredient(""); }
+
+document.getElementById("importRecipeBtn").onclick = openImportModal;
+document.getElementById("importCancel").onclick = closeImportModal;
+document.getElementById("importStart").onclick = startRecipeImport;
+document.getElementById("importBack").onclick = () => {
+  document.getElementById("importStep2").classList.add("hidden");
+  document.getElementById("importStep1").classList.remove("hidden");
+};
+document.getElementById("importSave").onclick = saveImportedRecipe;
+document.getElementById("importAddIngredient").onclick = addBlankImportedIngredient;
+document.getElementById("importRecipeModal").addEventListener("click", event => {
+  if(event.target.id === "importRecipeModal") closeImportModal();
+});
 
 /* ---------------- View / theme / settings ---------------- */
 
