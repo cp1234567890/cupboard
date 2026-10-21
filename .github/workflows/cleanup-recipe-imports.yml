@@ -1,0 +1,110 @@
+
+name: Clean up old recipe imports
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete results older than seven days
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          import datetime
+
+          from urllib.parse import quote
+
+          repo = os.environ['GH_REPO']
+
+          def api(method, path, payload=None):
+              cmd = ['gh', 'api', '--method', method, path]
+
+              if payload is not None:
+                  cmd += ['--input', '-']
+
+              p = subprocess.run(
+                  cmd,
+                  input=json.dumps(payload) if payload is not None else None,
+                  text=True,
+                  capture_output=True
+              )
+
+              if p.returncode:
+                  raise RuntimeError(p.stderr)
+
+              return json.loads(p.stdout) if p.stdout.strip() else None
+
+          listing = api(
+              'GET',
+              f'repos/{repo}/contents/recipe-imports?ref=main'
+          )
+
+          cutoff = (
+              datetime.datetime.now(datetime.timezone.utc)
+              - datetime.timedelta(days=7)
+          )
+
+          for item in listing:
+              if item['type'] != 'file':
+                  continue
+
+              if not re.fullmatch(r'[a-f0-9-]{36}\.json', item['name']):
+                  continue
+
+              path = item['path']
+
+              commits = api(
+                  'GET',
+                  f'repos/{repo}/commits?path={quote(path)}&per_page=1'
+              )
+
+              if not commits:
+                  continue
+
+              created = datetime.datetime.fromisoformat(
+                  commits[0]['commit']['committer']['date'].replace(
+                      'Z', '+00:00'
+                  )
+              )
+
+              if created >= cutoff:
+                  continue
+
+              current = api(
+                  'GET',
+                  f'repos/{repo}/contents/{quote(path)}?ref=main'
+              )
+
+              if current['sha'] != item['sha']:
+                  continue
+
+              api(
+                  'DELETE',
+                  f'repos/{repo}/contents/{quote(path)}',
+                  {
+                      'message': (
+                          f"Clean up expired recipe import {item['name']}"
+                      ),
+                      'sha': current['sha'],
+                      'branch': 'main'
+                  }
+              )
+
+              print('Deleted:', path)
+
+          PY
