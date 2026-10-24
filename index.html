@@ -3794,7 +3794,9 @@ function showImportedRecipe(data, sourceUrl){
   if(Array.isArray(data.sections) && data.sections.length){
     data.sections.forEach(section=>addSectionEditor("importSections",section,true));
   }else{
-    (Array.isArray(data.ingredients) ? data.ingredients : []).forEach(addImportedIngredient);
+    (Array.isArray(data.ingredients) ? data.ingredients : []).forEach(
+      ingredient => addImportedIngredient(ingredient)
+    );
   }
   document.getElementById("importStep1").classList.add("hidden");
   document.getElementById("importStep2").classList.remove("hidden");
