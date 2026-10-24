@@ -2593,11 +2593,6 @@ function renderRecipes(){
         renderRecipes();
       });
 
-      if(recipe.sections?.length){
-        const total = document.createElement("div");total.className="recipe-sub";
-        total.textContent="Total: "+recipe.ingredients.map(i=>`${fmtQty(i.quantity,i.unit)} ${i.name}`).join(" · ");
-        summary.querySelector(".recipe-info").appendChild(total);
-      }
       row.appendChild(summary);
 
       if(expandedRecipe === recipe.name){
