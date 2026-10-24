@@ -1043,6 +1043,54 @@ function addAlias(canon, alias){
   renderRecipes();
   return true;
 }
+  
+// Explicit import confirmation becomes a shared GitHub alias,
+// not merely a browser preference.
+// This deliberately does not merge cupboard stock or alter quantities.
+function confirmImportedIngredientAlias(imported, cupboardName){
+  const source = String(imported || '').trim();
+  const target = String(cupboardName || '').trim();
+
+  if(!source || !target || ingredientDistinctionConflict(source, target)){
+    return false;
+  }
+
+  if(normaliseName(source) === normaliseName(target)) return true;
+
+  const targetOwner = aliasOwner(target) || normaliseName(target);
+  const sourceOwner = aliasOwner(source);
+
+  if(sourceOwner && sourceOwner !== targetOwner){
+    alert(`Cannot match "${source}" to "${target}": it already belongs to ${sourceOwner}. Edit the existing alias group first.`);
+    return false;
+  }
+
+  if(sourceOwner === targetOwner) return true;
+
+  pushUndo(`match ${source} to ${target}`);
+
+  const key = Object.keys(aliases).find(
+    k => normaliseName(k) === targetOwner
+  ) || target;
+
+  if(!aliases[key]) aliases[key] = [];
+
+  if(!aliases[key].some(
+    a => normaliseName(a) === normaliseName(source)
+  )){
+    aliases[key].push(source);
+  }
+
+  queueAliasSave(`Confirm imported ingredient alias: ${source} → ${target}`);
+
+  render();
+  renderRecipes();
+
+  if(currentView === 'ideas') renderIdeas();
+  if(currentView === 'shopping') renderShopping();
+
+  return true;
+}
 
 function editDistance(a, b){
   const dp = Array.from({length: a.length + 1}, (_, i) => [i]);
@@ -3344,6 +3392,20 @@ function cupboardIngredientNames(){
 function findIngredientMatch(name){
   const prefs = readImportMatchPrefs();
   const key = ingredientMatchKey(name);
+
+  // Shared GitHub aliases take precedence over browser-only preferences.
+  const shared = cupboardIngredientNames().find(candidate =>
+    sameIngredient(name, candidate) &&
+    !ingredientDistinctionConflict(name, candidate)
+  );
+  
+  if(shared){
+    return {
+      name: shared,
+      score: 1,
+      remembered: true
+    };
+  }
   const acceptedName = prefs.accepted[key];
   if(acceptedName){
     const existing = cupboardIngredientNames().find(n => ingredientMatchKey(n) === ingredientMatchKey(acceptedName));
@@ -3375,7 +3437,7 @@ function renderImportedIngredientMatch(row){
   const strong = document.createElement("strong"); strong.textContent = suggested.name;
   text.appendChild(strong);
   if(suggested.remembered){
-    const note = document.createElement("span"); note.textContent = " · previously confirmed in this browser"; text.appendChild(note);
+    const note = document.createElement("span"); note.textContent = " · previously confirmed"; text.appendChild(note);
   }else if(suggested.score < .82){
     const note = document.createElement("span"); note.textContent = " · uncertain suggestion"; text.appendChild(note);
   }
@@ -3384,6 +3446,7 @@ function renderImportedIngredientMatch(row){
   const actions = document.createElement("div"); actions.className = "import-match-actions";
   const confirm = document.createElement("button"); confirm.type = "button"; confirm.className = "match-confirm"; confirm.textContent = "Use this match";
   confirm.onclick = () => {
+    if(!confirmImportedIngredientAlias(name, suggested.name)) return;
     const prefs = readImportMatchPrefs();
     prefs.accepted[ingredientMatchKey(name)] = suggested.name;
     prefs.rejected = prefs.rejected.filter(pair => !pair.startsWith(`${ingredientMatchKey(name)}=>`));
@@ -3405,6 +3468,7 @@ function renderImportedIngredientMatch(row){
   const chooseButton = document.createElement("button"); chooseButton.type = "button"; chooseButton.textContent = "Use selected";
   chooseButton.onclick = () => {
     if(!choose.value) return;
+    if(!confirmImportedIngredientAlias(name, choose.value)) return;
     const prefs = readImportMatchPrefs();
     prefs.accepted[ingredientMatchKey(name)] = choose.value;
     prefs.rejected = prefs.rejected.filter(pair => !pair.startsWith(`${ingredientMatchKey(name)}=>`));
