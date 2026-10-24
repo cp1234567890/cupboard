@@ -27,4 +27,4 @@ Milk|1|g|staple|loc:fridge
 Gochujang|1|g|staple|loc:fridge
 Cornflour|1|g|staple
 Garlic|1|g|staple|loc:fridge
-Chocolate|200|g|loc:unsorted
+Chocolate|200|g
