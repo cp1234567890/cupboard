@@ -3375,23 +3375,65 @@ async function githubImportRequest(url, options = {}){
   return response.status === 204 ? null : response.json();
 }
 
+
 async function waitForImportRun(requestId){
-  const runsUrl = `${importApiRoot()}/actions/workflows/${IMPORT_WORKFLOW}/runs?event=workflow_dispatch&branch=${BRANCH}&per_page=20`;
+  const root = importApiRoot();
+
+  const resultUrl =
+    `${root}/contents/${IMPORT_RESULTS_DIR}/${requestId}.json?ref=${BRANCH}`;
+
+  const runsUrl =
+    `${root}/actions/workflows/${IMPORT_WORKFLOW}/runs` +
+    `?event=workflow_dispatch&branch=${BRANCH}&per_page=30`;
+
   for(let attempt = 0; attempt < 120; attempt++){
-    const data = await githubImportRequest(runsUrl);
-    const run = data.workflow_runs.find(item => item.display_title === `Import recipe ${requestId}`);
-    if(run && run.status === "completed"){
-      if(run.conclusion !== "success"){
-        throw new Error("The recipe import workflow failed. Check GitHub Actions for its logs.");
+
+    // First check whether GitHub has published our result.
+    const response = await fetch(resultUrl, {
+      headers: authHeaders(),
+      cache: "no-store"
+    });
+
+    if(response.ok){
+      const file = await response.json();
+
+      if(!file.content){
+        throw new Error("The imported recipe file is empty.");
       }
-      const resultUrl = `${importApiRoot()}/contents/${IMPORT_RESULTS_DIR}/${requestId}.json?ref=${BRANCH}`;
-      const result = await githubImportRequest(resultUrl);
-      return JSON.parse(b64DecodeUtf8(result.content));
+
+      return JSON.parse(b64DecodeUtf8(file.content));
     }
-    document.getElementById("importProgress").textContent = `Waiting for GitHub Actions… (${attempt + 1}/120)`;
+
+    // A 404 is normal while the workflow is still running.
+    if(response.status !== 404){
+      throw new Error(
+        `Could not retrieve imported recipe: GitHub error ${response.status}`
+      );
+    }
+
+    // Check Actions separately so genuine failures are reported.
+    const runs = await githubImportRequest(runsUrl);
+
+    const run = (runs.workflow_runs || []).find(item =>
+      item.display_title?.includes(requestId)
+    );
+
+    if(run?.status === "completed" && run.conclusion !== "success"){
+      throw new Error(
+        "Recipe import failed. Open GitHub Actions to view the error."
+      );
+    }
+
+    document.getElementById("importProgress").textContent =
+      `Waiting for recipe result… (${attempt + 1}/120)`;
+
     await importDelay(2000);
   }
-  throw new Error("The import took too long. Check the run in GitHub Actions.");
+
+  throw new Error(
+    "The recipe result was not published within four minutes. " +
+    "Check the recipe-imports folder and GitHub Actions."
+  );
 }
 
 
