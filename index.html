@@ -1339,7 +1339,7 @@ function normaliseRecipe(recipe){
     bakeTime: String(recipe?.bakeTime || "").trim(),
     ingredients: Array.isArray(recipe?.ingredients)
       ? recipe.ingredients.map(i => ({
-          name: String(i?.name || "").trim(),
+          name: titleCase(String(i?.name || "")),
           quantity: Number(i?.quantity) || 0,
           unit: UNITS.includes(i?.unit) ? i.unit : "g"
         })).filter(i => i.name && i.quantity > 0)
@@ -1350,7 +1350,7 @@ function normaliseRecipe(recipe){
     ...(Array.isArray(recipe?.sections) && recipe.sections.length ? {sections: recipe.sections.map((section,i) => ({
       name: String(section?.name || `Section ${i+1}`).trim(),
       ingredients: (Array.isArray(section?.ingredients) ? section.ingredients : []).map(ing => ({
-        name: String(ing?.name || "").trim(), quantity: Number(ing?.quantity) || 0,
+        name: titleCase(String(ing?.name || "")), quantity: Number(ing?.quantity) || 0,
         unit: UNITS.includes(ing?.unit) ? ing.unit : "g"
       })).filter(ing => ing.name && ing.quantity > 0),
       method: (Array.isArray(section?.method) ? section.method : []).map(x => String(x).trim()).filter(Boolean)
@@ -3069,7 +3069,7 @@ function addSectionEditor(target, data = {}, imported = false){
 function appendSectionIngredient(host, value, imported){
   if(imported){addImportedIngredient(typeof value === "string" ? value : "",host);const row=host.lastElementChild;
     if(value && typeof value === "object"){
-      row.querySelector(".import-ing-name").value=value.name||"";
+      row.querySelector(".import-ing-name").value=titleCase(value.name||"");
       row.querySelector(".import-ing-quantity").value=value.quantity||1;
       row.querySelector(".import-ing-unit").value=value.unit||"pcs";
       renderImportedIngredientMatch(row);
@@ -3228,7 +3228,6 @@ function renderSectionMakePreview(){
   const selected=selectedMakeSections(), result=getRecipeAvailability(recipe,selected);
   const preview=document.getElementById("sectionMakePreview");preview.innerHTML="";
   const heading=document.createElement("p");heading.textContent=selected.length ? `${selected.length} section(s) · ${availabilityText(result)}` : "Select at least one section";preview.appendChild(heading);
-  preview.appendChild(ingredientBlock(result.details));
   document.getElementById("sectionMakeConfirm").disabled=!selected.length || result.details.some(i=>i.status!=="ok");
 }
 function closeSectionMakeModal(){document.getElementById("sectionMakeModal").classList.add("hidden");sectionMakeRecipe=null;}
@@ -3562,7 +3561,7 @@ function addImportedIngredient(raw = "", destination = null){
   name.type = "text";
   name.className = "import-ing-name";
   name.placeholder = "Ingredient name";
-  name.value = parsed.name;
+  name.value = titleCase(parsed.name);
 
   const matchPanel = document.createElement("div");
   matchPanel.className = "import-match";
