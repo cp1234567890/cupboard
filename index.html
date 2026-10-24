@@ -165,6 +165,21 @@
     background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line);
     border-radius:var(--radius); padding:12px 14px; margin-bottom:9px;
   }
+  .section-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card)}
+  .section-card h3{font-size:1rem;margin:0 0 8px}
+  .section-card.green{border-left:4px solid var(--herb)}
+  .section-card.yellow{border-left:4px solid var(--paprika)}
+  .section-card.red{border-left:4px solid var(--brick)}
+  .section-editor{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
+  .section-editor input.section-name,.section-editor textarea{width:100%;padding:9px;margin:5px 0;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
+  .section-tools{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0}
+  .section-tools button{padding:6px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)}
+  .section-editor .import-ing-row{flex-wrap:wrap}
+  .section-editor .section-move{width:100%;padding:6px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .section-editor .section-steps{display:flex;flex-direction:column;gap:5px}
+  .section-editor .section-step{display:flex;gap:5px}
+  .section-editor .section-step textarea{flex:1;min-width:0;margin:0}
+  .section-editor .section-step button{border:1px solid var(--line);background:var(--card);color:var(--ink)}
   .recipe-row.green{border-left-color:var(--herb);}
   .recipe-row.yellow{border-left-color:var(--paprika);}
   .recipe-row.red{border-left-color:var(--brick);}
@@ -618,6 +633,7 @@
         <label for="importMethod">Method (one step per line)</label>
         <textarea id="importMethod" rows="7"></textarea>
       </div>
+      <div class="field"><label>Optional named sections</label><div id="importSections"></div><button type="button" class="btn-secondary" id="importAddSection">+ Add section</button><p class="hint">When sections exist, use their ingredients and steps; the combined list is calculated automatically.</p></div>
       <p class="error-text" id="importReviewError"></p>
       <div class="modal-actions">
         <button type="button" class="btn-secondary" id="importBack">Back</button>
@@ -627,6 +643,12 @@
   </div>
 </div>
 
+<div id="sectionMakeModal" class="modal-backdrop hidden"><div class="modal recipe-modal">
+  <h2 id="sectionMakeTitle">Make recipe</h2><p class="hint">Select the sections you're making. All are selected initially.</p>
+  <div id="sectionMakeChoices"></div><div class="modal-actions"><button type="button" class="btn-secondary" id="sectionSelectAll">Select / deselect all</button></div>
+  <div id="sectionMakePreview" class="recipe-block"></div><p class="error-text" id="sectionMakeError"></p>
+  <div class="modal-actions"><button type="button" class="btn-secondary" id="sectionMakeCancel">Cancel</button><button type="button" class="btn-primary" id="sectionMakeConfirm">Confirm deduction</button></div>
+</div></div>
 <div id="recipeModal" class="modal-backdrop hidden">
   <div class="modal recipe-modal">
     <h2 id="recipeModalTitle">Add recipe</h2>
@@ -647,6 +669,7 @@
       <label for="rMethod">Method (one step per line)</label>
       <textarea id="rMethod" rows="6"></textarea>
     </div>
+    <div class="field"><label>Optional named sections</label><div id="rSections"></div><button type="button" class="btn-secondary" id="rAddSection">+ Add section</button><p class="hint">Leave this empty for a classic recipe. With sections, edit ingredients and steps within each section.</p></div>
     <p class="error-text" id="rError"></p>
     <div class="modal-actions">
       <button type="button" class="btn-secondary" id="rCancel">Cancel</button>
@@ -1293,6 +1316,21 @@ function queueSave(message){
 
 /* ---------------- Recipes ---------------- */
 
+function combineSectionIngredients(sections){
+  const combined = [];
+  sections.forEach(section => (section.ingredients || []).forEach(ing => {
+    const found = combined.find(x => sameIngredient(x.name, ing.name) && convertQty(1, ing.unit, x.unit) !== null);
+    if(found) found.quantity = roundQty(found.quantity + convertQty(ing.quantity, ing.unit, found.unit));
+    else combined.push({...ing});
+  }));
+  return combined;
+}
+function sectionIngredients(recipe, indices = null){
+  if(!recipe.sections?.length) return recipe.ingredients;
+  const chosen = indices === null ? recipe.sections : recipe.sections.filter((_,i) => indices.includes(i));
+  return combineSectionIngredients(chosen);
+}
+function sectionMethod(recipe){return recipe.sections.flatMap(s => s.method);}
 function normaliseRecipe(recipe){
   return {
     ...(recipe?.reserved ? {reserved: true} : {}),
@@ -1308,12 +1346,27 @@ function normaliseRecipe(recipe){
       : [],
     method: Array.isArray(recipe?.method)
       ? recipe.method.map(s => String(s).trim()).filter(Boolean)
-      : []
+      : [],
+    ...(Array.isArray(recipe?.sections) && recipe.sections.length ? {sections: recipe.sections.map((section,i) => ({
+      name: String(section?.name || `Section ${i+1}`).trim(),
+      ingredients: (Array.isArray(section?.ingredients) ? section.ingredients : []).map(ing => ({
+        name: String(ing?.name || "").trim(), quantity: Number(ing?.quantity) || 0,
+        unit: UNITS.includes(ing?.unit) ? ing.unit : "g"
+      })).filter(ing => ing.name && ing.quantity > 0),
+      method: (Array.isArray(section?.method) ? section.method : []).map(x => String(x).trim()).filter(Boolean)
+    }))} : {})
   };
 }
 
+// Flat recipes are never migrated. Section recipes cache the combined requirements
+// for all existing reservation, shopping, ideas and search calculations.
+function prepareRecipe(input){
+  const r = normaliseRecipe(input);
+  if(r.sections?.length){r.ingredients = sectionIngredients(r);r.method = sectionMethod(r);}
+  return r;
+}
 function normaliseRecipes(data){
-  if(Array.isArray(data)) return data.map(normaliseRecipe).filter(r => r.name);
+  if(Array.isArray(data)) return data.map(prepareRecipe).filter(r => r.name);
   return [];
 }
 
@@ -1418,11 +1471,12 @@ function toggleReserve(name){
   renderRecipes();
 }
 
-function getRecipeAvailability(recipe){
+function getRecipeAvailability(recipe, selected = null, reservationOwner = recipe){
+  const requirements = selected === null ? recipe.ingredients : sectionIngredients(recipe, selected);
   let missing = 0;
   let low = 0;
 
-  const details = recipe.ingredients.map(ingredient => {
+  const details = requirements.map(ingredient => {
     const cupboard = items.find(item => sameIngredient(item.name, ingredient.name));
 
     if(!cupboard){
@@ -1443,7 +1497,7 @@ function getRecipeAvailability(recipe){
     }
 
     const need = convertQty(ingredient.quantity, ingredient.unit, cupboard.unit);
-    const held = reservedAmount(cupboard, recipe); // set aside by other reserved recipes
+    const held = reservedAmount(cupboard, reservationOwner); // set aside by other reserved recipes
 
     if(need === null){
       low++;
@@ -2488,12 +2542,32 @@ function renderRecipes(){
         renderRecipes();
       });
 
+      if(recipe.sections?.length){
+        const total = document.createElement("div");total.className="recipe-sub";
+        total.textContent="Total: "+recipe.ingredients.map(i=>`${fmtQty(i.quantity,i.unit)} ${i.name}`).join(" · ");
+        summary.querySelector(".recipe-info").appendChild(total);
+      }
       row.appendChild(summary);
 
       if(expandedRecipe === recipe.name){
         const details = document.createElement("div");
         details.className = "recipe-details";
 
+        if(recipe.sections?.length){
+          recipe.sections.forEach((section, idx) => {
+            const a = getRecipeAvailability({...recipe, ingredients: section.ingredients}, null, recipe);
+            const card=document.createElement("div");card.className=`section-card ${a.colour}`;
+            const heading=document.createElement("h3");heading.textContent=`${section.name} — ${availabilityText(a)}`;card.appendChild(heading);
+            const ul=document.createElement("ul");ul.className="ri-list";
+            a.details.forEach(i=>{const li=document.createElement("li");li.className=`ri-${i.status}`;
+              li.textContent=`${i.status === "ok" ? "✓" : "!"} ${i.name} — ${fmtQty(i.quantity,i.unit)}${i.status === "ok" ? "" : " ("+i.status+")"}`;ul.appendChild(li);});
+            card.appendChild(ul);
+            if(section.method.length){const ol=document.createElement("ol");ol.className="method-list";
+              section.method.forEach(step=>{const li=document.createElement("li");li.textContent=step;ol.appendChild(li);});card.appendChild(ol);}
+            details.appendChild(card);
+          });
+        }
+        if(!recipe.sections?.length){
         const ingBlock = document.createElement("div");
         ingBlock.className = "recipe-block";
         ingBlock.innerHTML = `<div class="recipe-block-title">Ingredients</div>`;
@@ -2548,6 +2622,7 @@ function renderRecipes(){
           details.appendChild(methodBlock);
         }
 
+        }
         const actions = document.createElement("div");
         actions.className = "recipe-actions";
 
@@ -2965,6 +3040,57 @@ function addRecipeIngredientRow(data = {name:"", quantity:1, unit:"g"}){
   container.appendChild(row);
 }
 
+function addSectionEditor(target, data = {}, imported = false){
+  const host=document.getElementById(target), card=document.createElement("div");card.className="section-editor";
+  const title=document.createElement("input");title.className="section-name";title.placeholder="Section name";title.value=data.name || "";card.appendChild(title);
+  const tools=document.createElement("div");tools.className="section-tools";
+  const control=(label,action)=>{const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=action;tools.appendChild(b);};
+  control("↑",()=>{if(card.previousElementSibling)host.insertBefore(card,card.previousElementSibling);});
+  control("↓",()=>{if(card.nextElementSibling)host.insertBefore(card.nextElementSibling,card);});
+  control("Remove section",()=>card.remove());card.appendChild(tools);
+  const ingredients=document.createElement("div");ingredients.className="section-ingredients";card.appendChild(ingredients);
+  const addIng=document.createElement("button");addIng.type="button";addIng.className="btn-secondary";addIng.textContent="+ Ingredient";
+  addIng.onclick=()=>appendSectionIngredient(ingredients,{},imported);card.appendChild(addIng);
+  (data.ingredients || []).forEach(i=>appendSectionIngredient(ingredients,i,imported));
+  const stepHost=document.createElement("div");stepHost.className="section-steps";card.appendChild(stepHost);
+  const addStep=(value="")=>{const row=document.createElement("div");row.className="section-step";
+    const input=document.createElement("textarea");input.rows=2;input.placeholder="Method step";input.value=value;
+    const up=document.createElement("button");up.type="button";up.textContent="↑";up.onclick=()=>{if(row.previousElementSibling)stepHost.insertBefore(row,row.previousElementSibling);};
+    const down=document.createElement("button");down.type="button";down.textContent="↓";down.onclick=()=>{if(row.nextElementSibling)stepHost.insertBefore(row.nextElementSibling,row);};
+    const del=document.createElement("button");del.type="button";del.textContent="×";del.onclick=()=>row.remove();row.append(input,up,down,del);stepHost.appendChild(row);};
+  (data.method || []).forEach(addStep);
+  control("+ Method step",()=>addStep());host.appendChild(card);return card;
+}
+function appendSectionIngredient(host, value, imported){
+  if(imported){addImportedIngredient(typeof value === "string" ? value : "",host);const row=host.lastElementChild;
+    if(value && typeof value === "object"){
+      row.querySelector(".import-ing-name").value=value.name||"";
+      row.querySelector(".import-ing-quantity").value=value.quantity||1;
+      row.querySelector(".import-ing-unit").value=value.unit||"pcs";
+      renderImportedIngredientMatch(row);
+    }
+  }else{
+    const row=document.createElement("div");row.className="r-ing-row";
+    const name=document.createElement("input");name.type="text";name.placeholder="Ingredient";name.value=value.name||"";
+    const qty=document.createElement("input");qty.type="number";qty.min="0";qty.step="any";qty.value=value.quantity||1;
+    const unit=document.createElement("select");unit.innerHTML=unitOptions();unit.value=value.unit||"g";
+    const del=document.createElement("button");del.type="button";del.textContent="×";del.onclick=()=>row.remove();row.append(name,qty,unit,del);host.appendChild(row);
+  }
+  const row=host.lastElementChild, move=document.createElement("select");move.className="section-move";
+  move.innerHTML='<option value="">Move to section…</option>';
+  move.onfocus=()=>{move.innerHTML='<option value="">Move to section…</option>';[...host.closest(".field").querySelectorAll(".section-editor")].forEach((c,i)=>{
+    if(c===host.closest(".section-editor"))return;const opt=document.createElement("option");opt.value=i;opt.textContent=c.querySelector(".section-name").value||`Section ${i+1}`;move.appendChild(opt);});};
+  move.onchange=()=>{if(move.value==="")return;const dest=host.closest(".field").querySelectorAll(".section-editor")[Number(move.value)]?.querySelector(".section-ingredients");if(dest){move.remove();dest.appendChild(row);row.appendChild(move);move.value="";}};
+  row.appendChild(move);
+}
+function readSectionEditors(target, imported){
+  return [...document.querySelectorAll(`#${target} .section-editor`)].map((card,i)=>({
+    name:card.querySelector(".section-name").value.trim()||`Section ${i+1}`,
+    ingredients:[...card.querySelectorAll(".section-ingredients > div")].map(row=> imported ? ({name:row.querySelector(".import-ing-name").value.trim(),quantity:Number(row.querySelector(".import-ing-quantity").value),unit:row.querySelector(".import-ing-unit").value}) : ({name:row.querySelector('input[type="text"]').value.trim(),quantity:Number(row.querySelector('input[type="number"]').value),unit:row.querySelector("select:not(.section-move)").value})),
+    method:[...card.querySelectorAll(".section-step textarea")].map(x=>x.value.trim()).filter(Boolean)
+  }));
+}
+function validateSections(sections){return sections.every(s=>s.ingredients.length && s.ingredients.every(i=>i.name && Number.isFinite(i.quantity) && i.quantity>0));}
 function openRecipeModal(name = null){
   const modal = document.getElementById("recipeModal");
   const recipe = name ? recipes.find(r => r.name === name) : null;
@@ -2976,7 +3102,9 @@ function openRecipeModal(name = null){
 
   document.getElementById("rName").value = recipe?.name || "";
   document.getElementById("rBakeTime").value = recipe?.bakeTime || "";
-  document.getElementById("rMethod").value = recipe?.method?.join("\n") || "";
+  document.getElementById("rMethod").value = recipe?.sections?.length ? "" : (recipe?.method?.join("\n") || "");
+  document.getElementById("rSections").innerHTML="";
+  (recipe?.sections||[]).forEach(section=>addSectionEditor("rSections",section));
   document.getElementById("rError").style.display = "none";
 
   const ingredients = document.getElementById("rIngredients");
@@ -3025,13 +3153,13 @@ function saveRecipeFromModal(){
     return;
   }
 
-  if(!ingredients.length){
+  if(!ingredients.length && !document.querySelector("#rSections .section-editor")){
     error.textContent = "Add at least one ingredient.";
     error.style.display = "block";
     return;
   }
 
-  if(ingredients.some(i => !i.quantity || i.quantity <= 0)){
+  if(ingredients.some(i => !i.quantity || i.quantity <= 0) && !document.querySelector("#rSections .section-editor")){
     error.textContent = "Each ingredient needs a quantity greater than zero.";
     error.style.display = "block";
     return;
@@ -3050,11 +3178,14 @@ function saveRecipeFromModal(){
 
   const prev = editingRecipeName ? recipes.find(r => r.name === editingRecipeName) : null;
 
-  const recipe = normaliseRecipe({
+  const sections=readSectionEditors("rSections",false);
+  if(sections.length && !validateSections(sections)){error.textContent="Each section needs valid ingredients and quantities.";error.style.display="block";return;}
+  const recipe = prepareRecipe({
     name,
     bakeTime,
     ingredients,
     method,
+    ...(sections.length ? {sections} : {}),
     reserved: prev?.reserved,
     lastMade: prev?.lastMade
   });
@@ -3075,10 +3206,50 @@ function saveRecipeFromModal(){
   pushRecipes(wasEditing ? `Update recipe: ${name}` : `Add recipe: ${name}`);
 }
 
+let sectionMakeRecipe=null;
+function openSectionMakeModal(recipe){
+  sectionMakeRecipe=recipe;
+  document.getElementById("sectionMakeTitle").textContent=`Make ${recipe.name}`;
+  const choices=document.getElementById("sectionMakeChoices");choices.innerHTML="";
+  recipe.sections.forEach((section,i)=>{const label=document.createElement("label");label.style.display="block";label.style.margin="10px 0";
+    const cb=document.createElement("input");cb.type="checkbox";cb.checked=true;cb.value=i;cb.onchange=renderSectionMakePreview;
+    label.append(cb,document.createTextNode(` ${section.name}`));choices.appendChild(label);});
+  document.getElementById("sectionMakeError").style.display="none";
+  document.getElementById("sectionMakeModal").classList.remove("hidden");renderSectionMakePreview();
+}
+function selectedMakeSections(){return [...document.querySelectorAll('#sectionMakeChoices input:checked')].map(x=>Number(x.value));}
+function renderSectionMakePreview(){
+  const recipe=sectionMakeRecipe;if(!recipe)return;
+  const selected=selectedMakeSections(), result=getRecipeAvailability(recipe,selected);
+  const preview=document.getElementById("sectionMakePreview");preview.innerHTML="";
+  const heading=document.createElement("p");heading.textContent=selected.length ? `${selected.length} section(s) · ${availabilityText(result)}` : "Select at least one section";preview.appendChild(heading);
+  result.details.forEach(i=>{const p=document.createElement("div");p.textContent=`${i.name}: ${fmtQty(i.quantity,i.unit)} — ${i.status === "ok" ? "available" : i.status}`;preview.appendChild(p);});
+  document.getElementById("sectionMakeConfirm").disabled=!selected.length || result.details.some(i=>i.status!=="ok");
+}
+function closeSectionMakeModal(){document.getElementById("sectionMakeModal").classList.add("hidden");sectionMakeRecipe=null;}
+async function confirmSectionMake(){
+  const recipe=sectionMakeRecipe;if(!recipe)return;const selected=selectedMakeSections();
+  if(!selected.length)return;
+  const result=getRecipeAvailability(recipe,selected);
+  if(result.details.some(i=>i.status!=="ok")){renderSectionMakePreview();return;}
+  const requirements=sectionIngredients(recipe,selected);
+  clearTimeout(saveTimer);pushUndo(`make ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}`);
+  requirements.forEach(ingredient=>{const item=items.find(i=>sameIngredient(i.name,ingredient.name));if(!item)return;
+    item.used=Date.now();if(item.staple)return;const amount=convertQty(ingredient.quantity,ingredient.unit,item.unit);
+    if(amount!==null)item.quantity=roundQty(item.quantity-amount);});
+  items=items.filter(i=>i.staple||i.quantity>0);
+  recipe.lastMade=Date.now();if(selected.length===recipe.sections.length)delete recipe.reserved;
+  queueRecipeSave(`Made sections of ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}`);
+  closeSectionMakeModal();selectedName=null;customMode=false;render();renderRecipes();await pushFile(`Make sections: ${recipe.name}`);
+}
+document.getElementById("sectionSelectAll").onclick=()=>{const boxes=[...document.querySelectorAll('#sectionMakeChoices input')];const all=boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all);renderSectionMakePreview();};
+document.getElementById("sectionMakeCancel").onclick=closeSectionMakeModal;
+document.getElementById("sectionMakeConfirm").onclick=confirmSectionMake;
 async function makeRecipe(name){
   const recipe = recipes.find(r => r.name === name);
   if(!recipe) return;
 
+  if(recipe.sections?.length){openSectionMakeModal(recipe);return;}
   const result = getRecipeAvailability(recipe);
 
   // A recipe can only be made when every ingredient is available
@@ -3324,7 +3495,7 @@ function parseImportedIngredient(raw){
   };
 }
 
-function addImportedIngredient(raw = ""){
+function addImportedIngredient(raw = "", destination = null){
   const parsed = parseImportedIngredient(raw);
   const row = document.createElement("div");
   row.className = "import-ing-row";
@@ -3372,7 +3543,7 @@ function addImportedIngredient(raw = ""){
   remove.setAttribute("aria-label", "Remove ingredient");
   remove.onclick = () => row.remove();
   row.append(fields, remove);
-  document.getElementById("importIngredients").appendChild(row);
+  (destination || document.getElementById("importIngredients")).appendChild(row);
   renderImportedIngredientMatch(row);
 }
 
@@ -3575,7 +3746,12 @@ function showImportedRecipe(data, sourceUrl){
   document.getElementById("importDetails").textContent = details.join(" · ");
   document.getElementById("importMethod").value = Array.isArray(data.method) ? data.method.join("\n") : "";
   document.getElementById("importIngredients").innerHTML = "";
-  (Array.isArray(data.ingredients) ? data.ingredients : []).forEach(addImportedIngredient);
+  document.getElementById("importSections").innerHTML = "";
+  if(Array.isArray(data.sections) && data.sections.length){
+    data.sections.forEach(section=>addSectionEditor("importSections",section,true));
+  }else{
+    (Array.isArray(data.ingredients) ? data.ingredients : []).forEach(addImportedIngredient);
+  }
   document.getElementById("importStep1").classList.add("hidden");
   document.getElementById("importStep2").classList.remove("hidden");
 }
@@ -3632,7 +3808,9 @@ async function saveImportedRecipe(){
   }));
 
   if(!name){ error.textContent = "Recipe name is required."; return; }
-  if(!ingredients.length || ingredients.some(i => !i.name || !Number.isFinite(i.quantity) || i.quantity <= 0)){
+  const sections=readSectionEditors("importSections",true);
+  if(sections.length && !validateSections(sections)){error.textContent="Each section needs valid ingredients and quantities.";return;}
+  if(!sections.length && (!ingredients.length || ingredients.some(i => !i.name || !Number.isFinite(i.quantity) || i.quantity <= 0))){
     error.textContent = "Every ingredient needs a name and a quantity greater than zero. Remove or correct any uncertain ingredients.";
     return;
   }
@@ -3641,7 +3819,7 @@ async function saveImportedRecipe(){
     return;
   }
 
-  const recipe = normaliseRecipe({name, bakeTime, ingredients, method});
+  const recipe = prepareRecipe({name, bakeTime, ingredients, method, ...(sections.length ? {sections} : {})});
   const button = document.getElementById("importSave");
   button.disabled = true;
   button.textContent = "Saving…";
@@ -3675,6 +3853,22 @@ document.getElementById("importBack").onclick = () => {
 };
 document.getElementById("importSave").onclick = saveImportedRecipe;
 document.getElementById("importAddIngredient").onclick = addBlankImportedIngredient;
+document.getElementById("importAddSection").onclick = () => {
+  const host=document.getElementById("importSections");
+  if(!host.children.length){const ingredients=[...document.querySelectorAll("#importIngredients .import-ing-row")].map(row=>({name:row.querySelector(".import-ing-name").value,quantity:Number(row.querySelector(".import-ing-quantity").value),unit:row.querySelector(".import-ing-unit").value}));
+    const method=document.getElementById("importMethod").value.split(/\r?\n/).filter(Boolean);
+    addSectionEditor("importSections",{name:"Main",ingredients,method},true);
+    document.getElementById("importIngredients").innerHTML="";document.getElementById("importMethod").value="";
+  }else addSectionEditor("importSections",{name:"",ingredients:[],method:[]},true);
+};
+document.getElementById("rAddSection").onclick = () => {
+  const host=document.getElementById("rSections");
+  if(!host.children.length){const ingredients=[...document.querySelectorAll("#rIngredients .r-ing-row")].map(row=>({name:row.querySelector('input[type="text"]').value,quantity:Number(row.querySelector('input[type="number"]').value),unit:row.querySelector("select").value})).filter(i=>i.name);
+    const method=document.getElementById("rMethod").value.split(/\r?\n/).filter(Boolean);
+    addSectionEditor("rSections",{name:"Main",ingredients,method});
+    document.getElementById("rIngredients").innerHTML="";document.getElementById("rMethod").value="";
+  }else addSectionEditor("rSections",{name:"",ingredients:[],method:[]});
+};
 document.getElementById("importRecipeModal").addEventListener("click", event => {
   if(event.target.id === "importRecipeModal") closeImportModal();
 });
