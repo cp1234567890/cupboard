@@ -227,7 +227,7 @@
         "unit": "cups"
       },
       {
-        "name": "Bicarbonate of Soda",
+        "name": "Bicarbonate Of Soda",
         "quantity": 1,
         "unit": "tsp"
       },
@@ -398,7 +398,7 @@
         "unit": "g"
       },
       {
-        "name": "Bicarbonate of Soda",
+        "name": "Bicarbonate Of Soda",
         "quantity": 0.5,
         "unit": "tsp"
       }
@@ -453,7 +453,7 @@
         "unit": "g"
       },
       {
-        "name": "Caster sugar",
+        "name": "Caster Sugar",
         "quantity": 75,
         "unit": "g"
       },
@@ -493,7 +493,7 @@
     "bakeTime": "",
     "ingredients": [
       {
-        "name": "frozen apple slices",
+        "name": "Frozen Apple Slices",
         "quantity": 250,
         "unit": "g"
       },
@@ -533,22 +533,22 @@
         "unit": "tsp"
       },
       {
-        "name": "ground cinnamon",
+        "name": "Ground Cinnamon",
         "quantity": 1,
         "unit": "tsp"
       },
       {
-        "name": "ground ginger",
+        "name": "Ground Ginger",
         "quantity": 1,
         "unit": "tsp"
       },
       {
-        "name": "nut and raisin granola",
+        "name": "Nut And Raisin Granola",
         "quantity": 100,
         "unit": "g"
       },
       {
-        "name": "salted butter",
+        "name": "Salted Butter",
         "quantity": 125,
         "unit": "g"
       },
@@ -571,7 +571,7 @@
         "name": "Cake",
         "ingredients": [
           {
-            "name": "frozen apple slices",
+            "name": "Frozen Apple Slices",
             "quantity": 250,
             "unit": "g"
           },
@@ -611,17 +611,17 @@
             "unit": "tsp"
           },
           {
-            "name": "ground cinnamon",
+            "name": "Ground Cinnamon",
             "quantity": 1,
             "unit": "tsp"
           },
           {
-            "name": "ground ginger",
+            "name": "Ground Ginger",
             "quantity": 1,
             "unit": "tsp"
           },
           {
-            "name": "nut and raisin granola",
+            "name": "Nut And Raisin Granola",
             "quantity": 100,
             "unit": "g"
           }
@@ -638,7 +638,7 @@
         "name": "Buttercream",
         "ingredients": [
           {
-            "name": "salted butter",
+            "name": "Salted Butter",
             "quantity": 125,
             "unit": "g"
           },
