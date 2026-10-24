@@ -3331,7 +3331,9 @@ function importApiRoot(){
 }
 
 function importError(message){
-  document.getElementById("importError").textContent = message;
+  const el = document.getElementById("importError");
+  el.textContent = message;
+  el.style.display = message ? "block" : "none";
 }
 
 function openImportModal(){
