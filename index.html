@@ -165,11 +165,11 @@
     background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line);
     border-radius:var(--radius); padding:12px 14px; margin-bottom:9px;
   }
-  .section-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;background:var(--card)}
-  .section-card h3{font-size:1rem;margin:0 0 8px}
-  .section-card.green{border-left:4px solid var(--herb)}
-  .section-card.yellow{border-left:4px solid var(--paprika)}
-  .section-card.red{border-left:4px solid var(--brick)}
+  .section-card{border-left:4px solid var(--line);padding:2px 0 0 12px;margin:0 0 16px}
+  .section-card.green{border-left-color:var(--herb)}
+  .section-card.yellow{border-left-color:var(--paprika)}
+  .section-card.red{border-left-color:var(--brick)}
+  .section-head{margin-bottom:10px}
   .section-editor{border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
   .section-editor input.section-name,.section-editor textarea{width:100%;padding:9px;margin:5px 0;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
   .section-tools{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0}
@@ -2496,6 +2496,57 @@ function renderIdeas(){
   });
 }
 
+/* Shared builders so flat recipes and recipe sections look identical. */
+function ingredientBlock(details){
+  const block = document.createElement("div");
+  block.className = "recipe-block";
+  block.innerHTML = `<div class="recipe-block-title">Ingredients</div>`;
+
+  const ul = document.createElement("ul");
+  ul.className = "ri-list";
+
+  details.forEach(i => {
+    const li = document.createElement("li");
+    li.className = `ri-${i.status}`;
+    const icon = i.status === "ok" ? "✓" : i.status === "low" ? "!" : "×";
+
+    let text = `${i.name} — ${fmtQty(i.quantity, i.unit)}`;
+    if(i.staple){
+      text += " (staple)";
+    }else if(i.status === "low" && i.mismatch){
+      text += ` (cupboard is in ${i.haveUnit} — unit differs)`;
+    }else if(i.status === "low"){
+      text += i.held > 0
+        ? ` (have ${fmtQty(i.available, i.haveUnit)}, ${fmtQty(i.held, i.haveUnit)} reserved for other recipes)`
+        : ` (have ${fmtQty(i.available, i.haveUnit)})`;
+    }else if(i.status === "missing"){
+      text += " (missing)";
+    }
+
+    li.innerHTML = `<span class="ri-icon">${icon}</span><span>${escapeHtml(text)}</span>`;
+    ul.appendChild(li);
+  });
+
+  block.appendChild(ul);
+  return block;
+}
+
+function methodBlock(steps){
+  if(!steps || !steps.length) return null;
+  const block = document.createElement("div");
+  block.className = "recipe-block";
+  block.innerHTML = `<div class="recipe-block-title">Method</div>`;
+  const ol = document.createElement("ol");
+  ol.className = "method-list";
+  steps.forEach(step => {
+    const li = document.createElement("li");
+    li.textContent = step;
+    ol.appendChild(li);
+  });
+  block.appendChild(ol);
+  return block;
+}
+
 function renderRecipes(){
   updateShopBadge();
   const list = document.getElementById("recipeList");
@@ -2554,75 +2605,29 @@ function renderRecipes(){
         details.className = "recipe-details";
 
         if(recipe.sections?.length){
-          recipe.sections.forEach((section, idx) => {
+          recipe.sections.forEach(section => {
             const a = getRecipeAvailability({...recipe, ingredients: section.ingredients}, null, recipe);
-            const card=document.createElement("div");card.className=`section-card ${a.colour}`;
-            const heading=document.createElement("h3");heading.textContent=`${section.name} — ${availabilityText(a)}`;card.appendChild(heading);
-            const ul=document.createElement("ul");ul.className="ri-list";
-            a.details.forEach(i=>{const li=document.createElement("li");li.className=`ri-${i.status}`;
-              li.textContent=`${i.status === "ok" ? "✓" : "!"} ${i.name} — ${fmtQty(i.quantity,i.unit)}${i.status === "ok" ? "" : " ("+i.status+")"}`;ul.appendChild(li);});
-            card.appendChild(ul);
-            if(section.method.length){const ol=document.createElement("ol");ol.className="method-list";
-              section.method.forEach(step=>{const li=document.createElement("li");li.textContent=step;ol.appendChild(li);});card.appendChild(ol);}
+            const card = document.createElement("div");
+            card.className = `section-card ${a.colour}`;
+
+            const head = document.createElement("div");
+            head.className = "section-head";
+            head.innerHTML = `
+              <div class="recipe-name">${escapeHtml(section.name)}</div>
+              <div class="recipe-sub">${escapeHtml(availabilityText(a))}</div>
+            `;
+            card.appendChild(head);
+            card.appendChild(ingredientBlock(a.details));
+            const m = methodBlock(section.method);
+            if(m) card.appendChild(m);
             details.appendChild(card);
           });
-        }
-        if(!recipe.sections?.length){
-        const ingBlock = document.createElement("div");
-        ingBlock.className = "recipe-block";
-        ingBlock.innerHTML = `<div class="recipe-block-title">Ingredients</div>`;
-
-        const ul = document.createElement("ul");
-        ul.className = "ri-list";
-
-        result.details.forEach(i => {
-          const li = document.createElement("li");
-          li.className = `ri-${i.status}`;
-
-          const icon = i.status === "ok" ? "✓" : i.status === "low" ? "!" : "×";
-
-          let text = `${i.name} — ${fmtQty(i.quantity, i.unit)}`;
-          if(i.staple){
-            text += " (staple)";
-          }else if(i.status === "low" && i.mismatch){
-            text += ` (cupboard is in ${i.haveUnit} — unit differs)`;
-          }else if(i.status === "low"){
-            text += i.held > 0
-              ? ` (have ${fmtQty(i.available, i.haveUnit)}, ${fmtQty(i.held, i.haveUnit)} reserved for other recipes)`
-              : ` (have ${fmtQty(i.available, i.haveUnit)})`;
-          }else if(i.status === "missing"){
-            text += " (missing)";
-          }
-
-          li.innerHTML = `
-            <span class="ri-icon">${icon}</span>
-            <span>${escapeHtml(text)}</span>
-          `;
-          ul.appendChild(li);
-        });
-
-        ingBlock.appendChild(ul);
-        details.appendChild(ingBlock);
-
-        if(recipe.method.length){
-          const methodBlock = document.createElement("div");
-          methodBlock.className = "recipe-block";
-          methodBlock.innerHTML = `<div class="recipe-block-title">Method</div>`;
-
-          const methodList = document.createElement("ol");
-          methodList.className = "method-list";
-
-          recipe.method.forEach(step => {
-            const li = document.createElement("li");
-            li.textContent = step;
-            methodList.appendChild(li);
-          });
-
-          methodBlock.appendChild(methodList);
-          details.appendChild(methodBlock);
+        }else{
+          details.appendChild(ingredientBlock(result.details));
+          const m = methodBlock(recipe.method);
+          if(m) details.appendChild(m);
         }
 
-        }
         const actions = document.createElement("div");
         actions.className = "recipe-actions";
 
@@ -3223,7 +3228,7 @@ function renderSectionMakePreview(){
   const selected=selectedMakeSections(), result=getRecipeAvailability(recipe,selected);
   const preview=document.getElementById("sectionMakePreview");preview.innerHTML="";
   const heading=document.createElement("p");heading.textContent=selected.length ? `${selected.length} section(s) · ${availabilityText(result)}` : "Select at least one section";preview.appendChild(heading);
-  result.details.forEach(i=>{const p=document.createElement("div");p.textContent=`${i.name}: ${fmtQty(i.quantity,i.unit)} — ${i.status === "ok" ? "available" : i.status}`;preview.appendChild(p);});
+  preview.appendChild(ingredientBlock(result.details));
   document.getElementById("sectionMakeConfirm").disabled=!selected.length || result.details.some(i=>i.status!=="ok");
 }
 function closeSectionMakeModal(){document.getElementById("sectionMakeModal").classList.add("hidden");sectionMakeRecipe=null;}
