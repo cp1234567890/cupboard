@@ -32,3 +32,4 @@ Ground Cinnamon|1|g|staple
 Honey|1|g|staple
 Apple Slices|500|g|loc:unsorted
 Condensed Milk|1|pcs|loc:unsorted
+Granulated Sugar|1|kg|loc:unsorted
