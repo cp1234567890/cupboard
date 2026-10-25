@@ -417,7 +417,7 @@
     "ingredients": [
       {
         "name": "Butter",
-        "quantity": 175,
+        "quantity": 200,
         "unit": "g"
       },
       {
@@ -426,13 +426,13 @@
         "unit": "g"
       },
       {
-        "name": "Light Muscovado Sugar",
-        "quantity": 175,
+        "name": "Light Brown Soft Sugar",
+        "quantity": 150,
         "unit": "g"
       },
       {
         "name": "Oats",
-        "quantity": 350,
+        "quantity": 400,
         "unit": "g"
       }
     ],
@@ -440,7 +440,7 @@
       "Melt butter in a pan.",
       "Add golden syrup and sugar to the butter.",
       "Once sugar dissolved, stir in oats.",
-      "Pack into baking tin and bake for 25 minutes at 150 degrees."
+      "Pack into baking tin and bake for 25 minutes at 180 degrees."
     ]
   },
   {
