@@ -35,3 +35,4 @@ Condensed Milk|1|pcs
 Granulated Sugar|1|kg
 Eggs|6|pcs
 Nut And Raisin Granola|500|g
+Caramel|1|pcs|loc:unsorted
