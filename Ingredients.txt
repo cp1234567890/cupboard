@@ -30,3 +30,4 @@ Dark Chocolate|200|g
 Ground Ginger|1|g|staple
 Ground Cinnamon|1|g|staple
 Honey|1|g|staple
+Apple Slices|500|g|loc:unsorted
