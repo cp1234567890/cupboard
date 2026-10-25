@@ -33,4 +33,4 @@ Honey|1|g|staple
 Apple Slices|500|g|loc:unsorted
 Condensed Milk|1|pcs|loc:unsorted
 Granulated Sugar|1|kg|loc:unsorted
-Eggs|6|pcs|loc:unsorted
+Eggs|6|pcs
