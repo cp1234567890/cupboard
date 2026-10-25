@@ -1,12 +1,12 @@
-Plain Flour|1395|g|used:1792942535050
+Plain Flour|1170|g|used:1792942544151
 Vanilla Extract|1|pcs|staple
 Jam Sugar|500|g
 Soft Dark Brown Sugar|240|g
 Golden Caster Sugar|500|g|used:1792938009415
-Light Soft Brown Sugar|290|g|used:1792942535049
+Light Soft Brown Sugar|190|g|used:1792942544150
 Light Muscovado Sugar|1185|g
 Wholemeal Flour|625|g
-Icing Sugar|1|pcs|staple
+Icing Sugar|1|pcs|staple|used:1792942544153
 Golden Syrup|1|pcs|staple
 Oat Flour|200|g
 Demerara Sugar|280|g
@@ -14,9 +14,9 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|570|g|staple|used:1792942535049|loc:fridge
-Baking Powder|1|g|staple|used:1792942535051
-Bicarbonate Of Soda|1|g|staple|used:1792942535050
+Butter|570|g|staple|used:1792942544150|loc:fridge
+Baking Powder|1|g|staple|used:1792942544151
+Bicarbonate Of Soda|1|g|staple|used:1792942544151
 Cocoa Powder|1|g|staple|used:1792938009416
 Sea Salt|1|g|staple
 Oats|1000|g
@@ -26,11 +26,9 @@ Milk|1|g|staple|loc:fridge
 Gochujang|1|g|staple|loc:fridge
 Cornflour|1|g|staple
 Garlic|1|g|staple|loc:fridge
-Ground Ginger|1|g|staple|used:1792942535051
-Ground Cinnamon|1|g|staple|used:1792942535051
-Honey|1|g|staple|used:1792942535050
-Apple Slices|250|g|used:1792942535049|loc:freezer
+Ground Ginger|1|g|staple|used:1792942544152
+Ground Cinnamon|1|g|staple|used:1792942544152
+Honey|1|g|staple|used:1792942544151
 Condensed Milk|1|pcs
 Granulated Sugar|1|kg
-Eggs|1|pcs|used:1792942535050
-Nut And Raisin Granola|400|g|used:1792942535052
+Nut And Raisin Granola|300|g|used:1792942544153
