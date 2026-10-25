@@ -29,5 +29,5 @@ Cornflour|1|g|staple
 Garlic|1|g|staple|loc:fridge
 Dark Chocolate|200|g
 Ground Ginger|1|g|staple|loc:unsorted
-Ground Cinnamon|1|g|staple|loc:unsorted
+Ground Cinnamon|1|g|staple
 Honey|1|g|staple|loc:unsorted
