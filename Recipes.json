@@ -660,5 +660,166 @@
         ]
       }
     ]
+  },
+  {
+    "name": "Limoncello and raspberry drizzle cake recipe",
+    "bakeTime": "",
+    "ingredients": [
+      {
+        "name": "Plain Flour",
+        "quantity": 250,
+        "unit": "g"
+      },
+      {
+        "name": "Light Soft Brown Sugar",
+        "quantity": 200,
+        "unit": "g"
+      },
+      {
+        "name": "Baking Powder",
+        "quantity": 2,
+        "unit": "tsp"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.5,
+        "unit": "tsp"
+      },
+      {
+        "name": "Raspberry",
+        "quantity": 220,
+        "unit": "g"
+      },
+      {
+        "name": "Eggs",
+        "quantity": 2,
+        "unit": "pcs"
+      },
+      {
+        "name": "Unsalted Butter",
+        "quantity": 110,
+        "unit": "g"
+      },
+      {
+        "name": "Greek Yogurt",
+        "quantity": 130,
+        "unit": "g"
+      },
+      {
+        "name": "Vanilla Extract",
+        "quantity": 1,
+        "unit": "tsp"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "pcs"
+      },
+      {
+        "name": "Limoncello Liqueur",
+        "quantity": 60,
+        "unit": "ml"
+      },
+      {
+        "name": "Caster Sugar",
+        "quantity": 70,
+        "unit": "g"
+      }
+    ],
+    "method": [
+      "Preheat the oven to 180°C/160°C fan/gas mark 4, grease and line a 2lb loaf tin with greaseproof paper.",
+      "In a large bowl, mix the plain flour (250 g), soft light brown sugar (200 g), baking powder (2 tsp) and salt (1/2 tsp). Add the raspberry (150 g) and gently toss them into the flour mixture, then set aside.",
+      "In a medium bowl, mix the egg (2), melted unsalted butter (110 g), Greek style live yogurt (130 g), Madagascan vanilla extract (1 tsp) and lemon (1). Add the egg mix to the bowl with the dry ingredients, gently folding it together until combined.",
+      "Transfer the batter into the prepared tin and smooth the top with a spatula. Bake for 50-60 minutes, or until golden brown. To check it is cooked, insert a toothpick in the middle of the cake – if it comes out clean, it is baked. Remove from the oven and leave to cool for around 10 minutes.",
+      "Meanwhile, make your limoncello icing drizzle. Whisk together the limoncello liqueur (60 millilitre) with the caster sugar (70 g) until well combined. Once combined, crush the raspberry (70 g) into the drizzle and mix.",
+      "Evenly poke small holes into the cake, then evenly drizzle the icing all over. Leave it for a few minutes to let the drizzle seep through, then serve."
+    ],
+    "sections": [
+      {
+        "name": "Cake",
+        "ingredients": [
+          {
+            "name": "Plain Flour",
+            "quantity": 250,
+            "unit": "g"
+          },
+          {
+            "name": "Light Soft Brown Sugar",
+            "quantity": 200,
+            "unit": "g"
+          },
+          {
+            "name": "Baking Powder",
+            "quantity": 2,
+            "unit": "tsp"
+          },
+          {
+            "name": "Salt",
+            "quantity": 0.5,
+            "unit": "tsp"
+          },
+          {
+            "name": "Raspberry",
+            "quantity": 150,
+            "unit": "g"
+          },
+          {
+            "name": "Eggs",
+            "quantity": 2,
+            "unit": "pcs"
+          },
+          {
+            "name": "Unsalted Butter",
+            "quantity": 110,
+            "unit": "g"
+          },
+          {
+            "name": "Greek Yogurt",
+            "quantity": 130,
+            "unit": "g"
+          },
+          {
+            "name": "Vanilla Extract",
+            "quantity": 1,
+            "unit": "tsp"
+          },
+          {
+            "name": "Lemon",
+            "quantity": 1,
+            "unit": "pcs"
+          }
+        ],
+        "method": [
+          "Preheat the oven to 180°C/160°C fan/gas mark 4, grease and line a 2lb loaf tin with greaseproof paper.",
+          "In a large bowl, mix the plain flour (250 g), soft light brown sugar (200 g), baking powder (2 tsp) and salt (1/2 tsp). Add the raspberry (150 g) and gently toss them into the flour mixture, then set aside.",
+          "In a medium bowl, mix the egg (2), melted unsalted butter (110 g), Greek style live yogurt (130 g), Madagascan vanilla extract (1 tsp) and lemon (1). Add the egg mix to the bowl with the dry ingredients, gently folding it together until combined.",
+          "Transfer the batter into the prepared tin and smooth the top with a spatula. Bake for 50-60 minutes, or until golden brown. To check it is cooked, insert a toothpick in the middle of the cake – if it comes out clean, it is baked. Remove from the oven and leave to cool for around 10 minutes."
+        ]
+      },
+      {
+        "name": "Drizzle",
+        "ingredients": [
+          {
+            "name": "Limoncello Liqueur",
+            "quantity": 60,
+            "unit": "ml"
+          },
+          {
+            "name": "Caster Sugar",
+            "quantity": 70,
+            "unit": "g"
+          },
+          {
+            "name": "Raspberry",
+            "quantity": 70,
+            "unit": "g"
+          }
+        ],
+        "method": [
+          "Meanwhile, make your limoncello icing drizzle. Whisk together the limoncello liqueur (60 millilitre) with the caster sugar (70 g) until well combined. Once combined, crush the raspberry (70 g) into the drizzle and mix.",
+          "Evenly poke small holes into the cake, then evenly drizzle the icing all over. Leave it for a few minutes to let the drizzle seep through, then serve."
+        ]
+      }
+    ]
   }
 ]
