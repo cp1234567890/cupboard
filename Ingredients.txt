@@ -34,3 +34,4 @@ Apple Slices|500|g|loc:freezer
 Condensed Milk|1|pcs
 Granulated Sugar|1|kg
 Eggs|6|pcs
+Nut And Raisin Granola|500|g|loc:unsorted
