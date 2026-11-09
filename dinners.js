@@ -477,17 +477,62 @@ function dnUsable(dinners, rules){
   return dinners.filter(d => !d.retired && !dnAvoidHits(d, rules.avoid).length);
 }
 
+/* ---------- Leftovers to use up ---------- */
+
+// Does a recipe ingredient name match a leftover ("chicken" ~ "chicken thigh",
+// "pepper" ~ "bell pepper", "tomato" ~ "cherry tomatoes")?
+function dnIngMatch(a, b){
+  const x = dnSingular(dnNorm(a)), y = dnSingular(dnNorm(b));
+  if(!x || !y) return false;
+  if(x === y) return true;
+  const short = x.length < y.length ? x : y, long = x.length < y.length ? y : x;
+  return short.length >= 4 && (long.endsWith(" " + short) || long.startsWith(short + " "));
+}
+
+// Text like "half a courgette, 2 chicken thighs, spinach" -> ingredient list.
+function dnParseUseUp(text){
+  return String(text || "").split(/[,\n;]+/).map(s => s.trim()).filter(Boolean)
+    .flatMap(s => dnParseIngredientLine(s));
+}
+
+// How many spare chicken thighs / salmon fillets the leftovers hold.
+function dnSpare(useUp){
+  const count = name => (useUp || []).filter(i => dnIngMatch(i.name, name))
+    .reduce((n, i) => n + (i.unit === "pcs" && i.quantity ? i.quantity : 1), 0);
+  return {chicken: Math.floor(count("chicken thigh") / 2), salmon: count("salmon fillet")};
+}
+
+// Give each leftover ingredient to the earliest cook night (not a carried-over
+// meal) whose recipe uses it. Returns [{ing, day}] with day -1 if nothing uses it.
+function dnAssignUseUp(days, byName, useUp){
+  // Spare thighs and fillets are handled by the pack logic (single nights), not here.
+  return (useUp || []).filter(ing => !dnIngMatch(ing.name, "chicken thigh") && !dnIngMatch(ing.name, "salmon fillet")).map(ing => {
+    const day = days.findIndex(d => {
+      if(d.mode !== "cook" || d.carried || !d.dinner) return false;
+      const din = byName.get(d.dinner);
+      return din && din.ingredients.some(i => dnIngMatch(i.name, ing.name));
+    });
+    return {ing, day};
+  });
+}
+
 /* Fill a week.
  * opts.days     — current seven days. Kept as-is: locked days, "out", "sorted",
  *                 and the leftover night after a locked batch cook.
  * opts.recent   — arrays of dinner names from the previous weeks, newest first.
+ * opts.carryOver — dinner names not made last week: placed early, marked carried.
+ * opts.useUp    — leftover ingredients to favour.
+ * opts.rules.officeDays — this week's office days.
  * Returns {days, score, checks}.
  */
 function dnGenerateWeek(opts){
   const rules = Object.assign({}, DN_DEFAULT_RULES, opts.rules || {});
   const rand = dnRandom(opts.seed);
   const pool = dnUsable(opts.dinners || [], rules);
-  const byName = new Map(pool.map(d => [d.name, d]));
+  const byName = new Map((opts.dinners || []).map(d => [d.name, d]));
+  const extra = {useUp: opts.useUp || []};
+  const spare = dnSpare(extra.useUp);
+  const carry = (opts.carryOver || []).map(n => byName.get(n)).filter(Boolean);
   const recent = (opts.recent || []).map(names => new Set(names));
   const base = (opts.days || DN_DAYS.map(() => ({mode: "free"}))).map(d => Object.assign({}, d));
 
@@ -522,10 +567,30 @@ function dnGenerateWeek(opts){
     const days = base.map(d => Object.assign({}, d));
     const used = new Set(days.filter(d => d.dinner).map(d => d.dinner));
     const blocks = {C: 0, S: 0, B: 0};
+    const open = free.slice();
+
+    // Last week's unmade meals go in first, leaning towards the start of the week
+    // (their ingredients are already in the fridge).
+    const order = carry.slice().sort(() => rand() - 0.5);
+    order.forEach(dish => {
+      if(used.has(dish.name)) return;
+      const batch = dish.serves >= 2;
+      const spots = [0, 1, 2, 3, 4, 5, 6].filter(i => open[i] && (!batch || (i < 6 && open[i + 1])));
+      if(!spots.length) return;
+      const i = dnPickWeighted(spots, k => (8 - k) * (8 - k), rand);
+      days[i] = {mode: "cook", dinner: dish.name, carried: true};
+      open[i] = false;
+      used.add(dish.name);
+      if(batch){ days[i + 1] = {mode: "leftover", dinner: dish.name}; open[i + 1] = false; }
+    });
+
+    let spareC = spare.chicken, spareS = spare.salmon;
     for(let i = 0; i < 7; i++){
-      if(!free[i]) continue;
-      const pair = i < 6 && free[i + 1];
+      if(!open[i]) continue;
+      const pair = i < 6 && open[i + 1];
       const options = [];
+      if(spareC > 0 && pools.chicken.length) options.push(["c1", 2.5]);
+      if(spareS > 0 && pools.salmon.length) options.push(["s1", 2.5]);
       if(pair && pools.chicken.length) options.push(["C", blocks.C ? 0.25 : 3]);
       if(pair && pools.salmon.length) options.push(["S", blocks.S ? 0.25 : 3]);
       if(pair && pools.vegBatch.length) options.push(["B", blocks.B ? 0.4 : 2.2]);
@@ -553,6 +618,9 @@ function dnGenerateWeek(opts){
         days[i + 1] = {mode: "leftover", dinner: dish.name};
         if(kind === "B") blocks.B++;
         i++;
+      }else if(kind === "c1" || kind === "s1"){
+        cook(i, pickDish(kind === "c1" ? pools.chicken : pools.salmon, used));
+        if(kind === "c1") spareC--; else spareS--;
       }else if(kind === "V"){
         cook(i, pickDish(pools.vegSingle, used));
       }else if(kind === "M"){
@@ -569,7 +637,7 @@ function dnGenerateWeek(opts){
   const tries = opts.tries || 700;
   for(let t = 0; t < tries; t++){
     const days = fillOnce();
-    const res = dnScoreWeek(days, byName, rules, recent);
+    const res = dnScoreWeek(days, byName, rules, recent, extra);
     const jittered = res.score + rand() * 1.5;
     if(!best || jittered > best.jittered) best = {days, score: res.score, checks: res.checks, jittered};
   }
@@ -577,32 +645,72 @@ function dnGenerateWeek(opts){
 }
 
 // Score a week against the rules. Also used to show the checklist under a plan.
-function dnScoreWeek(days, byName, rules, recent){
+function dnScoreWeek(days, byName, rules, recent, extra){
   rules = Object.assign({}, DN_DEFAULT_RULES, rules || {});
   recent = recent || [];
+  extra = extra || {};
   let s = 0;
   const checks = [];
   const dish = d => d && d.dinner ? byName.get(d.dinner) : null;
   const cooks = days.map((d, i) => ({d, i, dinner: d.mode === "cook" ? dish(d) : null}));
+  const fresh = cooks.filter(c => c.dinner && !c.d.carried);     // needs buying this week
   const planned = days.filter(d => d.mode !== "out").length;
+  const spare = dnSpare(extra.useUp);
 
   // Packs: chicken (4 thighs = 2 nights) and salmon (2 fillets) on consecutive nights.
+  // Spare thighs/fillets from the leftovers cover single nights.
   ["chicken", "salmon"].forEach(type => {
-    const idx = cooks.filter(c => c.dinner && c.dinner.type === type && c.dinner.serves === 1).map(c => c.i);
+    const idx = fresh.filter(c => c.dinner.type === type && c.dinner.serves === 1).map(c => c.i);
     const label = type === "chicken" ? "Chicken pack" : "Salmon pack";
     if(!idx.length){
-      if(planned >= 5) s -= 1.5;
+      if(planned >= 5 && !cooks.some(c => c.dinner && c.dinner.type === type)) s -= 1.5;
       return;
     }
-    let paired = 0, singles = 0;
+    let paired = 0;
+    const singleDays = [], pairStarts = [];
     for(let k = 0; k < idx.length; k++){
-      if(k + 1 < idx.length && idx[k + 1] === idx[k] + 1){ paired++; k++; }
-      else singles++;
+      if(k + 1 < idx.length && idx[k + 1] === idx[k] + 1){ paired++; pairStarts.push(idx[k]); k++; }
+      else singleDays.push(idx[k]);
     }
+    // Leftover meat goes first: the earliest single nights use it up.
+    const coveredDays = singleDays.slice(0, spare[type]);
+    const singles = singleDays.length - coveredDays.length;
     s += paired * 4 - Math.max(0, paired - 1) * 3 - singles * 3;
+    coveredDays.forEach(i => {
+      s += 2 + (6 - i) * 0.4;
+      if(pairStarts.some(p => p < i)) s -= 2;     // opened a new pack before using the leftovers
+    });
+    const what = type === "chicken" ? "thighs" : "fillet";
+    if(coveredDays.length) checks.push({ok: true, text: `Leftover ${type} ${what}: ${coveredDays.map(i => DN_DAYS_SHORT[i]).join(", ")}`});
+    if(spare[type] > coveredDays.length) checks.push({ok: false, text: `Leftover ${type} ${what} not used`});
     if(singles) checks.push({ok: false, text: `${label} split: ${singles} night on its own (packs are used over 2 nights)`});
-    else checks.push({ok: true, text: `${label} used over consecutive nights`});
+    else if(paired) checks.push({ok: true, text: `${label} used over consecutive nights`});
   });
+  ["chicken", "salmon"].forEach(type => {
+    if(spare[type] && !fresh.some(c => c.dinner.type === type && c.dinner.serves === 1)){
+      s -= 3;
+      checks.push({ok: false, text: `Leftover ${type} ${type === "chicken" ? "thighs" : "fillet"} not used`});
+    }
+  });
+
+  // Meals carried over from last week: the earlier the better.
+  const carried = cooks.filter(c => c.dinner && c.d.carried);
+  carried.forEach(c => { s += 3 + (6 - c.i) * 1.2; });
+  if(carried.length){
+    checks.push({ok: true, text: "From last week: " + carried.map(c =>
+      `${c.dinner.name.split(/\s+with\s+/i)[0]} (${DN_DAYS_SHORT[c.i]})`).join(", ")});
+  }
+
+  // Leftover ingredients: used, and used early.
+  if(extra.useUp && extra.useUp.length){
+    const assigned = dnAssignUseUp(days, byName, extra.useUp);
+    const used = assigned.filter(a => a.day >= 0);
+    const unused = assigned.filter(a => a.day < 0);
+    used.forEach(a => { s += 2.5 + (6 - a.day) * 0.3; });
+    s -= unused.length * 1.5;
+    if(used.length) checks.push({ok: true, text: "Uses up: " + used.map(a => `${a.ing.name} (${DN_DAYS_SHORT[a.day]})`).join(", ")});
+    if(unused.length) checks.push({ok: false, text: "Not used: " + unused.map(a => a.ing.name).join(", ")});
+  }
 
   // Batch cook covering the next night.
   const batches = cooks.filter(c => c.dinner && c.dinner.serves >= 2);
@@ -656,13 +764,23 @@ function dnScoreWeek(days, byName, rules, recent){
 
   // Pak choi: comes in a pack of 2.
   let pak = 0;
-  cooks.forEach(c => { if(c.dinner) pak += dnIngredientCount(c.dinner, "pak choi"); });
-  if(pak === 2) s += 5;
-  else if(pak === 0) s -= 1;
-  else if(pak === 4) s -= 1;
-  else s -= 4;
-  checks.push({ok: pak === 2 || pak === 4, text: pak === 2 ? "Pak choi used twice (one pack)"
-    : pak === 0 ? "No pak choi this week" : `Pak choi used ${pak} times (packs are 2)`});
+  fresh.forEach(c => { pak += dnIngredientCount(c.dinner, "pak choi"); });
+  const sparePak = (extra.useUp || []).filter(i => dnIngMatch(i.name, "pak choi"))
+    .reduce((n, i) => n + (i.unit === "pcs" && i.quantity ? i.quantity : 1), 0);
+  const buyPak = Math.max(0, pak - sparePak);
+  if(sparePak && pak >= sparePak && buyPak % 2 === 0){
+    s += 5;
+    checks.push({ok: true, text: buyPak ? `Pak choi: leftover used, plus one pack` : "Pak choi: uses up your leftover"});
+  }else{
+    if(buyPak === 2) s += 5;
+    else if(buyPak === 0) s -= sparePak ? 3 : 1;
+    else if(buyPak === 4) s -= 1;
+    else s -= 4;
+    checks.push({ok: buyPak === 2 || buyPak === 4 || (buyPak === 0 && !sparePak),
+      text: sparePak && pak < sparePak ? "Leftover pak choi not used"
+        : buyPak === 2 ? "Pak choi used twice (one pack)"
+        : buyPak === 0 ? "No pak choi this week" : `Pak choi used ${buyPak} times (packs are 2)`});
+  }
 
   // Variety.
   const names = cooks.filter(c => c.dinner).map(c => c.dinner.name);
@@ -697,21 +815,34 @@ function dnScoreWeek(days, byName, rules, recent){
 }
 
 // Notes shown under each day: packs, defrosting, batch cooking.
-function dnAutoNotes(days, byName, rules){
+function dnAutoNotes(days, byName, rules, extra){
   rules = Object.assign({}, DN_DEFAULT_RULES, rules || {});
+  extra = extra || {};
   const notes = days.map(() => []);
+  const spare = dnSpare(extra.useUp);
   const dish = d => d && d.mode === "cook" && d.dinner ? byName.get(d.dinner) : null;
+  const fresh = i => { const din = dish(days[i]); return din && !days[i].carried ? din : null; };
   for(let i = 0; i < 7; i++){
     const din = dish(days[i]);
     if(!din) continue;
-    const prev = i > 0 ? dish(days[i - 1]) : null;
+    if(days[i].carried){
+      notes[i].push("From last week, ingredients already bought");
+      if(din.serves >= 2 && days[i + 1] && days[i + 1].mode === "leftover") notes[i].push(`Batch cook for ${din.serves} portions`);
+      continue;
+    }
+    const prev = i > 0 ? fresh(i - 1) : null;
+    const next = i < 6 ? fresh(i + 1) : null;
     if(din.type === "chicken" && din.serves === 1){
       const continuing = prev && prev.type === "chicken" && notes[i - 1].includes("Open chicken pack, use 2 thighs");
-      notes[i].push(continuing ? "Remaining 2 thighs" : "Open chicken pack, use 2 thighs");
+      const alone = !continuing && !(next && next.type === "chicken" && next.serves === 1);
+      if(alone && spare.chicken > 0){ notes[i].push("Use your leftover thighs"); spare.chicken--; }
+      else notes[i].push(continuing ? "Remaining 2 thighs" : "Open chicken pack, use 2 thighs");
     }
     if(din.type === "salmon" && din.serves === 1){
       const continuing = prev && prev.type === "salmon" && notes[i - 1].includes("Open salmon pack");
-      notes[i].push(continuing ? "Finish salmon pack" : "Open salmon pack");
+      const alone = !continuing && !(next && next.type === "salmon" && next.serves === 1);
+      if(alone && spare.salmon > 0){ notes[i].push("Use your leftover fillet"); spare.salmon--; }
+      else notes[i].push(continuing ? "Finish salmon pack" : "Open salmon pack");
       if(i > 0) notes[i - 1].push("Defrost a salmon fillet tonight");
     }
     if(din.serves >= 2){
@@ -724,6 +855,13 @@ function dnAutoNotes(days, byName, rules){
       notes[i].unshift(rules.officeDays.includes(i) ? "Nothing to cook after the office" : "Nothing to cook");
     }
   });
+  if(extra.useUp && extra.useUp.length){
+    const byDay = {};
+    dnAssignUseUp(days, byName, extra.useUp).forEach(a => {
+      if(a.day >= 0) (byDay[a.day] = byDay[a.day] || []).push(a.ing.name);
+    });
+    Object.keys(byDay).forEach(i => notes[i].push("Uses up your " + byDay[i].join(", ")));
+  }
   return notes;
 }
 
@@ -786,12 +924,13 @@ Recipes
 
 function dnBuildPrompt(kind, info){
   const rules = Object.assign({}, DN_DEFAULT_RULES, info.rules || {});
-  const office = rules.officeDays.map(i => DN_DAYS[i]).join(" and ");
+  const officeList = Array.isArray(info.officeDays) ? info.officeDays : rules.officeDays;
+  const office = officeList.length ? officeList.map(i => DN_DAYS[i]).join(" and ") : "";
   const ruleLines = [
     `- Never include: ${rules.avoid.join(", ")} (eggs in any form).`,
     "- Chicken thighs come in packs of 4 (2 per meal), so use them on two consecutive nights. Salmon comes frozen in packs of 2 fillets: two consecutive nights.",
     "- Pak choi comes in packs of 2: use it exactly twice in the week, steamed.",
-    `- Weeknight dinners take ${rules.maxWeeknightMins} minutes or less. ${office} are office days: cover them with leftovers from a batch cook the night before, or something very quick.`,
+    `- Weeknight dinners take ${rules.maxWeeknightMins} minutes or less.${office ? ` ${office} ${officeList.length > 1 ? "are office days" : "is an office day"}: cover ${officeList.length > 1 ? "them" : "it"} with leftovers from a batch cook the night before, or something very quick.` : ""}`,
     "- Vegetarian dinners are welcome, especially early in the week. Flavours lean Korean and Indian (gochujang, garam masala, cumin, turmeric, sesame oil).",
     "- Recipes are for one person unless they're a batch cook (Serves 2, covering two nights).",
     `- Staples I already have: ${rules.staples.join(", ")}.`
@@ -821,6 +960,8 @@ function dnBuildPrompt(kind, info){
     "My rules:",
     ...ruleLines,
     ...(fixed ? ["", "These days are already decided, keep them as they are:", fixed] : []),
+    ...((info.carryOver || []).length ? ["", "I didn't get round to these last week and already have the ingredients, so fit them in early in the week (reuse the names exactly, no need to write out the recipes):", ...info.carryOver.map(n => `- ${n}`)] : []),
+    ...(info.useUpText ? ["", `Leftovers to use up early in the week: ${info.useUpText}.`] : []),
     "",
     "Dinners I already have recipes for (reuse the names exactly when you pick one; only write out full recipes for new dishes):",
     library || "- (none yet)",
@@ -834,7 +975,7 @@ function dnBuildPrompt(kind, info){
 if(typeof module !== "undefined" && module.exports){
   module.exports = {dnParseClaudeText, dnParseIngredientLine, dnPlanFromParsed, dnGenerateWeek,
     dnScoreWeek, dnAutoNotes, dnClassifyDay, dnMatchDinner, dnNormaliseDinner, dnAvoidHits,
-    dnBuildPrompt, dnSingular, DN_DEFAULT_RULES, DN_DAYS};
+    dnBuildPrompt, dnSingular, dnParseUseUp, dnAssignUseUp, dnIngMatch, DN_DEFAULT_RULES, DN_DAYS};
 }
 
 /* =========================================================================
@@ -873,19 +1014,40 @@ function dnNormaliseData(raw){
 
 function dnNormalisePlans(raw){
   const weeks = raw && Array.isArray(raw.weeks) ? raw.weeks : [];
-  return {weeks: weeks.filter(w => w && /^\d{4}-\d{2}-\d{2}$/.test(w.start)).map(w => ({
-    start: w.start,
-    onList: !!w.onList,
-    days: DN_DAYS.map((_, i) => {
-      const d = (w.days || [])[i] || {};
-      const mode = ["cook", "leftover", "out", "sorted", "free"].includes(d.mode) ? d.mode : "free";
-      const out = {mode};
-      ["dinner", "text", "note"].forEach(k => { if(d[k]) out[k] = String(d[k]); });
-      if(d.locked) out.locked = true;
+  return {weeks: weeks.filter(w => w && /^\d{4}-\d{2}-\d{2}$/.test(w.start)).map(w => {
+    const week = {
+      start: w.start,
+      onList: !!w.onList,
+      days: DN_DAYS.map((_, i) => {
+        const d = (w.days || [])[i] || {};
+        const mode = ["cook", "leftover", "out", "sorted", "free"].includes(d.mode) ? d.mode : "free";
+        const out = {mode};
+        ["dinner", "text", "note"].forEach(k => { if(d[k]) out[k] = String(d[k]); });
+        if(d.locked) out.locked = true;
+        if(d.carried) out.carried = true;
+        return out;
+      })
+    };
+    // What was set up before generating: this week's office days, last week's
+    // unmade meals, and leftover ingredients to use up.
+    if(Array.isArray(w.officeDays)) week.officeDays = w.officeDays.map(Number).filter(n => n >= 0 && n < 7);
+    if(Array.isArray(w.carryOver) && w.carryOver.length) week.carryOver = w.carryOver.map(String);
+    if(w.useUpText) week.useUpText = String(w.useUpText);
+    if(Array.isArray(w.useUp) && w.useUp.length) week.useUp = w.useUp.map(i => {
+      const out = {name: String(i.name || "").toLowerCase(), quantity: Number(i.quantity) || 0, unit: String(i.unit || "")};
       return out;
-    })
-  })).sort((a, b) => a.start.localeCompare(b.start))};
+    }).filter(i => i.name);
+    return week;
+  }).sort((a, b) => a.start.localeCompare(b.start))};
 }
+
+// Rules for one week: its own office days when they were confirmed.
+function dnWeekRules(week){
+  const r = dnRules();
+  if(week && Array.isArray(week.officeDays)) r.officeDays = week.officeDays;
+  return r;
+}
+function dnWeekExtra(week){ return {useUp: (week && week.useUp) || []}; }
 
 /* ---------- GitHub sync ---------- */
 
@@ -979,21 +1141,26 @@ function dnRecentNames(id){
 
 function dnWeekHasPlan(w){ return !!w && w.days.some(d => d.mode !== "free"); }
 
-function dnGenerate(){
+/* setup: {modes: ["home"|"office"|"out" ×7], usual: bool, carryOver: [names], useUpText} */
+function dnGenerate(setup){
   const id = dnWeekId;
-  pushUndo("generate dinner plan");
-  const week = dnEnsureWeek(id);
   const usable = dnUsable(dnData.dinners, dnRules());
   if(!usable.length){
     alert("There are no dinners in your library yet. Paste some recipes from Claude first.");
     return;
   }
-  const res = dnGenerateWeek({dinners: dnData.dinners, days: week.days, recent: dnRecentNames(id), rules: dnRules()});
+  pushUndo("generate dinner plan");
+  const week = dnEnsureWeek(id);
+  if(setup) dnApplySetup(week, setup);
+
+  const res = dnGenerateWeek({dinners: dnData.dinners, days: week.days, recent: dnRecentNames(id),
+    rules: dnWeekRules(week), carryOver: week.carryOver || [], useUp: week.useUp || []});
   week.days = res.days.map((d, i) => {
     const keep = week.days[i];
     if(keep.locked || keep.mode === "out" || keep.mode === "sorted") return keep;
     const out = {mode: d.mode};
     if(d.dinner) out.dinner = d.dinner;
+    if(d.carried) out.carried = true;
     return out;
   });
   week.onList = true;
@@ -1001,6 +1168,28 @@ function dnGenerate(){
   dnQueueSave("plans", `Plan dinners w/c ${id}`);
   renderDinners();
   updateShopBadge();
+}
+
+// Store what the setup step asked: day modes, office days, carried meals, leftovers.
+function dnApplySetup(week, setup){
+  {
+    const office = [];
+    setup.modes.forEach((m, i) => {
+      if(m === "office") office.push(i);
+      const d = week.days[i];
+      if(m === "out" && d.mode !== "out") week.days[i] = {mode: "out"};
+      if(m !== "out" && d.mode === "out") week.days[i] = {mode: "free"};
+    });
+    week.officeDays = office;
+    if(setup.usual){
+      dnData.rules = Object.assign({}, dnRules(), {officeDays: office});
+      dnQueueSave("data", "Update usual office days");
+    }
+    if(setup.carryOver.length) week.carryOver = setup.carryOver; else delete week.carryOver;
+    const useUp = dnParseUseUp(setup.useUpText);
+    if(setup.useUpText.trim()){ week.useUpText = setup.useUpText.trim(); week.useUp = useUp; }
+    else { delete week.useUpText; delete week.useUp; }
+  }
 }
 
 /* ---------- Day edits ---------- */
@@ -1101,7 +1290,7 @@ function dinnerShoppingNeeds(){
   const weeks = dnPlans.weeks.filter(w => w.onList);
   weeks.forEach(w => {
     w.days.forEach(d => {
-      if(d.mode !== "cook" || !d.dinner) return;
+      if(d.mode !== "cook" || !d.dinner || d.carried) return;   // carried meals were bought last week
       const din = map.get(d.dinner);
       if(!din) return;
       din.ingredients.forEach(ing => {
@@ -1123,8 +1312,22 @@ function dinnerShoppingNeeds(){
     });
   });
 
+  // Leftover ingredients the week was set up with come off the list.
+  weeks.forEach(w => (w.useUp || []).forEach(ing => {
+    groups.forEach(g => {
+      if(!dnIngMatch(g.name, ing.name)) return;
+      if(!ing.quantity){ g.leftover = Infinity; return; }          // "spinach": you have some
+      let q = null;
+      if(g.unit in DN_MEASURE && ing.unit in DN_MEASURE) q = ing.quantity * DN_MEASURE[ing.unit] / DN_MEASURE[g.unit];
+      else if(g.unit === ing.unit) q = ing.quantity;
+      g.leftover = (g.leftover || 0) + (q === null ? Infinity : q);
+    });
+  }));
+
   const out = [];
   groups.forEach(g => {
+    if(g.leftover) g.total -= g.leftover;
+    if(g.total <= 0.001) return;
     const stock = dnStockFor(g.name);
     let have = 0;
     let label = dnTitle(g.unit === "pcs" ? dnSingular(g.name) : g.name);
@@ -1204,7 +1407,8 @@ function dnRenderPlan(){
   const host = document.getElementById("dnPlan");
   const week = dnGetWeek(dnWeekId);
   const map = dnByName();
-  const rules = dnRules();
+  const rules = dnWeekRules(week);
+  const extra = dnWeekExtra(week);
   const thisMon = dnThisMonday();
   const rel = dnWeekId === thisMon ? "This week" : dnWeekId === dnAddDays(thisMon, 7) ? "Next week"
     : dnWeekId === dnAddDays(thisMon, -7) ? "Last week" : "";
@@ -1234,7 +1438,7 @@ function dnRenderPlan(){
   }
 
   const days = week ? week.days : DN_DAYS.map(() => ({mode: "free"}));
-  const notes = dnAutoNotes(days, map, rules);
+  const notes = dnAutoNotes(days, map, rules, extra);
   html += `<div class="dn-days">`;
   days.forEach((d, i) => {
     const din = d.dinner ? map.get(d.dinner) : null;
@@ -1278,7 +1482,7 @@ function dnRenderPlan(){
   html += `</div>`;
 
   if(dnWeekHasPlan(week)){
-    const {checks} = dnScoreWeek(week.days, map, rules, []);
+    const {checks} = dnScoreWeek(week.days, map, rules, [], extra);
     html += `<div class="dn-checks">${checks.map(c =>
       `<div class="${c.ok ? "ok" : "bad"}"><span>${c.ok ? "✓" : "!"}</span>${escapeHtml(c.text)}</div>`).join("")}</div>`;
     const needs = week.onList ? dinnerShoppingNeeds().length : 0;
@@ -1481,6 +1685,9 @@ async function dnCopyPrompt(kind){
     rules: dnRules(),
     library: dnUsable(dnData.dinners, dnRules()).map(d => d.name),
     weekLabel: `Monday ${dnPrettyDate(dnWeekId)}`,
+    officeDays: dnWeekRules(week).officeDays,
+    carryOver: (week && week.carryOver) || [],
+    useUpText: (week && week.useUpText) || "",
     fancy: document.getElementById("dnFancy").value.trim(),
     fixedDays: fixed
   });
@@ -1590,6 +1797,109 @@ function dnSaveReview(){
   updateShopBadge();
 }
 
+/* ---------- Plan this week: setup before generating ---------- */
+
+let dnSetupModes = [];
+
+function dnOpenSetup(){
+  if(!dnLoaded) return;
+  const week = dnGetWeek(dnWeekId);
+  const map = dnByName();
+  const office = dnWeekRules(week).officeDays;
+  dnSetupModes = DN_DAYS.map((_, i) => {
+    const d = week && week.days[i];
+    if(d && d.mode === "out") return "out";
+    return office.includes(i) ? "office" : "home";
+  });
+
+  document.getElementById("dnSetupTitle").textContent = `Plan w/c ${dnPrettyDate(dnWeekId, true)}`;
+  document.getElementById("dnSetupHint").textContent = dnWeekHasPlan(week)
+    ? "This replaces the week's current plan. Locked days and anything marked already sorted stay as they are."
+    : "Check the week, then Generate.";
+
+  // Days already decided (locked or sorted) are shown so you know they'll stay.
+  const kept = DN_DAYS.map((_, i) => {
+    const d = week && week.days[i];
+    if(!d || !(d.locked || d.mode === "sorted")) return "";
+    return (d.mode === "leftover" ? "Leftover " : "") + (d.dinner || d.text || "already sorted");
+  });
+  document.getElementById("dnSetupDays").innerHTML = DN_DAYS.map((_, i) => `
+    <div class="dn-setup-day">
+      <div class="dn-setup-date"><b>${DN_DAYS_SHORT[i]}</b><small>${escapeHtml(dnPrettyDate(dnAddDays(dnWeekId, i)))}</small></div>
+      <div class="dn-seg" data-day="${i}">
+        ${["home", "office", "out"].map(m => `<button type="button" data-m="${m}">${m === "home" ? "Home" : m === "office" ? "Office" : "Out"}</button>`).join("")}
+      </div>
+      ${kept[i] ? `<small class="dn-setup-kept">Keeping: ${escapeHtml(kept[i])}</small>` : ""}
+    </div>`).join("");
+  document.querySelectorAll("#dnSetupDays .dn-seg button").forEach(b => b.onclick = () => {
+    dnSetupModes[Number(b.parentElement.dataset.day)] = b.dataset.m;
+    dnSetupRefresh();
+  });
+
+  // Last week's cooked meals, for "didn't get round to it".
+  const prev = dnGetWeek(dnAddDays(dnWeekId, -7));
+  const already = new Set(((week && week.days) || []).filter(d => d.locked && d.dinner).map(d => d.dinner));
+  const last = [];
+  ((prev && prev.days) || []).forEach((d, i) => {
+    if(d.mode === "cook" && d.dinner && map.has(d.dinner) && !already.has(d.dinner) && !last.some(x => x.name === d.dinner)){
+      last.push({name: d.dinner, day: i});
+    }
+  });
+  const carried = new Set((week && week.carryOver) || []);
+  document.getElementById("dnSetupCarry").innerHTML = last.length
+    ? `<p class="hint dn-setup-sub">Tick any you didn't make. They go early in the week and won't be added to the shopping list again.</p>` +
+      last.map(x => `<label class="dn-review-row">
+        <input type="checkbox" data-carry="${escapeHtml(x.name)}" ${carried.has(x.name) ? "checked" : ""}>
+        <span>${escapeHtml(x.name)}<small>Planned for ${DN_DAYS[x.day]}</small></span></label>`).join("")
+    : `<p class="hint dn-setup-sub">Nothing was planned for last week.</p>`;
+
+  const box = document.getElementById("dnSetupUseUp");
+  box.value = (week && week.useUpText) || "";
+  box.oninput = dnSetupRefresh;
+  document.getElementById("dnSetupUsual").checked = false;
+
+  dnSetupRefresh();
+  document.getElementById("dnSetupModal").classList.remove("hidden");
+}
+
+function dnSetupRefresh(){
+  document.querySelectorAll("#dnSetupDays .dn-seg").forEach(seg => {
+    const m = dnSetupModes[Number(seg.dataset.day)];
+    seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.m === m));
+  });
+  // Offer "make these my usual office days" only when they differ from the usual.
+  const office = dnSetupModes.map((m, i) => m === "office" ? i : -1).filter(i => i >= 0);
+  const usual = dnRules().officeDays;
+  const differs = office.join() !== usual.slice().sort().join();
+  const usualRow = document.getElementById("dnSetupUsualRow");
+  usualRow.classList.toggle("hidden", !differs);
+  document.getElementById("dnSetupUsualText").textContent = `Make these my usual office days (currently ${usual.length ? usual.map(i => DN_DAYS_SHORT[i]).join(", ") : "none"})`;
+
+  const parsed = dnParseUseUp(document.getElementById("dnSetupUseUp").value);
+  document.getElementById("dnSetupParsed").textContent = parsed.length
+    ? "Reads as: " + parsed.map(i => i.quantity ? `${dnFmtUseUp(i)}` : i.name).join(" · ")
+    : "";
+}
+
+function dnFmtUseUp(i){
+  const q = Math.round(i.quantity * 100) / 100;
+  const half = q === 0.5 ? "½" : String(q);
+  if(i.unit in DN_MEASURE) return `${q}${i.unit === "g" || i.unit === "ml" ? "" : " "}${i.unit} ${i.name}`;
+  if(i.unit === "pcs") return `${half} ${i.name}${q > 1 && !/s$/.test(i.name) ? "s" : ""}`;
+  return `${half} ${dnPlural(i.unit, q)} ${i.name}`;
+}
+
+function dnReadSetup(){
+  return {
+    modes: dnSetupModes.slice(),
+    usual: !document.getElementById("dnSetupUsualRow").classList.contains("hidden") && document.getElementById("dnSetupUsual").checked,
+    carryOver: [...document.querySelectorAll("#dnSetupCarry [data-carry]")].filter(b => b.checked).map(b => b.dataset.carry),
+    useUpText: document.getElementById("dnSetupUseUp").value
+  };
+}
+
+function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("hidden"); }
+
 /* ---------- Styles and wiring ---------- */
 
 (function dnInit(){
@@ -1644,22 +1954,73 @@ function dnSaveReview(){
   .dn-review-row input{margin-top:4px; width:18px; height:18px; accent-color:var(--herb); flex-shrink:0;}
   .dn-review-row small{display:block; color:var(--ink-soft); font-size:0.78rem; margin-top:2px;}
   .dn-review-row select{margin:4px 0; padding:6px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); max-width:100%;}
+  .dn-setup-day{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .dn-setup-date{width:52px; display:flex; flex-direction:column; line-height:1.2;}
+  .dn-setup-date small{font-size:0.72rem; color:var(--ink-soft);}
+  .dn-seg{flex:1; display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden;}
+  .dn-seg button{flex:1; padding:8px 4px; border:none; background:var(--card); color:var(--ink-soft); font-size:0.85rem; cursor:pointer;}
+  .dn-seg button + button{border-left:1px solid var(--line);}
+  .dn-seg button.on[data-m="home"]{background:var(--herb); color:#fff;}
+  .dn-seg button.on[data-m="office"]{background:var(--paprika); color:#fff;}
+  .dn-seg button.on[data-m="out"]{background:var(--ink-soft); color:var(--card);}
+  .dn-setup-kept{width:100%; padding-left:62px; color:var(--ink-soft); font-size:0.78rem;}
+  .dn-setup-sub{margin:2px 0 6px !important;}
+  #dnSetupUseUp{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-size:0.9rem;}
+  .dn-setup-claude{width:100%; margin-top:10px; padding:10px; border:none; background:none; color:var(--herb); font-size:0.9rem; cursor:pointer; text-decoration:underline;}
   .dn-review-plan{font-size:0.88rem; display:flex; flex-direction:column; gap:4px; margin:10px 0 4px;}
   .dn-review-plan b{display:inline-block; width:36px;}
   `;
   document.head.appendChild(css);
+
+  // The "Plan this week" dialog lives here so index.html doesn't need it.
+  const setup = document.createElement("div");
+  setup.id = "dnSetupModal";
+  setup.className = "modal-backdrop hidden";
+  setup.innerHTML = `
+    <div class="modal recipe-modal">
+      <h2 id="dnSetupTitle">Plan this week</h2>
+      <p class="hint" id="dnSetupHint"></p>
+      <div class="ideas-title">Your week</div>
+      <div id="dnSetupDays"></div>
+      <label class="dn-review-row hidden" id="dnSetupUsualRow"><input type="checkbox" id="dnSetupUsual"><span id="dnSetupUsualText"></span></label>
+      <div class="ideas-title">Didn't get round to last week?</div>
+      <div id="dnSetupCarry"></div>
+      <div class="ideas-title">Leftovers to use up</div>
+      <textarea id="dnSetupUseUp" rows="3" placeholder="e.g. half a courgette, 2 chicken thighs, spinach"></textarea>
+      <p class="hint dn-setup-sub" id="dnSetupParsed"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="dnSetupCancel">Cancel</button>
+        <button type="button" class="btn-primary" id="dnSetupGo">Generate</button>
+      </div>
+      <button type="button" class="dn-setup-claude" id="dnSetupClaude">Ask Claude to plan it instead</button>
+    </div>`;
+  document.body.appendChild(setup);
 
   document.querySelectorAll("#dnModeChips .chip").forEach(c => c.onclick = () => {
     dnMode = c.dataset.mode;
     dnExpanded = null;
     renderDinners();
   });
-  document.getElementById("dnGenerateBtn").onclick = () => {
-    const week = dnGetWeek(dnWeekId);
-    if(dnWeekHasPlan(week) && week.days.some(d => (d.mode === "cook" || d.mode === "leftover") && !d.locked)
-      && !confirm("Replace this week's unlocked days with a new plan? Locked days, \"Out\" days and anything marked already sorted stay.")) return;
-    dnGenerate();
+  document.getElementById("dnGenerateBtn").onclick = dnOpenSetup;
+  document.getElementById("dnSetupCancel").onclick = dnCloseSetup;
+  document.getElementById("dnSetupGo").onclick = () => {
+    const setup = dnReadSetup();
+    dnCloseSetup();
+    dnGenerate(setup);
   };
+  document.getElementById("dnSetupClaude").onclick = () => {
+    const setup = dnReadSetup();
+    pushUndo("set up dinner week");
+    const week = dnEnsureWeek(dnWeekId);
+    dnApplySetup(week, setup);
+    dnQueueSave("plans", `Set up dinners w/c ${dnWeekId}`);
+    dnCloseSetup();
+    renderDinners();
+    dnOpenClaude();
+  };
+  document.getElementById("dnSetupModal").addEventListener("click", e => {
+    if(e.target.id === "dnSetupModal") dnCloseSetup();
+  });
   document.getElementById("dnClaudeBtn").onclick = dnOpenClaude;
   document.getElementById("dnCopyPlan").onclick = () => dnCopyPrompt("plan");
   document.getElementById("dnCopyRecipe").onclick = () => dnCopyPrompt("recipe");
