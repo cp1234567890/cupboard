@@ -125,35 +125,28 @@
     },
     {
       "start": "2026-11-16",
-      "onList": true,
+      "onList": false,
       "days": [
         {
-          "mode": "cook",
-          "dinner": "Garam Masala Lentil & Spinach Daal with Crispy Roasted Potatoes"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Spiced Chickpea & Tomato Pasta"
+          "mode": "free"
         },
         {
-          "mode": "leftover",
-          "dinner": "Spiced Chickpea & Tomato Pasta"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Cumin Spiced Chicken with Crispy Roasted Potatoes & Basmati Rice"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli"
+          "mode": "free"
         }
       ]
     }
