@@ -1,6 +1,8 @@
 
 name: Import recipe
+
 run-name: Import recipe ${{ inputs.request_id }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -14,7 +16,7 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   import:
@@ -39,7 +41,7 @@ jobs:
           RECIPE_URL: ${{ inputs.recipe_url }}
         run: python scripts/import_recipe.py
 
-      - name: Publish import result
+      - name: Validate request and output
         env:
           REQUEST_ID: ${{ inputs.request_id }}
         run: |
@@ -47,7 +49,6 @@ jobs:
           import json
           import os
           import re
-          import shutil
           from pathlib import Path
 
           request_id = os.environ["REQUEST_ID"]
@@ -56,26 +57,26 @@ jobs:
               raise SystemExit("Invalid request ID")
 
           source = Path("recipe-import.json")
+
           if not source.is_file():
-              raise SystemExit("Recipe output file was not created")
+              raise SystemExit("Recipe output was not created")
 
-          # Validate the JSON before publishing it.
           with source.open(encoding="utf-8") as f:
-              json.load(f)
+              data = json.load(f)
 
-          destination = Path("recipe-imports") / f"{request_id}.json"
-          destination.parent.mkdir(parents=True, exist_ok=True)
-          shutil.copyfile(source, destination)
+          if not isinstance(data.get("ingredients"), list):
+              raise SystemExit("Invalid recipe ingredients")
 
-          print(f"Published import result: {destination}")
+          if not isinstance(data.get("method"), list):
+              raise SystemExit("Invalid recipe method")
+
+          print("Recipe output validated successfully.")
           PY
 
-      - name: Commit import result
-        env:
-          REQUEST_ID: ${{ inputs.request_id }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "recipe-imports/${REQUEST_ID}.json"
-          git commit -m "Add recipe import result"
-          git push
+      - name: Upload temporary recipe result
+        uses: actions/upload-artifact@v4
+        with:
+          name: recipe-import-${{ inputs.request_id }}
+          path: recipe-import.json
+          if-no-files-found: error
+          retention-days: 1
