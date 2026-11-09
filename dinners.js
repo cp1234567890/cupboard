@@ -1216,7 +1216,10 @@ function dnRenderPlan(){
       <button type="button" class="dn-nav" data-step="-7" aria-label="Previous week">‹</button>
       <div class="dn-weeklabel"><strong>w/c ${escapeHtml(dnPrettyDate(dnWeekId, true))}</strong>${rel ? `<small>${rel}</small>` : ""}</div>
       <button type="button" class="dn-nav" data-step="7" aria-label="Next week">›</button>
-    </div>`;
+    </div>
+    ${dnLoaded && dnWeekHasPlan(week) ? `<div class="dn-weektools">
+      <button type="button" class="dn-clear" id="dnClearWeek">Clear week</button>
+    </div>` : ""}`;
 
   if(!dnLoaded){
     host.innerHTML = html + `<div class="empty">Loading dinners…</div>`;
@@ -1282,7 +1285,6 @@ function dnRenderPlan(){
     html += `<div class="dn-weekactions">
       <button type="button" class="${week.onList ? "btn-secondary" : "btn-primary"}" id="dnListToggle">
         ${week.onList ? `On shopping list ✓ ${needs ? `(${needs} to buy)` : ""}` : "Add to shopping list"}</button>
-      <button type="button" class="btn-secondary" id="dnClearWeek">Clear week</button>
     </div>`;
   }
 
@@ -1627,6 +1629,9 @@ function dnSaveReview(){
   .dn-checks span{width:16px; flex-shrink:0; text-align:center; font-weight:700;}
   .dn-checks .ok span{color:var(--herb);}
   .dn-checks .bad span{color:var(--brick);}
+  .dn-weektools{display:flex; justify-content:flex-end; margin:-4px 0 10px;}
+  .dn-clear{padding:7px 12px; border-radius:9px; border:1px solid var(--brick); background:none; color:var(--brick); font-size:0.85rem; cursor:pointer;}
+  .dn-clear:active{background:var(--brick); color:#fff;}
   .dn-weekactions{display:flex; gap:10px; margin-bottom:16px;}
   .dn-weekactions button{flex:1; padding:11px; border-radius:10px; border:none; font-size:0.9rem; cursor:pointer;}
   .dn-rules{margin-top:20px;}
