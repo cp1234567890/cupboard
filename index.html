@@ -455,6 +455,7 @@
   <button type="button" class="tab active" data-view="cupboard">Cupboard</button>
   <button type="button" class="tab" data-view="recipes">Recipes</button>
   <button type="button" class="tab" data-view="ideas">Ideas</button>
+  <button type="button" class="tab" data-view="dinners">Dinners</button>
   <button type="button" class="tab" data-view="shopping">Shopping</button>
 </nav>
 
@@ -493,6 +494,14 @@
   <div id="ideasView" class="hidden">
     <div id="ideasEmpty" class="empty hidden"></div>
     <div id="ideasList"></div>
+  </div>
+  <div id="dinnersView" class="hidden">
+    <div class="chips" id="dnModeChips">
+      <button type="button" class="chip active" data-mode="plan">Week plan</button>
+      <button type="button" class="chip" data-mode="library">Dinner library</button>
+    </div>
+    <div id="dnPlan"></div>
+    <div id="dnLibrary" class="hidden"></div>
   </div>
   <div id="shoppingView" class="hidden">
     <form id="shopAdd" class="shop-add">
@@ -535,6 +544,45 @@
 <div id="recipeFooter" class="adjust-bar hidden">
   <button type="button" id="importRecipeBtn" class="recipe-footer-btn">Import from URL</button>
   <button type="button" id="addRecipeBtn" class="recipe-footer-btn">+ Add recipe</button>
+</div>
+
+<div id="dinnerFooter" class="adjust-bar hidden">
+  <button type="button" id="dnClaudeBtn" class="recipe-footer-btn">From Claude</button>
+  <button type="button" id="dnGenerateBtn" class="recipe-footer-btn">Generate week</button>
+</div>
+
+<div id="dnClaudeModal" class="modal-backdrop hidden">
+  <div class="modal recipe-modal">
+    <h2>From Claude</h2>
+    <div id="dnStep1">
+      <p class="hint">Copy a prompt with your rules and the reply format built in, ask Claude, then paste the whole reply below. A weekly plan, one recipe or several all work.</p>
+      <div class="field">
+        <label for="dnFancy">Anything you fancy? (optional)</label>
+        <input type="text" id="dnFancy" placeholder="e.g. something with pork, a new curry" autocomplete="off">
+      </div>
+      <div class="dn-copy">
+        <button type="button" id="dnCopyPlan">Copy prompt: plan this week</button>
+        <button type="button" id="dnCopyRecipe">Copy prompt: one new recipe</button>
+      </div>
+      <p id="dnCopied"></p>
+      <div class="field">
+        <label for="dnPaste">Claude's reply</label>
+        <textarea id="dnPaste" rows="9" placeholder="Paste here…"></textarea>
+      </div>
+      <p class="error-text" id="dnClaudeError"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="dnClaudeCancel">Cancel</button>
+        <button type="button" class="btn-primary" id="dnClaudeRead">Read reply</button>
+      </div>
+    </div>
+    <div id="dnStep2" class="hidden">
+      <div id="dnReview"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="dnClaudeBack">Back</button>
+        <button type="button" class="btn-primary" id="dnClaudeSave">Save</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="settingsModal" class="modal-backdrop hidden">
@@ -680,6 +728,7 @@
   </div>
 </div>
 
+<script src="dinners.js"></script>
 <script>
 const BRANCH = "main";
 const PATH = "Ingredients.txt";
@@ -762,7 +811,8 @@ function pushUndo(label = "last change"){
     recipes: JSON.parse(JSON.stringify(recipes)),
     aliases: JSON.parse(JSON.stringify(aliases)),
     shopping: JSON.parse(JSON.stringify(shopping)),
-    locMemory: JSON.parse(JSON.stringify(locMemory))
+    locMemory: JSON.parse(JSON.stringify(locMemory)),
+    dinners: typeof dnSnapshot === "function" ? dnSnapshot() : null
   });
   if(undoStack.length > 20) undoStack.shift();
   updateUndoBtn();
@@ -799,6 +849,7 @@ function undo(){
   if(aliasesChanged) queueAliasSave(`Undo: ${snap.label}`);
   if(shoppingChanged) queueShoppingSave(`Undo: ${snap.label}`);
   if(locChanged) queueLocSave(`Undo: ${snap.label}`);
+  if(snap.dinners && typeof dnRestore === "function") dnRestore(snap.dinners);
 
   updateUndoBtn();
   render();
@@ -1254,6 +1305,7 @@ async function fetchFile(){
       await fetchAliases();
       await fetchShopping();
       await fetchLocations();
+      if(typeof dnFetchAll === "function") await dnFetchAll();
     }catch(e){
       setStatus("err", "Cupboard loaded — some extra files failed to load");
       render();
@@ -2166,8 +2218,12 @@ function shoppingNeeds(){
   return shortfallFor(recipes.filter(r => r.reserved));
 }
 
+function dinnerNeedsSafe(){
+  return typeof dinnerShoppingNeeds === "function" ? dinnerShoppingNeeds() : [];
+}
+
 function updateShopBadge(){
-  const n = shoppingNeeds().length + shopping.manual.length;
+  const n = shoppingNeeds().length + shopping.manual.length + dinnerNeedsSafe().length;
   const tab = document.querySelector('.tab[data-view="shopping"]');
   if(tab) tab.textContent = n ? `Shopping (${n})` : "Shopping";
 }
@@ -2197,13 +2253,14 @@ function renderShopping(){
   list.innerHTML = "";
 
   const needs = shoppingNeeds();
+  const dinnerNeeds = dinnerNeedsSafe();
 
   // Forget ticks for things that are no longer needed.
-  const valid = new Set(needs.map(n => n.key));
+  const valid = new Set(needs.map(n => n.key).concat(dinnerNeeds.map(n => n.key)));
   Object.keys(shopping.checked).forEach(k => { if(!valid.has(k)) delete shopping.checked[k]; });
 
-  if(needs.length === 0 && shopping.manual.length === 0){
-    empty.textContent = "Nothing to buy. Reserve a recipe and whatever it's missing will appear here, or add something yourself above.";
+  if(needs.length === 0 && shopping.manual.length === 0 && dinnerNeeds.length === 0){
+    empty.textContent = "Nothing to buy. Plan some dinners or reserve a recipe and whatever's missing will appear here, or add something yourself above.";
     empty.classList.remove("hidden");
   }else{
     empty.classList.add("hidden");
@@ -2220,6 +2277,28 @@ function renderShopping(){
         name: n.name,
         qtyText: fmtQty(n.quantity, n.unit),
         sub: "for " + n.recipes.join(", "),
+        checked: !!shopping.checked[n.key],
+        onToggle: () => {
+          if(shopping.checked[n.key]) delete shopping.checked[n.key];
+          else shopping.checked[n.key] = true;
+          queueShoppingSave("Update shopping list");
+          renderShopping();
+        }
+      }));
+    });
+  }
+
+  if(dinnerNeeds.length){
+    const h = document.createElement("div");
+    h.className = "ideas-title";
+    h.textContent = dnShoppingTitle();
+    list.appendChild(h);
+
+    dinnerNeeds.forEach(n => {
+      list.appendChild(shopRow({
+        name: n.name,
+        qtyText: n.qtyText,
+        sub: n.sub,
         checked: !!shopping.checked[n.key],
         onToggle: () => {
           if(shopping.checked[n.key]) delete shopping.checked[n.key];
@@ -3971,7 +4050,9 @@ function switchView(view){
   document.getElementById("recipesView").classList.toggle("hidden", view !== "recipes");
   document.getElementById("ideasView").classList.toggle("hidden", view !== "ideas");
   document.getElementById("shoppingView").classList.toggle("hidden", view !== "shopping");
+  document.getElementById("dinnersView").classList.toggle("hidden", view !== "dinners");
   document.getElementById("recipeFooter").classList.toggle("hidden", view !== "recipes");
+  document.getElementById("dinnerFooter").classList.toggle("hidden", view !== "dinners");
 
   if(view === "recipes"){
     renderAdjustBar(); // hides the cupboard bars
@@ -3982,6 +4063,9 @@ function switchView(view){
   }else if(view === "shopping"){
     renderAdjustBar();
     renderShopping();
+  }else if(view === "dinners"){
+    renderAdjustBar();
+    renderDinners();
   }else{
     render();
   }
