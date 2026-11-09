@@ -435,6 +435,7 @@
   .adjust-loc button.on.l-cupboard{background:var(--cupboard); color:#fff;}
   #unsortedBox{border-left:4px solid var(--paprika);}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -3323,7 +3324,6 @@ async function deleteRecipe(name){
 
 let importedRecipeData = null;
 const IMPORT_WORKFLOW = "import-recipe.yml";
-const IMPORT_RESULTS_DIR = "recipe-imports";
 
 function importApiRoot(){
   return `https://api.github.com/repos/${settings.owner}/${settings.repo}`;
@@ -3378,49 +3378,88 @@ async function githubImportRequest(url, options = {}){
 async function waitForImportRun(requestId){
   const root = importApiRoot();
 
-  const resultUrl =
-    `${root}/contents/${IMPORT_RESULTS_DIR}/${requestId}.json?ref=${BRANCH}`;
-
   const runsUrl =
     `${root}/actions/workflows/${IMPORT_WORKFLOW}/runs` +
     `?event=workflow_dispatch&branch=${BRANCH}&per_page=30`;
 
+  const artifactName = `recipe-import-${requestId}`;
+
   for(let attempt = 0; attempt < 120; attempt++){
 
-    // First check whether GitHub has published our result.
-    const response = await fetch(resultUrl, {
-      headers: authHeaders(),
-      cache: "no-store"
-    });
-
-    if(response.ok){
-      const file = await response.json();
-
-      if(!file.content){
-        throw new Error("The imported recipe file is empty.");
-      }
-
-      return JSON.parse(b64DecodeUtf8(file.content));
-    }
-
-    // A 404 is normal while the workflow is still running.
-    if(response.status !== 404){
-      throw new Error(
-        `Could not retrieve imported recipe: GitHub error ${response.status}`
-      );
-    }
-
-    // Check Actions separately so genuine failures are reported.
+    // Find the workflow run belonging to this import request.
     const runs = await githubImportRequest(runsUrl);
 
     const run = (runs.workflow_runs || []).find(item =>
       item.display_title?.includes(requestId)
     );
 
-    if(run?.status === "completed" && run.conclusion !== "success"){
-      throw new Error(
-        "Recipe import failed. Open GitHub Actions to view the error."
-      );
+    if(run){
+
+      // Report workflow failures immediately.
+      if(run.status === "completed" && run.conclusion !== "success"){
+        throw new Error(
+          "Recipe import failed. Open GitHub Actions to view the error."
+        );
+      }
+
+      // Only look for an artifact once the workflow has succeeded.
+      if(run.status === "completed" && run.conclusion === "success"){
+
+        const artifacts = await githubImportRequest(
+          `${root}/actions/runs/${run.id}/artifacts?per_page=100`
+        );
+
+        const artifact = (artifacts.artifacts || []).find(item =>
+          item.name === artifactName && !item.expired
+        );
+
+        if(artifact){
+
+          // Download the artifact ZIP.
+          const response = await fetch(
+            `${root}/actions/artifacts/${artifact.id}/zip`,
+            {
+              headers: authHeaders(),
+              cache: "no-store"
+            }
+          );
+
+          if(!response.ok){
+            throw new Error(
+              `Could not download recipe result: GitHub error ${response.status}`
+            );
+          }
+
+          if(typeof JSZip === "undefined"){
+            throw new Error(
+              "The ZIP extraction library could not be loaded. Refresh and try again."
+            );
+          }
+
+          // Extract recipe-import.json from the ZIP.
+          const zip = await JSZip.loadAsync(await response.blob());
+          const file = zip.file("recipe-import.json");
+
+          if(!file){
+            throw new Error("The downloaded recipe artifact is missing its JSON file.");
+          }
+
+          const data = JSON.parse(await file.async("string"));
+
+          // Delete the artifact after successful retrieval.
+          // If deletion fails, GitHub will expire it automatically.
+          try{
+            await githubImportRequest(
+              `${root}/actions/artifacts/${artifact.id}`,
+              {method: "DELETE"}
+            );
+          }catch(error){
+            console.warn("Could not immediately delete recipe artifact:", error);
+          }
+
+          return data;
+        }
+      }
     }
 
     document.getElementById("importProgress").textContent =
@@ -3430,10 +3469,11 @@ async function waitForImportRun(requestId){
   }
 
   throw new Error(
-    "The recipe result was not published within four minutes. " +
-    "Check the recipe-imports folder and GitHub Actions."
+    "The recipe result was not available within four minutes. " +
+    "Check GitHub Actions for the import run."
   );
 }
+
 
 
 function parseImportedIngredient(raw){
@@ -3496,7 +3536,7 @@ function parseImportedIngredient(raw){
 
   // Recognise supported units, with or without spaces.
   const unitMatch = remainder.match(
-    /^(kilograms?|kgs?|grams?|g|millilit(?:res|ers)?|ml|lit(?:res|ers)?|liters?|litres?|l|teaspoons?|tsp|tablespoons?|tbsp|cups?|pieces?|pcs)\.?(?=\s|$|[a-z])/i
+    /^(kilograms?|kgs?|grams?|g|millilit(?:res|ers)?|ml|lit(?:res|ers)?|liters?|litres?|teaspoons?|tsp|tablespoons?|tbsp|cups?|pieces?|pcs)\.?(?=\s|$)/i
   );
 
   let unit = "pcs";
