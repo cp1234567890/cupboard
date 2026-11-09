@@ -1,0 +1,2231 @@
+{
+  "rules": {
+    "officeDays": [
+      2,
+      3
+    ],
+    "maxWeeknightMins": 30,
+    "packs": {
+      "chicken thigh": {
+        "size": 4,
+        "label": "pack of 4"
+      },
+      "salmon fillet": {
+        "size": 2,
+        "label": "pack of 2"
+      },
+      "pak choi": {
+        "size": 2,
+        "label": "pack of 2"
+      }
+    },
+    "avoid": [
+      "cheese",
+      "parmesan",
+      "mozzarella",
+      "cheddar",
+      "feta",
+      "halloumi",
+      "paneer",
+      "prawn",
+      "shrimp",
+      "egg",
+      "omelette",
+      "noodle",
+      "greek yogurt",
+      "fish sauce",
+      "oyster sauce",
+      "smoked paprika"
+    ],
+    "staples": [
+      "olive oil",
+      "sunflower oil",
+      "sesame oil",
+      "soy sauce",
+      "honey",
+      "salt",
+      "chilli flakes",
+      "paprika",
+      "cumin",
+      "turmeric",
+      "garam masala",
+      "ground coriander",
+      "ground ginger",
+      "garlic powder",
+      "onion powder",
+      "mixed herbs",
+      "sesame seeds",
+      "rice vinegar",
+      "basmati rice",
+      "brown rice",
+      "quinoa",
+      "red lentils",
+      "pasta",
+      "spaghetti",
+      "vegetable stock",
+      "tomato puree",
+      "hoisin sauce",
+      "miso paste",
+      "gochujang paste"
+    ]
+  },
+  "dinners": [
+    {
+      "name": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 20,
+      "protein": 30,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated; or 0.5 tsp ground ginger"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "butter",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions.",
+        "Mix soy sauce, honey, ginger, chilli flakes, garlic and sesame oil together in a small bowl.",
+        "Melt butter in a pan over medium-high heat. Place the salmon skin-side down and cook for 4 minutes. Flip, pour the glaze over, and cook for a further 3 minutes, spooning the glaze over the fish as it cooks.",
+        "While the salmon finishes, steam the pak choi for 3–4 minutes until tender.",
+        "Plate up rice and pak choi, lay the salmon on top and spoon over any remaining glaze. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Defrost the fillet in the fridge the night before and pat it dry before it goes in the pan. The ginger and chilli make this a fresher, lighter dish than the miso salmon."
+    },
+    {
+      "name": "Courgette & Red Lentil Curry with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 18,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "red lentils",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "courgette",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "chopped into chunks"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "vegetable stock",
+          "quantity": 200,
+          "unit": "ml"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per night"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pot over medium heat. Add onion and cook for 5 minutes until softened. Add garlic, ginger, paprika, mixed herbs, chilli flakes, and garlic powder and cook for 1 more minute.",
+        "Add lentils, tinned tomatoes, and stock. Stir well, bring to a boil, then reduce to a simmer for 10 minutes.",
+        "Add courgette and cook for a further 10 minutes until lentils are soft and courgette is tender. Season with salt.",
+        "While curry finishes, cook rice according to packet instructions (cook fresh each night, 100g per serving).",
+        "Serve curry over rice."
+      ],
+      "tip": "Store the second portion in an airtight container in the fridge for up to 4 days. Reheat with a splash of water to loosen."
+    },
+    {
+      "name": "Crispy Hoisin Cauliflower Bowl with Quinoa & Edamame",
+      "serves": 1,
+      "mins": 35,
+      "protein": 22,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "cauliflower florets",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "sunflower oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "pinch"
+        },
+        {
+          "name": "hoisin sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "quinoa",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "frozen edamame",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp",
+          "note": "optional"
+        }
+      ],
+      "method": [
+        "Preheat oven to 230°C (210°C fan) with a baking tray inside so it heats up.",
+        "Toss cauliflower with sunflower oil, paprika, garlic powder and salt. Spread on the hot tray in a single layer and roast for 25 minutes, turning once, until deep golden and crisp at the edges.",
+        "Rinse quinoa, then cook in 120ml water with a pinch of salt: bring to the boil, cover and simmer for 12 minutes. Rest, covered, for 5 minutes, then fluff with a fork.",
+        "Boil the edamame from frozen for 4 minutes, then drain.",
+        "Mix hoisin, soy sauce, honey, rice vinegar and sesame oil in a bowl. Toss the roasted cauliflower in the sauce and return to the oven for 3–4 minutes to glaze.",
+        "Serve the quinoa topped with edamame and the glazed cauliflower. Scatter sesame seeds and chilli flakes over to finish."
+      ],
+      "tip": "Crowding the tray steams the cauliflower instead of crisping it. Use a single layer, and use two trays if needed."
+    },
+    {
+      "name": "Crispy Skin Salmon with Soy & Sesame Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 20,
+      "protein": 32,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "skin on"
+        },
+        {
+          "name": "sunflower oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "pinch"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "lettuce",
+          "quantity": 1,
+          "unit": "handful",
+          "note": "to serve, lightly dressed with a few drops of rice vinegar"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions. Once cooked, stir through the soy sauce, sesame oil and rice vinegar. Keep warm.",
+        "Pat the salmon skin very dry with kitchen paper and season the skin with salt.",
+        "Heat sunflower oil in a pan over medium-high heat. Place the salmon skin-side down, pressing gently with a spatula for the first 30 seconds so the skin stays flat. Cook for 5–6 minutes without moving it, until the skin is crisp and the flesh is cooked about three-quarters of the way up.",
+        "Flip and cook for 1 minute more.",
+        "While the salmon cooks, steam or pan-fry the tenderstem broccoli for 3–4 minutes until tender.",
+        "Serve salmon over the sesame rice with the broccoli and lettuce alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "The skin is the whole point here. Dry it thoroughly, don't move the fish while it crisps, and resist the urge to flip early."
+    },
+    {
+      "name": "Crispy Smashed Potatoes with Spiced Chickpeas & Spinach",
+      "serves": 1,
+      "mins": 35,
+      "protein": 15,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "potatoes",
+          "quantity": 300,
+          "unit": "g",
+          "note": "small if possible"
+        },
+        {
+          "name": "chickpeas",
+          "quantity": 1,
+          "unit": "tin",
+          "note": "drained"
+        },
+        {
+          "name": "spinach",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Boil potatoes in salted water for 15 minutes until just tender. Drain and leave to steam dry for 2 minutes.",
+        "Place potatoes on a baking tray. Use the bottom of a glass or mug to firmly smash each one flat. Drizzle with 1.5 tbsp olive oil and season with salt. Roast at 220°C (200°C fan) for 20 minutes until golden and crispy.",
+        "While potatoes roast, heat remaining olive oil in a pan over medium heat. Add garlic and cook for 1 minute. Add chickpeas, garam masala, cumin, turmeric, paprika and chilli flakes. Toss well and cook for 5–6 minutes until chickpeas are lightly crispy and well coated in spice.",
+        "Add spinach to the chickpea pan and stir until wilted.",
+        "Serve smashed potatoes topped with spiced chickpeas and spinach."
+      ],
+      "tip": "The key to crispy smashed potatoes is making sure they're well dried after boiling and generously oiled before roasting. Don't rush the roasting time. The crispier the better."
+    },
+    {
+      "name": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice",
+      "serves": 1,
+      "mins": 30,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "courgette",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced into rounds"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "onion powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss courgette rounds with 0.5 tbsp olive oil and a pinch of salt. Spread on a baking tray and roast for 20 minutes until golden.",
+        "Cook basmati rice according to packet instructions.",
+        "Mix cumin, paprika, garlic powder, onion powder, chilli flakes, soy sauce and 1 tbsp olive oil in a bowl. Coat chicken thighs well.",
+        "Heat a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "Rest chicken for 2 minutes then serve over rice with roasted courgette alongside."
+      ],
+      "tip": "Get the courgette in the oven first. It takes the longest and is easy to forget about once the chicken is in the pan."
+    },
+    {
+      "name": "Cumin Spiced Chicken with Crispy Roasted Potatoes & Basmati Rice",
+      "serves": 1,
+      "mins": 30,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "potatoes",
+          "quantity": 250,
+          "unit": "g",
+          "note": "cut into chunks"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "onion powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss potato chunks with 0.5 tbsp olive oil, 0.5 tsp cumin, and a pinch of salt. Spread on a baking tray and roast for 25 minutes until golden and crispy, turning halfway.",
+        "Cook basmati rice according to packet instructions.",
+        "Mix remaining cumin, paprika, garlic powder, onion powder, chilli flakes, soy sauce, and 1 tbsp olive oil in a bowl. Coat chicken thighs well.",
+        "Heat a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "Rest chicken for 2 minutes then serve over rice with crispy potatoes alongside."
+      ],
+      "tip": "Get the potatoes in first — they take the longest. Don't turn them too early or they'll stick to the tray; wait until they release naturally."
+    },
+    {
+      "name": "Garam Masala Chickpea Curry with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 16,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "chickpeas",
+          "quantity": 1,
+          "unit": "tin",
+          "note": "drained"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "tomato puree",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g",
+          "note": "for Monday; cook fresh for Tuesday"
+        },
+        {
+          "name": "tomato",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "chopped",
+          "perPortion": true
+        },
+        {
+          "name": "red onion",
+          "quantity": 0.25,
+          "unit": "pcs",
+          "perPortion": true
+        },
+        {
+          "name": "lemon",
+          "quantity": 0.25,
+          "unit": "pcs",
+          "perPortion": true
+        }
+      ],
+      "method": [
+        "Heat olive oil in a pan over medium heat. Add the onion and cook for 5 minutes until softened. Add the garlic and cook for 1 more minute.",
+        "Add tomato puree, garam masala, cumin, turmeric and chilli flakes. Stir and cook for 1 minute until fragrant.",
+        "Add the chickpeas and chopped tomatoes with 100ml water. Bring to the boil, then simmer for 15 minutes until thick. Lightly crush a few chickpeas against the side of the pan to thicken it.",
+        "Season with salt. Cook the rice according to packet instructions.",
+        "Toss the chopped tomato and red onion with lemon juice and a pinch of salt.",
+        "Serve half the curry over rice, topped with the tomato and onion mix. Cool the second portion quickly and store in an airtight container for the next day."
+      ],
+      "tip": "Chill the second portion within an hour. The spices deepen overnight, so the second portion will taste even better. Make the tomato topping fresh each time.",
+      "boost": "stir 75g red lentils into the curry with the tomatoes (add a splash of extra water and simmer for 20 minutes), and serve over quinoa instead of rice. This takes each portion to roughly 28g."
+    },
+    {
+      "name": "Garam Masala Lentil & Spinach Daal with Crispy Roasted Potatoes",
+      "serves": 1,
+      "mins": 30,
+      "protein": 18,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "red lentils",
+          "quantity": 75,
+          "unit": "g"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "ginger",
+          "quantity": 0.5,
+          "unit": "tsp",
+          "note": "grated; or pinch of ground ginger"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 0.5,
+          "unit": "tin",
+          "note": "freeze or use the rest in another meal"
+        },
+        {
+          "name": "vegetable stock",
+          "quantity": 150,
+          "unit": "ml"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "ground coriander",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "spinach",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "potatoes",
+          "quantity": 250,
+          "unit": "g",
+          "note": "cut into chunks"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss potato chunks with olive oil, paprika, garlic powder, and salt. Spread on a baking tray and roast for 25 minutes until golden and crispy, turning halfway.",
+        "While potatoes roast, heat olive oil in a pot over medium heat. Add onion and cook for 5 minutes until softened. Add garlic, ginger, garam masala, cumin, turmeric, ground coriander, and chilli flakes and cook for 1 minute until fragrant.",
+        "Add lentils, tomatoes, and stock. Bring to a boil then reduce to a simmer for 15–18 minutes, stirring occasionally, until lentils are soft.",
+        "Cook rice according to packet instructions.",
+        "Stir spinach into the dal until wilted. Season with salt.",
+        "Serve dal over rice with crispy potatoes alongside."
+      ],
+      "tip": "The potatoes are done when they're golden and crispy on the outside — resist the urge to turn them too early or they'll stick to the tray."
+    },
+    {
+      "name": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 25,
+      "protein": 32,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "quinoa",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Rinse quinoa and cook in 180ml of water. Bring to a boil, reduce to a simmer, cover, and cook for 15 minutes until water is absorbed. Fluff with a fork.",
+        "Mix gochujang, soy sauce, honey, sesame oil, and garlic together in a bowl. Add chicken thighs and coat well.",
+        "Heat olive oil in a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "Remove chicken and rest. Add spinach to the same pan and stir until wilted, about 1 minute.",
+        "While chicken rests, steam pak choi for 3–4 minutes until tender.",
+        "Serve chicken over quinoa with spinach and pak choi alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Gochujang has a good kick — reduce to 1 tbsp and add extra honey if you want less heat."
+    },
+    {
+      "name": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 25,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook basmati rice according to packet instructions.",
+        "Mix gochujang, soy sauce, honey, sesame oil and garlic together in a bowl. Add the chicken thighs and coat well.",
+        "Heat olive oil in a pan over medium-high heat. Cook the chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "While the chicken rests, steam the pak choi for 3–4 minutes until tender.",
+        "Serve the chicken over rice with pak choi alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Gochujang has a good kick. Reduce to 1 tbsp and add extra honey if you want less heat."
+    },
+    {
+      "name": "Gochujang Chicken with Brown Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 25,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "brown rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook brown rice according to packet instructions (~25 minutes — start first).",
+        "Mix gochujang, soy sauce, honey, sesame oil, and garlic together in a bowl. Add chicken thighs and coat well.",
+        "Heat olive oil in a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "While chicken rests, steam pak choi for 3–4 minutes until tender.",
+        "Serve chicken over rice with pak choi alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Gochujang has a good kick — if you want less heat, reduce to 1 tbsp and add a little extra honey to balance."
+    },
+    {
+      "name": "Honey Garlic Chicken with Basmati Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 25,
+      "protein": 32,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "butter",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "lettuce",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "tomato",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Cook basmati rice according to packet instructions.",
+        "Mix soy sauce, honey and garlic in a bowl. Add the chicken thighs and coat well.",
+        "Melt butter in a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and sticky. Pour the remaining glaze over in the last 2 minutes.",
+        "While the chicken rests, steam the pak choi for 3–4 minutes until tender.",
+        "Whisk rice vinegar and honey together and toss through the lettuce and tomato.",
+        "Serve chicken over rice with pak choi and salad alongside."
+      ],
+      "tip": "Watch the heat once the honey goes in. Medium-high is fine, but the glaze goes from sticky to burnt quickly in the last 2 minutes."
+    },
+    {
+      "name": "Honey Garlic Chicken with Basmati Rice & Wilted Spinach",
+      "serves": 1,
+      "mins": 25,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "butter",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "quantity": 1,
+          "unit": "handful"
+        }
+      ],
+      "method": [
+        "Cook basmati rice according to packet instructions.",
+        "Mix soy sauce, honey, and garlic together in a small bowl.",
+        "Heat olive oil in a pan over medium-high heat. Cook chicken thighs for 6–7 minutes per side until cooked through. Pour the glaze over and cook for a further 2 minutes, turning to coat. Add butter in the last minute for extra richness.",
+        "Remove chicken from the pan and rest. Add spinach to the same pan and stir until wilted, about 1 minute.",
+        "Serve chicken over rice with spinach alongside."
+      ],
+      "tip": "The honey will catch quickly once added — keep the heat at medium and keep an eye on it."
+    },
+    {
+      "name": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 20,
+      "protein": 32,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "miso paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions. Once cooked, stir through 0.5 tbsp soy sauce, sesame oil and rice vinegar. Keep warm.",
+        "Mix miso paste, remaining soy sauce, honey and garlic together in a small bowl. Spread generously over the salmon fillet.",
+        "Heat a pan over medium heat with a small drizzle of oil. Place the salmon skin-side down and cook for 4 minutes. Flip and cook for a further 2–3 minutes. The miso glaze will caramelise, so watch it closely as it can catch quickly.",
+        "While the salmon finishes, steam or pan-fry the tenderstem broccoli for 3–4 minutes until tender.",
+        "Serve the salmon over sesame rice with broccoli alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Your miso is darker and saltier than white miso, so 1 tbsp with the extra honey keeps it balanced. Keep the heat at medium once you flip. The caramelised edges are the best bit."
+    },
+    {
+      "name": "Paprika Chicken with Roasted Courgette & Quinoa",
+      "serves": 1,
+      "mins": 30,
+      "protein": 36,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "courgette",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced into rounds"
+        },
+        {
+          "name": "quinoa",
+          "quantity": 60,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "onion powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "lettuce",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "tomato",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss courgette rounds with 0.5 tbsp olive oil and a pinch of salt. Spread on a baking tray and roast for 20 minutes until golden.",
+        "Rinse quinoa, then cook in 120ml water with a pinch of salt: bring to the boil, cover and simmer for 12 minutes. Rest, covered, for 5 minutes, then fluff with a fork.",
+        "Mix paprika, garlic powder, onion powder, chilli flakes, soy sauce and 1 tbsp olive oil in a bowl. Coat the chicken thighs well.",
+        "Heat a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly crispy. Pour any remaining marinade over in the last 2 minutes.",
+        "Whisk soy sauce, rice vinegar and sesame oil together and toss through the lettuce and tomato.",
+        "Rest chicken for 2 minutes, then serve over quinoa with the courgette and salad alongside."
+      ],
+      "tip": "Get the courgette in the oven first. It takes the longest, and the same trick makes it nicely golden at the edges."
+    },
+    {
+      "name": "Quinoa & Roasted Veg Bowl",
+      "serves": 1,
+      "mins": 25,
+      "protein": 12,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "quinoa",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "courgette",
+          "quantity": 0.5,
+          "unit": "pcs",
+          "note": "chopped into chunks"
+        },
+        {
+          "name": "bell pepper",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "cherry tomatoes",
+          "quantity": 75,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss courgette, pepper, and cherry tomatoes with olive oil, paprika, mixed herbs, garlic powder, and salt on a baking tray. Spread out in a single layer.",
+        "Roast for 20–25 minutes until tender and slightly charred at the edges.",
+        "While veg roasts, rinse quinoa and cook in 180ml of water. Bring to a boil, then reduce to a simmer, cover, and cook for 15 minutes until water is absorbed. Fluff with a fork.",
+        "Spoon quinoa into a bowl and top with roasted veg."
+      ],
+      "tip": "Feel free to swap in any veg you have going. Mushrooms, red onion, or aubergine all work well here.",
+      "boost": "Add a tin of drained chickpeas to the roasting tray (adds ~10g and gets nicely crispy)."
+    },
+    {
+      "name": "Quinoa & Roasted Veg Bowl with Salmon",
+      "serves": 1,
+      "mins": 25,
+      "protein": 32,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "quinoa",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "courgette",
+          "quantity": 0.5,
+          "unit": "pcs",
+          "note": "chopped into chunks"
+        },
+        {
+          "name": "bell pepper",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "cherry tomatoes",
+          "quantity": 75,
+          "unit": "g"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "butter",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Preheat oven to 220°C (200°C fan). Toss courgette, pepper, and cherry tomatoes with olive oil, paprika, mixed herbs, garlic powder, and salt on a baking tray. Spread out in a single layer and roast for 20–25 minutes.",
+        "While veg roasts, rinse quinoa and cook in 180ml of water. Bring to a boil, reduce to a simmer, cover, and cook for 15 minutes until water is absorbed. Fluff with a fork.",
+        "Mix soy sauce and honey in a small bowl. Melt butter in a pan over medium-high heat. Cook salmon skin-side down for 4 minutes, flip, pour over the glaze and cook for a further 3 minutes.",
+        "Spoon quinoa into a bowl, top with roasted veg and flake the salmon over the top."
+      ]
+    },
+    {
+      "name": "Red Lentil Dal with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 18,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "red lentils",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "vegetable stock",
+          "quantity": 200,
+          "unit": "ml"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per serving"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pot over medium heat. Add onion and cook until softened, about 5 minutes. Add garlic, paprika, mixed herbs, and chilli flakes and cook for 1 more minute.",
+        "Add lentils, tinned tomatoes, and stock. Stir well, bring to a boil, then reduce to a simmer. Cook uncovered for 20 minutes, stirring occasionally, until lentils are soft and the dal has thickened.",
+        "Season with salt. Cook rice according to packet instructions.",
+        "Serve dal over rice."
+      ],
+      "tip": "This makes 2 portions — have the second as lunch the next day or dinner on Monday if needed."
+    },
+    {
+      "name": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 20,
+      "protein": 32,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "ginger",
+          "quantity": 0.5,
+          "unit": "tsp",
+          "note": "grated; or pinch of ground ginger"
+        },
+        {
+          "name": "butter",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions.",
+        "Mix soy sauce, sesame oil, honey, garlic, and ginger together in a small bowl.",
+        "Melt butter in a pan over medium-high heat. Place salmon skin-side down and cook for 4 minutes. Flip, pour the glaze over, and cook for a further 3 minutes, spooning the glaze over the fish as it cooks.",
+        "While salmon finishes, steam or pan-fry tenderstem broccoli for 3–4 minutes until tender.",
+        "Plate up rice and broccoli, lay salmon on top, spoon over any remaining glaze, and scatter sesame seeds over to finish."
+      ],
+      "tip": "The sesame oil adds a lovely nutty depth — don't be tempted to swap it for olive oil here as it really makes the dish."
+    },
+    {
+      "name": "Soy-Glazed Chicken with Brown Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 30,
+      "protein": 32,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "brown rice",
+          "quantity": 70,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        }
+      ],
+      "method": [
+        "Cook the brown rice according to packet instructions. Start it first, as it takes longest.",
+        "Mix soy sauce, honey, garlic powder, paprika, chilli flakes and olive oil in a bowl. Coat the chicken thighs well.",
+        "Heat a pan over medium-high heat. Cook the chicken for 6–7 minutes per side until cooked through and crisp at the edges. Pour any remaining glaze over in the last 2 minutes.",
+        "While the chicken rests for 2 minutes, steam the tenderstem broccoli for 3–4 minutes until tender.",
+        "Serve the chicken over the rice with the broccoli alongside."
+      ],
+      "tip": "Brown rice is the slow part on a weeknight, so put it on before you do anything else."
+    },
+    {
+      "name": "Soy-Glazed Chicken with Courgette & Quinoa",
+      "serves": 1,
+      "mins": 25,
+      "protein": 30,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "boneless skinless"
+        },
+        {
+          "name": "courgette",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced into rounds"
+        },
+        {
+          "name": "quinoa",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        }
+      ],
+      "method": [
+        "Rinse quinoa and cook in 180ml of water. Bring to a boil, reduce to a simmer, cover, and cook for 15 minutes until water is absorbed. Fluff with a fork.",
+        "Mix soy sauce, garlic powder, paprika, and chilli flakes in a bowl. Add chicken thighs and coat well.",
+        "Heat olive oil in a pan over medium-high heat. Cook chicken for 6–7 minutes per side until cooked through and slightly charred. Pour any remaining marinade over in the last 2 minutes.",
+        "Remove chicken and rest. Add courgette slices to the same pan and cook for 3–4 minutes per side until golden.",
+        "Slice chicken and serve over quinoa with courgette alongside."
+      ],
+      "tip": "Cooking the courgette in the same pan picks up all the leftover spiced juices — don't wipe it clean between steps."
+    },
+    {
+      "name": "Spiced Chickpea & Tomato Pasta",
+      "serves": 2,
+      "mins": 25,
+      "protein": 18,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "pasta",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "chickpeas",
+          "quantity": 1,
+          "unit": "tin",
+          "note": "drained"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "vegetable stock",
+          "quantity": 200,
+          "unit": "ml"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pan over medium heat. Add onion and cook for 5 minutes until softened. Add garlic, paprika, mixed herbs, and chilli flakes and cook for 1 more minute.",
+        "Add tinned tomatoes, stock, and chickpeas. Stir well and simmer for 15 minutes until the sauce has thickened.",
+        "While the sauce simmers, cook pasta according to packet instructions. Reserve a mug of pasta water before draining.",
+        "Stir pasta through the sauce, adding a splash of pasta water to loosen if needed. Season with salt."
+      ],
+      "tip": "Store the second portion in an airtight container in the fridge and reheat with a splash of water."
+    },
+    {
+      "name": "Spiced Coconut Lentil Dal with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 18,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "red lentils",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "coconut milk",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated; or 0.5 tsp ground ginger"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "ground coriander",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per night"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pot over medium heat. Add onion and cook for 5 minutes until softened. Add garlic and ginger and cook for 1 more minute.",
+        "Add cumin, turmeric, garam masala, ground coriander, and chilli flakes. Stir well and cook for 1 minute until fragrant.",
+        "Add lentils, tinned tomatoes, and coconut milk. Stir well, bring to a boil, then reduce to a simmer. Cook uncovered for 20 minutes, stirring occasionally, until lentils are completely soft and the dal has thickened to a creamy consistency. Add a splash of water if it thickens too quickly.",
+        "Season with salt. Cook rice fresh each night (100g per serving).",
+        "Serve dal over rice."
+      ],
+      "tip": "Store the second portion in an airtight container in the fridge. The coconut flavour deepens overnight so Friday's portion will taste even better."
+    },
+    {
+      "name": "Spiced Lamb Meatballs with Basmati Rice & Pan-Fried Courgette",
+      "serves": 1,
+      "mins": 25,
+      "protein": 35,
+      "type": "lamb",
+      "ingredients": [
+        {
+          "name": "minced lamb",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "courgette",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced into rounds"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 90,
+          "unit": "g"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "mixed herbs",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "onion powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic powder",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Cook basmati rice according to packet instructions.",
+        "Mix minced lamb with garlic, paprika, mixed herbs, chilli flakes, onion powder, garlic powder, and salt. Shape into small meatballs, about the size of a golf ball (makes around 8–10).",
+        "Heat olive oil in a pan over medium-high heat. Cook meatballs for 8–10 minutes, turning occasionally, until browned all over and cooked through.",
+        "Remove meatballs and rest. Add courgette slices to the same pan and cook for 3–4 minutes per side until golden, picking up the lamb juices.",
+        "Serve meatballs and courgette over rice."
+      ],
+      "tip": "Don't overcrowd the pan with the meatballs — cook in batches if needed to get a good colour on them rather than steaming."
+    },
+    {
+      "name": "Sticky Hoisin Pork Belly with Basmati Rice, Stir-Fried Tenderstem Broccoli & Steamed Pak Choi",
+      "serves": 2,
+      "mins": 25,
+      "protein": 35,
+      "type": "pork",
+      "ingredients": [
+        {
+          "name": "pork belly slices",
+          "quantity": 400,
+          "unit": "g"
+        },
+        {
+          "name": "hoisin sauce",
+          "quantity": 3,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 160,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 2,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "thinly sliced; for the broccoli"
+        }
+      ],
+      "method": [
+        "Cook basmati rice according to packet instructions.",
+        "Mix hoisin sauce, soy sauce, honey, minced garlic, and chilli flakes together in a bowl. Add pork belly slices and coat well.",
+        "Heat olive oil in a large pan over medium-high heat. Cook pork belly slices for 4–5 minutes per side until caramelised and cooked through. Pour any remaining marinade over in the last 2 minutes.",
+        "While pork rests, stir-fry tenderstem broccoli in the same pan with sliced garlic for 3–4 minutes until tender with a little char.",
+        "Steam pak choi in a separate pan or steamer for 3–4 minutes until tender.",
+        "Serve pork belly over rice with broccoli and pak choi alongside."
+      ],
+      "tip": "Don't rush the pork — letting it caramelise properly in the pan is what makes this dish impressive. If the marinade starts catching too quickly, add a small splash of water to the pan."
+    },
+    {
+      "name": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 20,
+      "protein": 31,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "butter",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "tomato",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions.",
+        "Mix soy sauce, honey and garlic together in a small bowl.",
+        "Melt butter in a pan over medium-high heat. Place salmon skin-side down and cook for 4 minutes. Flip, pour the teriyaki mix over, and cook for a further 3 minutes, spooning the sauce over the fish as it thickens.",
+        "While the salmon finishes, steam the pak choi for 3–4 minutes until tender.",
+        "Toss the sliced tomato with sesame oil, rice vinegar and sesame seeds.",
+        "Plate up rice and pak choi, lay the salmon on top and spoon over any remaining sauce. Serve with the tomato salad."
+      ],
+      "tip": "Defrost the fillet in the fridge the night before so the skin crisps properly. Pat it dry before it goes in the pan."
+    },
+    {
+      "name": "Teriyaki Salmon with Rice & Wilted Spinach with Garlic",
+      "serves": 1,
+      "mins": 20,
+      "protein": 30,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "butter",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "spinach",
+          "quantity": 1,
+          "unit": "handful"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "thinly sliced"
+        }
+      ],
+      "method": [
+        "Cook rice according to packet instructions.",
+        "Mix soy sauce, honey, and minced garlic together in a small bowl.",
+        "Melt butter in a pan over medium-high heat. Place salmon skin-side down and cook for 4 minutes. Flip, pour the glaze over, and cook for a further 3 minutes, spooning the glaze over the fish as it cooks.",
+        "Remove salmon. Add sliced garlic to the same pan and cook for 30 seconds, then add spinach and stir until wilted, about 1 minute.",
+        "Plate up rice, lay salmon on top, and serve spinach alongside."
+      ]
+    }
+  ]
+}
