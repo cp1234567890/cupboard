@@ -125,35 +125,28 @@
     },
     {
       "start": "2026-11-16",
-      "onList": true,
+      "onList": false,
       "days": [
         {
-          "mode": "cook",
-          "dinner": "Courgette & Red Lentil Curry with Basmati Rice"
+          "mode": "free"
         },
         {
-          "mode": "leftover",
-          "dinner": "Courgette & Red Lentil Curry with Basmati Rice"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Gochujang Chicken with Brown Rice & Steamed Pak Choi"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Teriyaki Salmon with Rice & Wilted Spinach with Garlic"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Crispy Smashed Potatoes with Spiced Chickpeas & Spinach"
+          "mode": "free"
         }
       ]
     }
