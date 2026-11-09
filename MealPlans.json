@@ -6,38 +6,38 @@
       "days": [
         {
           "mode": "cook",
-          "note": "open chicken pack, use 2 thighs",
-          "dinner": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice"
+          "dinner": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice",
+          "note": "open chicken pack, use 2 thighs"
         },
         {
           "mode": "cook",
-          "note": "remaining 2 thighs",
-          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi",
+          "note": "remaining 2 thighs"
         },
         {
           "mode": "cook",
-          "note": "after the office",
-          "dinner": "Crispy Smashed Potatoes with Spiced Chickpeas & Spinach"
+          "dinner": "Crispy Smashed Potatoes with Spiced Chickpeas & Spinach",
+          "note": "after the office"
         },
         {
           "mode": "cook",
-          "note": "BATCH COOK for 2 portions",
-          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice"
+          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice",
+          "note": "BATCH COOK for 2 portions"
         },
         {
           "mode": "leftover",
-          "note": "nothing to cook after the office",
-          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice"
+          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice",
+          "note": "nothing to cook after the office"
         },
         {
           "mode": "cook",
-          "note": "defrost one fillet Friday night",
-          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi",
+          "note": "defrost one fillet Friday night"
         },
         {
           "mode": "cook",
-          "note": "defrost second fillet Saturday night",
-          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli",
+          "note": "defrost second fillet Saturday night"
         }
       ]
     },
@@ -47,38 +47,38 @@
       "days": [
         {
           "mode": "sorted",
-          "note": "already sorted, nothing to plan",
-          "text": "Lentil dal"
+          "text": "Lentil dal",
+          "note": "already sorted, nothing to plan"
         },
         {
           "mode": "sorted",
-          "note": "already sorted, nothing to plan",
-          "text": "Lentil dal"
+          "text": "Lentil dal",
+          "note": "already sorted, nothing to plan"
         },
         {
           "mode": "cook",
-          "note": "plus lettuce & tomato salad; open chicken pack, use 2 thighs",
-          "dinner": "Paprika Chicken with Roasted Courgette & Quinoa"
+          "dinner": "Paprika Chicken with Roasted Courgette & Quinoa",
+          "note": "plus lettuce & tomato salad; open chicken pack, use 2 thighs"
         },
         {
           "mode": "cook",
-          "note": "plus lettuce & tomato salad; use remaining 2 thighs; defrost one salmon fillet Thursday night",
-          "dinner": "Honey Garlic Chicken with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Honey Garlic Chicken with Basmati Rice & Steamed Pak Choi",
+          "note": "plus lettuce & tomato salad; use remaining 2 thighs; defrost one salmon fillet Thursday night"
         },
         {
           "mode": "cook",
-          "note": "plus tomato & sesame salad; open salmon pack; defrost second fillet Friday night",
-          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi",
+          "note": "plus tomato & sesame salad; open salmon pack; defrost second fillet Friday night"
         },
         {
           "mode": "cook",
-          "note": "plus lettuce side; finish salmon pack",
-          "dinner": "Crispy Skin Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+          "dinner": "Crispy Skin Salmon with Soy & Sesame Rice & Tenderstem Broccoli",
+          "note": "plus lettuce side; finish salmon pack"
         },
         {
           "mode": "cook",
-          "note": "BATCH COOK for 2 portions; this curry was not made and moved to Monday and Tuesday of Week 16",
-          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice",
+          "note": "BATCH COOK for 2 portions; this curry was not made and moved to Monday and Tuesday of Week 16"
         }
       ]
     },
@@ -88,38 +88,72 @@
       "days": [
         {
           "mode": "cook",
-          "note": "BATCH COOK for 2 portions",
-          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice",
+          "note": "BATCH COOK for 2 portions"
         },
         {
           "mode": "leftover",
-          "note": "cook fresh rice",
-          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice",
+          "note": "cook fresh rice"
         },
         {
           "mode": "cook",
-          "note": "office day, quick; open chicken pack, use 2 thighs",
-          "dinner": "Soy-Glazed Chicken with Brown Rice & Tenderstem Broccoli"
+          "dinner": "Soy-Glazed Chicken with Brown Rice & Tenderstem Broccoli",
+          "note": "office day, quick; open chicken pack, use 2 thighs"
         },
         {
           "mode": "cook",
-          "note": "office day, quick; use remaining 2 thighs; defrost one salmon fillet Thursday night",
-          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi",
+          "note": "office day, quick; use remaining 2 thighs; defrost one salmon fillet Thursday night"
         },
         {
           "mode": "cook",
-          "note": "open salmon pack; defrost second fillet Friday night",
-          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi",
+          "note": "open salmon pack; defrost second fillet Friday night"
         },
         {
           "mode": "cook",
-          "note": "finish salmon pack",
-          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli",
+          "note": "finish salmon pack"
         },
         {
           "mode": "cook",
-          "note": "new dish, vegetarian",
-          "dinner": "Crispy Hoisin Cauliflower Bowl with Quinoa & Edamame"
+          "dinner": "Crispy Hoisin Cauliflower Bowl with Quinoa & Edamame",
+          "note": "new dish, vegetarian"
+        }
+      ]
+    },
+    {
+      "start": "2026-11-16",
+      "onList": true,
+      "days": [
+        {
+          "mode": "cook",
+          "dinner": "Garam Masala Lentil & Spinach Daal with Crispy Roasted Potatoes"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Spiced Chickpea & Tomato Pasta"
+        },
+        {
+          "mode": "leftover",
+          "dinner": "Spiced Chickpea & Tomato Pasta"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Cumin Spiced Chicken with Crispy Roasted Potatoes & Basmati Rice"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli"
         }
       ]
     }
