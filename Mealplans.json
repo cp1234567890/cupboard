@@ -1,0 +1,127 @@
+{
+  "weeks": [
+    {
+      "start": "2026-10-26",
+      "onList": false,
+      "days": [
+        {
+          "mode": "cook",
+          "note": "open chicken pack, use 2 thighs",
+          "dinner": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice"
+        },
+        {
+          "mode": "cook",
+          "note": "remaining 2 thighs",
+          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "after the office",
+          "dinner": "Crispy Smashed Potatoes with Spiced Chickpeas & Spinach"
+        },
+        {
+          "mode": "cook",
+          "note": "BATCH COOK for 2 portions",
+          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice"
+        },
+        {
+          "mode": "leftover",
+          "note": "nothing to cook after the office",
+          "dinner": "Spiced Coconut Lentil Dal with Basmati Rice"
+        },
+        {
+          "mode": "cook",
+          "note": "defrost one fillet Friday night",
+          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "defrost second fillet Saturday night",
+          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+        }
+      ]
+    },
+    {
+      "start": "2026-11-02",
+      "onList": false,
+      "days": [
+        {
+          "mode": "sorted",
+          "note": "already sorted, nothing to plan",
+          "text": "Lentil dal"
+        },
+        {
+          "mode": "sorted",
+          "note": "already sorted, nothing to plan",
+          "text": "Lentil dal"
+        },
+        {
+          "mode": "cook",
+          "note": "plus lettuce & tomato salad; open chicken pack, use 2 thighs",
+          "dinner": "Paprika Chicken with Roasted Courgette & Quinoa"
+        },
+        {
+          "mode": "cook",
+          "note": "plus lettuce & tomato salad; use remaining 2 thighs; defrost one salmon fillet Thursday night",
+          "dinner": "Honey Garlic Chicken with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "plus tomato & sesame salad; open salmon pack; defrost second fillet Friday night",
+          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "plus lettuce side; finish salmon pack",
+          "dinner": "Crispy Skin Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+        },
+        {
+          "mode": "cook",
+          "note": "BATCH COOK for 2 portions; this curry was not made and moved to Monday and Tuesday of Week 16",
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+        }
+      ]
+    },
+    {
+      "start": "2026-11-09",
+      "onList": false,
+      "days": [
+        {
+          "mode": "cook",
+          "note": "BATCH COOK for 2 portions",
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+        },
+        {
+          "mode": "leftover",
+          "note": "cook fresh rice",
+          "dinner": "Garam Masala Chickpea Curry with Basmati Rice"
+        },
+        {
+          "mode": "cook",
+          "note": "office day, quick; open chicken pack, use 2 thighs",
+          "dinner": "Soy-Glazed Chicken with Brown Rice & Tenderstem Broccoli"
+        },
+        {
+          "mode": "cook",
+          "note": "office day, quick; use remaining 2 thighs; defrost one salmon fillet Thursday night",
+          "dinner": "Gochujang Chicken with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "open salmon pack; defrost second fillet Friday night",
+          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "note": "finish salmon pack",
+          "dinner": "Miso-Glazed Salmon with Soy & Sesame Rice & Tenderstem Broccoli"
+        },
+        {
+          "mode": "cook",
+          "note": "new dish, vegetarian",
+          "dinner": "Crispy Hoisin Cauliflower Bowl with Quinoa & Edamame"
+        }
+      ]
+    }
+  ]
+}
