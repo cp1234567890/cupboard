@@ -1,5 +1,11 @@
 {
-  "manual": [],
+  "manual": [
+    {
+      "name": "Broccoli",
+      "quantity": 1,
+      "unit": "g"
+    }
+  ],
   "checked": {
     "limoncello liqueur|measure": true
   }
