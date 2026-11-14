@@ -1,10 +1,10 @@
-Plain Flour|1395|g|used:1792942535050
+Plain Flour|1145|g|used:1794663892609
 Vanilla Extract|1|pcs|staple
 Jam Sugar|500|g
 Soft Dark Brown Sugar|240|g
-Golden Caster Sugar|500|g|used:1792938009415
+Golden Caster Sugar|425|g|used:1794663892609
 Light Soft Brown Sugar|290|g|used:1792942535049
-Light Muscovado Sugar|1185|g
+Light Muscovado Sugar|1085|g|used:1794663892609
 Wholemeal Flour|625|g
 Icing Sugar|1|pcs|staple
 Golden Syrup|1|pcs|staple
@@ -14,7 +14,7 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|570|g|staple|used:1792942535049|loc:fridge
+Butter|570|g|staple|used:1794663892609|loc:fridge
 Baking Powder|1|g|staple|used:1792942535051
 Bicarbonate Of Soda|1|g|staple|used:1792942535050
 Cocoa Powder|1|g|staple|used:1792938009416
@@ -30,10 +30,9 @@ Ground Ginger|1|g|staple|used:1792942535051
 Ground Cinnamon|1|g|staple|used:1792942535051
 Honey|1|g|staple|used:1792942535050
 Apple Slices|250|g|used:1792942535049|loc:freezer
-Condensed Milk|2|pcs
+Condensed Milk|1|pcs|used:1794663892610
 Granulated Sugar|1|kg
 Eggs|7|pcs|used:1792942535050
 Nut And Raisin Granola|400|g|used:1792942535052
 Salt|1|g|staple
 Lemon|1|pcs|loc:fridge
-Chocolate|200|g
