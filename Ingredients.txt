@@ -34,3 +34,4 @@ Condensed Milk|1|pcs
 Granulated Sugar|1|kg
 Eggs|1|pcs|used:1792942535050
 Nut And Raisin Granola|400|g|used:1792942535052
+Salt|1|g|staple|loc:unsorted
