@@ -27,9 +27,19 @@
     "unsalted butter"
   ],
   "Eggs": [
-    "Egg"
+    "Egg",
+    "Simply Mixed Eggs"
   ],
   "Apple Slices": [
     "Frozen Apple Slices"
+  ],
+  "Condensed Milk": [
+    "Nestle Carn Condensed Mi"
+  ],
+  "Lemon": [
+    "Ea Lemon"
+  ],
+  "Chocolate": [
+    "Dark Cooking Chocolate"
   ]
 }
