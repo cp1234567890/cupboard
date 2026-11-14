@@ -1,10 +1,4 @@
 {
-  "manual": [
-    {
-      "name": "Broccoli",
-      "quantity": 1,
-      "unit": "g"
-    }
-  ],
+  "manual": [],
   "checked": {}
 }
