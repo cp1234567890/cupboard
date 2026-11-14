@@ -35,5 +35,5 @@ Granulated Sugar|1|kg
 Eggs|7|pcs|used:1792942535050
 Nut And Raisin Granola|400|g|used:1792942535052
 Salt|1|g|staple
-Lemon|1|pcs|loc:unsorted
+Lemon|1|pcs|loc:fridge
 Chocolate|200|g
