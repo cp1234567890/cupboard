@@ -692,6 +692,7 @@
   </div>
 </div>
 
+<style>.section-short{margin:6px 0 4px;padding-left:20px;color:var(--brick);font-size:0.9rem;display:flex;flex-direction:column;gap:3px;}</style>
 <div id="sectionMakeModal" class="modal-backdrop hidden"><div class="modal recipe-modal">
   <h2 id="sectionMakeTitle">Make recipe</h2><p class="hint">Select the sections you're making. All are selected initially.</p>
   <div id="sectionMakeChoices"></div><div class="modal-actions"><button type="button" class="btn-secondary" id="sectionSelectAll">Select / deselect all</button></div>
@@ -3303,14 +3304,29 @@ function renderSectionMakePreview(){
   const selected=selectedMakeSections(), result=getRecipeAvailability(recipe,selected);
   const preview=document.getElementById("sectionMakePreview");preview.innerHTML="";
   const heading=document.createElement("p");heading.textContent=selected.length ? `${selected.length} section(s) · ${availabilityText(result)}` : "Select at least one section";preview.appendChild(heading);
-  document.getElementById("sectionMakeConfirm").disabled=!selected.length || result.details.some(i=>i.status!=="ok");
+  // Say exactly what's short, so it's clear why it can't be made yet.
+  const short=selected.length ? result.details.filter(i=>i.status!=="ok") : [];
+  if(short.length){
+    const list=document.createElement("ul");list.className="section-short";
+    short.forEach(i=>{const li=document.createElement("li");
+      const have=i.available>0 ? `only ${fmtQty(roundQty(i.available),i.unit)} available` : "not in your cupboard";
+      li.textContent=`${i.name}: need ${fmtQty(i.quantity,i.unit)}, ${have}`;list.appendChild(li);});
+    preview.appendChild(list);
+    const hint=document.createElement("p");hint.className="hint";
+    hint.textContent="You can still make it: only what's in your cupboard is deducted. Anything not there is skipped, and anything short is used up.";preview.appendChild(hint);
+  }
+  const btn=document.getElementById("sectionMakeConfirm");
+  btn.disabled=!selected.length;
+  btn.textContent=short.length ? "Make anyway" : "Confirm deduction";
+  document.getElementById("sectionMakeError").style.display="none";
 }
 function closeSectionMakeModal(){document.getElementById("sectionMakeModal").classList.add("hidden");sectionMakeRecipe=null;}
 async function confirmSectionMake(){
   const recipe=sectionMakeRecipe;if(!recipe)return;const selected=selectedMakeSections();
   if(!selected.length)return;
   const result=getRecipeAvailability(recipe,selected);
-  if(result.details.some(i=>i.status!=="ok")){renderSectionMakePreview();return;}
+  const shortCount=result.details.filter(i=>i.status!=="ok").length;
+  if(shortCount && !confirm(`Make anyway with ${availabilityText(result)}? Only what's in your cupboard will be deducted.`)) return;
   const requirements=sectionIngredients(recipe,selected);
   clearTimeout(saveTimer);pushUndo(`make ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}`);
   requirements.forEach(ingredient=>{const item=items.find(i=>sameIngredient(i.name,ingredient.name));if(!item)return;
@@ -3318,7 +3334,7 @@ async function confirmSectionMake(){
     if(amount!==null)item.quantity=roundQty(item.quantity-amount);});
   items=items.filter(i=>i.staple||i.quantity>0);
   recipe.lastMade=Date.now();if(selected.length===recipe.sections.length)delete recipe.reserved;
-  queueRecipeSave(`Made sections of ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}`);
+  queueRecipeSave(`Made sections of ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}${shortCount ? " (with missing ingredients)" : ""}`);
   closeSectionMakeModal();selectedName=null;customMode=false;render();renderRecipes();await pushFile(`Make sections: ${recipe.name}`);
 }
 document.getElementById("sectionSelectAll").onclick=()=>{const boxes=[...document.querySelectorAll('#sectionMakeChoices input')];const all=boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all);renderSectionMakePreview();};
@@ -3333,15 +3349,12 @@ async function makeRecipe(name){
 
   // A recipe can only be made when every ingredient is available
   // in the required quantity and unit.
-  if(result.colour !== "green"){
-    const reasons = [];
-    if(result.missing) reasons.push(`${result.missing} missing`);
-    if(result.low) reasons.push(`${result.low} insufficient`);
-    alert(`You don't have enough ingredients to make ${recipe.name} (${reasons.join(", ")}).`);
-    return;
-  }
-
-  if(!confirm(`Make ${recipe.name}? This will remove the required quantities from your cupboard.`)){
+  // Anything short can be overridden: only what's in the cupboard is deducted.
+  const short = result.details.filter(i => i.status !== "ok");
+  if(short.length){
+    const lines = short.map(i => `• ${i.name}: need ${fmtQty(i.quantity, i.unit)}, ${i.available > 0 ? `only ${fmtQty(roundQty(i.available), i.unit)} available` : "not in your cupboard"}`);
+    if(!confirm(`Some ingredients for ${recipe.name} are short:\n\n${lines.join("\n")}\n\nMake it anyway? Only what's in your cupboard will be deducted: missing items are skipped and short ones are used up.`)) return;
+  }else if(!confirm(`Make ${recipe.name}? This will remove the required quantities from your cupboard.`)){
     return;
   }
 
