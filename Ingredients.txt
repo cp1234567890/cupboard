@@ -30,7 +30,6 @@ Ground Ginger|1|g|staple|used:1792942535051
 Ground Cinnamon|1|g|staple|used:1792942535051
 Honey|1|g|staple|used:1792942535050
 Apple Slices|250|g|used:1792942535049|loc:freezer
-Condensed Milk|1|pcs|used:1794663892610
 Granulated Sugar|1|kg
 Eggs|5|pcs|used:1794747914115
 Nut And Raisin Granola|400|g|used:1792942535052
