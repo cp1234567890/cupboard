@@ -167,7 +167,8 @@
       "days": [
         {
           "mode": "cook",
-          "dinner": "Quinoa & Roasted Veg Bowl"
+          "dinner": "Gochujang Crispy Tofu with Brown Rice & Tenderstem Broccoli",
+          "locked": true
         },
         {
           "mode": "cook",
