@@ -693,6 +693,19 @@
 </div>
 
 <style>.section-short{margin:6px 0 4px;padding-left:20px;color:var(--brick);font-size:0.9rem;display:flex;flex-direction:column;gap:3px;}</style>
+<style>
+.shop-bar{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+.shop-bar .chips{flex:1; margin:0;}
+.shop-edit{padding:7px 12px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.85rem; cursor:pointer; white-space:nowrap;}
+.shop-edit.on{background:var(--herb); color:#fff; border-color:var(--herb);}
+.shop-hint{margin:4px 0 8px;}
+.aisle-head{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.aisle-move{display:flex; gap:6px;}
+.aisle-move button{width:34px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:1rem; cursor:pointer;}
+.aisle-move button:disabled{opacity:0.3; cursor:default;}
+.aisle-pick{max-width:46%; padding:6px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:0.82rem;}
+.row.editing-aisle{cursor:default;}
+</style>
 <div id="sectionMakeModal" class="modal-backdrop hidden"><div class="modal recipe-modal">
   <h2 id="sectionMakeTitle">Make recipe</h2><p class="hint">Select the sections you're making. All are selected initially.</p>
   <div id="sectionMakeChoices"></div><div class="modal-actions"><button type="button" class="btn-secondary" id="sectionSelectAll">Select / deselect all</button></div>
@@ -788,7 +801,7 @@ let aliases = {};
 let aliasesSha = null;
 let aliasSaveTimer = null;
 let aliasEditing = null;
-let shopping = {manual: [], checked: {}};
+let shopping = {manual: [], checked: {}, aisles: {}, aisleOrder: []};
 let shoppingSha = null;
 let shopSaveTimer = null;
 let locMemory = {};
@@ -2096,7 +2109,7 @@ function applyQuickAdd(){
 /* ---------------- Shopping list ---------------- */
 
 function normaliseShopping(data){
-  const out = {manual: [], checked: {}};
+  const out = {manual: [], checked: {}, aisles: {}, aisleOrder: AISLES.slice()};
   if(data && typeof data === "object"){
     if(Array.isArray(data.manual)){
       data.manual.forEach(m => {
@@ -2114,14 +2127,57 @@ function normaliseShopping(data){
     if(data.checked && typeof data.checked === "object"){
       Object.keys(data.checked).forEach(k => { if(data.checked[k]) out.checked[k] = true; });
     }
+    // Aisles you've moved items to, and the order you walk the shop in.
+    if(data.aisles && typeof data.aisles === "object"){
+      Object.keys(data.aisles).forEach(k => { if(AISLES.includes(data.aisles[k])) out.aisles[k] = data.aisles[k]; });
+    }
+    if(Array.isArray(data.aisleOrder)){
+      const seen = data.aisleOrder.filter(a => AISLES.includes(a));
+      out.aisleOrder = [...new Set(seen.concat(AISLES))];
+    }
   }
   return out;
+}
+
+/* ---------------- Aisles (shop order) ---------------- */
+
+const AISLES = ["Fruit & veg", "Bakery", "Meat & fish", "Fridge", "Frozen", "Tins & jars",
+  "Pasta, rice & grains", "Baking", "Spices, oils & sauces", "Drinks", "Household", "Other"];
+
+// Checked in order: the first match wins, so specific phrases come before single words.
+const AISLE_RULES = [
+  ["Pasta, rice & grains", /granola|muesli|cereal/],
+  ["Spices, oils & sauces", /garlic powder|onion powder|chilli powder|curry powder|ginger powder|garlic granules/],
+  ["Frozen", /\bfrozen\b|ice cream|\bedamame\b|\bpeas\b/],
+  ["Baking", /condensed milk|evaporated milk|desiccated coconut|ground almond|cornflour|corn flour|\bflour\b|\bsugar\b|\bicing\b|cocoa|baking powder|bicarbonate|baking soda|\byeast\b|vanilla|chocolate|sprinkles|golden syrup|maple syrup|treacle|gelatine|food colou?r|marzipan|poppy seed|chia seed|glac[eé] cherr|sultana|raisin|currant|flaked almond|cake case|cupcake case/],
+  ["Tins & jars", /chopped tomato|tinned|\btins?\b|tomato pur[eé]e|passata|coconut milk|coconut cream|chickpea|kidney bean|butter bean|black bean|baked bean|cannellini|sweetcorn|\bjam\b|marmalade|honey|peanut butter|lemon curd|nutella/],
+  ["Spices, oils & sauces", /chilli flakes|chilli powder|ground (?:coriander|ginger|cinnamon|nutmeg|cloves|cardamom|allspice|black pepper|white pepper)|garam masala|\bcumin\b|turmeric|paprika|cinnamon|nutmeg|mixed spice|mixed herbs|dried |oregano|thyme|bay lea|\bsalt\b|black pepper|peppercorn|\boil\b|vinegar|soy sauce|hoisin|gochujang|\bmiso\b|sriracha|ketchup|mayonnaise|mustard|worcestershire|stock|sesame seed|curry paste|tahini/],
+  ["Drinks", /limoncello|liqueur|\bwine\b|\brum\b|brandy|whisk(e)?y|\bgin\b|vodka|\bjuice\b|coffee|\btea\b/],
+  ["Household", /\bfoil\b|cling|baking paper|parchment|kitchen roll|washing|bin bag|sponge|\bsoap\b/],
+  ["Meat & fish", /chicken|\bbeef\b|\bpork\b|\blamb\b|mince|bacon|sausage|salmon|\bcod\b|haddock|\bfish\b|tuna|prawn|steak|\bham\b|chorizo|turkey|\bduck\b/],
+  ["Fridge", /\bmilk\b|\bbutter\b|cream|yog(h)?urt|cheese|\beggs?\b|tofu|cr[eè]me fra[iî]che|mascarpone|ricotta|halloumi|feta|kimchi|fresh pasta|hummus/],
+  ["Bakery", /\bbread\b|\brolls?\b|\bwraps?\b|tortilla|pitta|\bnaan\b|bagel|croissant|crumpet|brioche/],
+  ["Pasta, rice & grains", /pasta|spaghetti|penne|fusilli|linguine|\brice\b|quinoa|lentil|couscous|bulgur|\boats\b|porridge|noodle|cereal|granola/],
+  ["Fruit & veg", /apple|banana|lemon|\blime|orange|berr|grape|\bpear|mango|pineapple|melon|avocado|onion|shallot|garlic|ginger|chilli|potato|carrot|courgette|pepper|tomato|spinach|lettuce|salad|rocket|pak choi|bok choy|broccoli|tenderstem|cauliflower|cabbage|kale|mushroom|cucumber|celery|leek|squash|aubergine|beansprout|green bean|parsley|coriander|basil|\bmint\b|rosemary|herb/]
+];
+
+function aisleFor(name){
+  const key = canonicalName(name);
+  if(shopping.aisles && shopping.aisles[key]) return shopping.aisles[key];   // you moved it
+  const n = normaliseName(name);
+  for(const [aisle, re] of AISLE_RULES) if(re.test(n)) return aisle;
+  // Nothing in the name: go by where you keep it.
+  const stock = items.find(i => sameIngredient(i.name, name));
+  const loc = stock ? stock.loc : (memFor(name) || {}).loc;
+  if(loc === "freezer") return "Frozen";
+  if(loc === "fridge") return "Fridge";
+  return "Other";
 }
 
 async function fetchShopping(){
   const data = await getGithubFile(SHOPPING_PATH);
   if(!data){
-    shopping = {manual: [], checked: {}};
+    shopping = normaliseShopping(null);
     shoppingSha = null;
     return;
   }
@@ -2229,7 +2285,7 @@ function updateShopBadge(){
   if(tab) tab.textContent = n ? `Shopping (${n})` : "Shopping";
 }
 
-function shopRow({name, qtyText, sub, checked, onToggle, onDelete}){
+function shopRow({name, qtyText, sub, checked, onToggle, onDelete, aislePicker}){
   const row = document.createElement("div");
   row.className = "row" + (checked ? " checked" : "");
   row.innerHTML = `
@@ -2238,7 +2294,24 @@ function shopRow({name, qtyText, sub, checked, onToggle, onDelete}){
     <span class="qty">${escapeHtml(qtyText)}</span>
     ${onDelete ? `<button type="button" class="del" aria-label="Remove ${escapeHtml(name)}">✕</button>` : ""}
   `;
-  row.addEventListener("click", onToggle);
+  if(aislePicker){
+    // Editing aisles: the row picks an aisle instead of ticking.
+    const sel = document.createElement("select");
+    sel.className = "aisle-pick";
+    sel.setAttribute("aria-label", `Aisle for ${name}`);
+    shopping.aisleOrder.forEach(a => {
+      const o = document.createElement("option"); o.value = a; o.textContent = a;
+      if(a === aisleFor(name)) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("click", e => e.stopPropagation());
+    sel.addEventListener("change", () => aislePicker(sel.value));
+    row.querySelector(".qty").replaceWith(sel);
+    row.querySelector("input[type=checkbox]").disabled = true;
+    row.classList.add("editing-aisle");
+  }else{
+    row.addEventListener("click", onToggle);
+  }
   if(onDelete){
     row.querySelector(".del").addEventListener("click", e => {
       e.stopPropagation();
@@ -2247,6 +2320,9 @@ function shopRow({name, qtyText, sub, checked, onToggle, onDelete}){
   }
   return row;
 }
+
+let shopGroup = (() => { try{ return localStorage.getItem("cupboard-shop-group") || "aisle"; }catch(e){ return "aisle"; } })();
+let editingAisles = false;
 
 function renderShopping(){
   const list = document.getElementById("shopList");
@@ -2260,85 +2336,148 @@ function renderShopping(){
   const valid = new Set(needs.map(n => n.key).concat(dinnerNeeds.map(n => n.key)));
   Object.keys(shopping.checked).forEach(k => { if(!valid.has(k)) delete shopping.checked[k]; });
 
-  if(needs.length === 0 && shopping.manual.length === 0 && dinnerNeeds.length === 0){
+  const tick = key => () => {
+    if(shopping.checked[key]) delete shopping.checked[key];
+    else shopping.checked[key] = true;
+    queueShoppingSave("Update shopping list");
+    renderShopping();
+  };
+
+  // Everything on the list, whichever part it came from.
+  const entries = [];
+  needs.forEach(n => entries.push({source: "recipes", name: n.name, qtyText: fmtQty(n.quantity, n.unit),
+    sub: "for " + n.recipes.join(", "), checked: !!shopping.checked[n.key], onToggle: tick(n.key)}));
+  dinnerNeeds.forEach(n => entries.push({source: "dinners", name: n.name, qtyText: n.qtyText,
+    sub: n.sub, checked: !!shopping.checked[n.key], onToggle: tick(n.key)}));
+  shopping.manual.forEach(m => entries.push({source: "manual", name: m.name, qtyText: fmtQty(m.quantity, m.unit),
+    sub: shopGroup === "aisle" ? "added by you" : "", checked: !!m.checked,
+    onToggle: () => {
+      if(m.checked) delete m.checked; else m.checked = true;
+      queueShoppingSave("Update shopping list");
+      renderShopping();
+    },
+    onDelete: () => {
+      pushUndo(`remove ${m.name} from shopping list`);
+      shopping.manual = shopping.manual.filter(x => x !== m);
+      queueShoppingSave("Update shopping list");
+      renderShopping();
+      updateShopBadge();
+    }}));
+
+  if(!entries.length){
     empty.textContent = "Nothing to buy. Plan some dinners or reserve a recipe and whatever's missing will appear here, or add something yourself above.";
     empty.classList.remove("hidden");
+    editingAisles = false;
+    updateShopBadge();
+    return;
+  }
+  empty.classList.add("hidden");
+
+  // View switch: shop order or where each item came from.
+  const bar = document.createElement("div");
+  bar.className = "shop-bar";
+  bar.innerHTML = `
+    <div class="chips">
+      <button type="button" class="chip${shopGroup === "aisle" ? " active" : ""}" data-g="aisle">By aisle</button>
+      <button type="button" class="chip${shopGroup === "source" ? " active" : ""}" data-g="source">By recipe</button>
+    </div>
+    ${shopGroup === "aisle" ? `<button type="button" class="shop-edit${editingAisles ? " on" : ""}">${editingAisles ? "Done" : "Edit aisles"}</button>` : ""}`;
+  bar.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+    shopGroup = b.dataset.g;
+    editingAisles = false;
+    try{ localStorage.setItem("cupboard-shop-group", shopGroup); }catch(e){}
+    renderShopping();
+  });
+  const edit = bar.querySelector(".shop-edit");
+  if(edit) edit.onclick = () => { editingAisles = !editingAisles; renderShopping(); };
+  list.appendChild(bar);
+  if(editingAisles){
+    const hint = document.createElement("p");
+    hint.className = "hint shop-hint";
+    hint.textContent = "Pick a different aisle for any item (it's remembered), and use the arrows to put the aisles in the order you walk round the shop.";
+    list.appendChild(hint);
+  }
+
+  const heading = (text, extra) => {
+    const h = document.createElement("div");
+    h.className = "ideas-title" + (extra ? " aisle-head" : "");
+    const label = document.createElement("span");
+    label.textContent = text;
+    h.appendChild(label);
+    if(extra) h.appendChild(extra);
+    list.appendChild(h);
+  };
+  const row = (e, picker) => list.appendChild(shopRow({...e, aislePicker: picker}));
+
+  if(shopGroup === "source"){
+    [["recipes", "For reserved recipes"], ["dinners", dnShoppingTitleSafe()], ["manual", "Added by you"]].forEach(([src, title]) => {
+      const group = entries.filter(e => e.source === src);
+      if(!group.length) return;
+      heading(title);
+      group.forEach(e => row(e));
+    });
   }else{
-    empty.classList.add("hidden");
-  }
-
-  if(needs.length){
-    const h = document.createElement("div");
-    h.className = "ideas-title";
-    h.textContent = "For reserved recipes";
-    list.appendChild(h);
-
-    needs.forEach(n => {
-      list.appendChild(shopRow({
-        name: n.name,
-        qtyText: fmtQty(n.quantity, n.unit),
-        sub: "for " + n.recipes.join(", "),
-        checked: !!shopping.checked[n.key],
-        onToggle: () => {
-          if(shopping.checked[n.key]) delete shopping.checked[n.key];
-          else shopping.checked[n.key] = true;
-          queueShoppingSave("Update shopping list");
-          renderShopping();
-        }
-      }));
+    // The same thing needed for a recipe and a dinner becomes one row with both amounts.
+    const merged = new Map();
+    entries.forEach(e => {
+      const k = canonicalName(e.name);
+      const m = merged.get(k);
+      if(!m){ merged.set(k, {...e, parts: [e]}); return; }
+      m.parts.push(e);
+      const count = t => { const x = String(t).match(/^(\d+(?:\.\d+)?)(?: pcs)?$/); return x ? Number(x[1]) : null; };
+      const a = count(m.qtyText), b = count(e.qtyText);
+      m.qtyText = a !== null && b !== null ? String(roundQty(a + b)) : m.qtyText + " + " + e.qtyText;
+      m.sub = m.parts.map(x => x.sub).filter(Boolean).join("; ");
+      m.checked = m.parts.every(x => x.checked);
+      m.onDelete = null;
+      m.onToggle = () => {
+        const target = !m.checked;
+        m.parts.forEach(x => { if(x.checked !== target) x.onToggle(); });
+      };
     });
-  }
-
-  if(dinnerNeeds.length){
-    const h = document.createElement("div");
-    h.className = "ideas-title";
-    h.textContent = dnShoppingTitle();
-    list.appendChild(h);
-
-    dinnerNeeds.forEach(n => {
-      list.appendChild(shopRow({
-        name: n.name,
-        qtyText: n.qtyText,
-        sub: n.sub,
-        checked: !!shopping.checked[n.key],
-        onToggle: () => {
-          if(shopping.checked[n.key]) delete shopping.checked[n.key];
-          else shopping.checked[n.key] = true;
-          queueShoppingSave("Update shopping list");
-          renderShopping();
-        }
-      }));
+    const byAisle = new Map();
+    [...merged.values()].forEach(e => {
+      const a = aisleFor(e.name);
+      if(!byAisle.has(a)) byAisle.set(a, []);
+      byAisle.get(a).push(e);
     });
-  }
-
-  if(shopping.manual.length){
-    const h = document.createElement("div");
-    h.className = "ideas-title";
-    h.textContent = "Added by you";
-    list.appendChild(h);
-
-    shopping.manual.forEach(m => {
-      list.appendChild(shopRow({
-        name: m.name,
-        qtyText: fmtQty(m.quantity, m.unit),
-        checked: !!m.checked,
-        onToggle: () => {
-          if(m.checked) delete m.checked; else m.checked = true;
-          queueShoppingSave("Update shopping list");
+    const order = editingAisles ? shopping.aisleOrder : shopping.aisleOrder.filter(a => byAisle.has(a));
+    order.forEach((aisle, idx) => {
+      const group = (byAisle.get(aisle) || [])
+        .sort((x, y) => (x.checked - y.checked) || x.name.localeCompare(y.name));   // ticked items sink
+      if(!group.length && !editingAisles) return;
+      let extra = null;
+      if(editingAisles){
+        extra = document.createElement("span");
+        extra.className = "aisle-move";
+        extra.innerHTML = `<button type="button" aria-label="Move ${escapeHtml(aisle)} up" ${idx === 0 ? "disabled" : ""}>↑</button><button type="button" aria-label="Move ${escapeHtml(aisle)} down" ${idx === order.length - 1 ? "disabled" : ""}>↓</button>`;
+        const [up, down] = extra.querySelectorAll("button");
+        const move = d => {
+          pushUndo("reorder aisles");
+          const o = shopping.aisleOrder;
+          [o[idx], o[idx + d]] = [o[idx + d], o[idx]];
+          queueShoppingSave("Reorder aisles");
           renderShopping();
-        },
-        onDelete: () => {
-          pushUndo(`remove ${m.name} from shopping list`);
-          shopping.manual = shopping.manual.filter(x => x !== m);
-          queueShoppingSave("Update shopping list");
-          renderShopping();
-          updateShopBadge();
-        }
-      }));
+        };
+        up.onclick = () => move(-1);
+        down.onclick = () => move(1);
+      }
+      const left = group.filter(e => !e.checked).length;
+      heading(group.length ? `${aisle} · ${left ? `${left} to get` : "all got ✓"}` : aisle, extra);
+      group.forEach(e => row(e, editingAisles ? (to => {
+        pushUndo(`move ${e.name} to ${to}`);
+        shopping.aisles[canonicalName(e.name)] = to;
+        queueShoppingSave(`Move ${e.name} to ${to}`);
+        renderShopping();
+      }) : null));
     });
   }
 
   updateShopBadge();
+}
+
+function dnShoppingTitleSafe(){
+  return typeof dnShoppingTitle === "function" ? dnShoppingTitle() : "For dinners";
 }
 
 function reserveCombo(list){
