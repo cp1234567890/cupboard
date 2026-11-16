@@ -1932,7 +1932,13 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
   .recipe-row.dn-chicken{border-left-color:var(--paprika);}
   .recipe-row.dn-salmon{border-left-color:var(--brick);}
   .recipe-row.dn-veg{border-left-color:var(--herb);}
-  .recipe-row.dn-lamb, .recipe-row.dn-pork, .recipe-row.dn-beef, .recipe-row.dn-fish{border-left-color:var(--ink-soft);}
+  :root{--dn-pork:#c2577f; --dn-beef:#7a5230; --dn-lamb:#7b4a7a;}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--dn-pork:#e08aa8; --dn-beef:#b48a62; --dn-lamb:#b383b1;}}
+  :root[data-theme="dark"]{--dn-pork:#e08aa8; --dn-beef:#b48a62; --dn-lamb:#b383b1;}
+  .recipe-row.dn-pork{border-left-color:var(--dn-pork);}
+  .recipe-row.dn-beef{border-left-color:var(--dn-beef);}
+  .recipe-row.dn-lamb{border-left-color:var(--dn-lamb);}
+  .recipe-row.dn-fish{border-left-color:var(--ink-soft);}
   .recipe-row.dn-leftover .recipe-name, .recipe-row.dn-out .recipe-name, .recipe-row.dn-free .recipe-name{color:var(--ink-soft);}
   .recipe-row.dn-free{border-style:dashed;}
   .dn-swap{width:100%; padding:9px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--ink); font:inherit; font-size:0.9rem; margin-bottom:8px;}
