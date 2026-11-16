@@ -69,3 +69,4 @@ Cinnamon|1|g|staple
 Coconut Milk|0|pcs
 Courgette|0|pcs|loc:fridge
 Espresso|1|g|staple
+Lemon|1|pcs|loc:fridge
