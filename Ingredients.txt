@@ -61,3 +61,4 @@ Hoisin Sauce|1|g|staple
 Miso Paste|1|g|staple|loc:fridge
 Bananas|0|pcs
 Bell Pepper|0|pcs|loc:fridge
+Chicken Thigh|4|pcs|loc:fridge
