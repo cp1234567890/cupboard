@@ -65,3 +65,4 @@ Chicken Thigh|4|pcs|loc:fridge
 Chickpeas|0|pcs
 Chopped Tomatoes|1|pcs
 Condensed Milk|0|pcs
+Cinnamon|1|g|staple
