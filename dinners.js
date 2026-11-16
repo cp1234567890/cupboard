@@ -548,7 +548,7 @@ function dnGenerateWeek(opts){
     salmon: pool.filter(d => d.type === "salmon" && d.serves === 1),
     vegBatch: pool.filter(d => d.type === "veg" && d.serves >= 2),
     vegSingle: pool.filter(d => d.type === "veg" && d.serves === 1),
-    meatBatch: pool.filter(d => d.type !== "veg" && d.type !== "chicken" && d.type !== "salmon" && d.serves >= 2),
+    meatBatch: pool.filter(d => d.type !== "veg" && d.serves >= 2),   // includes whole-pack chicken batches
     meatSingle: pool.filter(d => ["lamb", "pork", "beef", "fish"].includes(d.type) && d.serves === 1)
   };
 
@@ -662,6 +662,14 @@ function dnScoreWeek(days, byName, rules, recent, extra){
   ["chicken", "salmon"].forEach(type => {
     const idx = fresh.filter(c => c.dinner.type === type && c.dinner.serves === 1).map(c => c.i);
     const label = type === "chicken" ? "Chicken pack" : "Salmon pack";
+    // A batch cook with its leftovers the next night uses a whole pack too.
+    const batchPacks = fresh.filter(c => c.dinner.type === type && c.dinner.serves >= 2 &&
+      days[c.i + 1] && days[c.i + 1].mode === "leftover" && days[c.i + 1].dinner === c.dinner.name).length;
+    if(!idx.length && batchPacks){
+      s += 4 - (batchPacks - 1) * 3;
+      checks.push({ok: true, text: `${label} used in a batch cook`});
+      return;
+    }
     if(!idx.length){
       if(planned >= 5 && !cooks.some(c => c.dinner && c.dinner.type === type)) s -= 1.5;
       return;
@@ -675,7 +683,7 @@ function dnScoreWeek(days, byName, rules, recent, extra){
     // Leftover meat goes first: the earliest single nights use it up.
     const coveredDays = singleDays.slice(0, spare[type]);
     const singles = singleDays.length - coveredDays.length;
-    s += paired * 4 - Math.max(0, paired - 1) * 3 - singles * 3;
+    s += paired * 4 - Math.max(0, paired + batchPacks - 1) * 3 - singles * 3;
     coveredDays.forEach(i => {
       s += 2 + (6 - i) * 0.4;
       if(pairStarts.some(p => p < i)) s -= 2;     // opened a new pack before using the leftovers
@@ -847,6 +855,7 @@ function dnAutoNotes(days, byName, rules, extra){
     }
     if(din.serves >= 2){
       const next = days[i + 1];
+      if(din.type === "chicken") notes[i].push("Uses the whole chicken pack (4 thighs)");
       if(next && next.mode === "leftover") notes[i].push(`Batch cook for ${din.serves} portions`);
     }
   }
