@@ -71,3 +71,4 @@ Courgette|0|pcs|loc:fridge
 Espresso|1|g|staple
 Lemon|1|pcs|loc:fridge
 Maple Syrup|1|g|staple
+Minced Lamb|0|g|loc:fridge
