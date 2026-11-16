@@ -59,3 +59,4 @@ Vegetable Stock|1|g|staple
 Tomato Puree|1|g|staple
 Hoisin Sauce|1|g|staple
 Miso Paste|1|g|staple|loc:fridge
+Bananas|0|pcs
