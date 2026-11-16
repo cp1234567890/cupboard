@@ -182,27 +182,24 @@
         },
         {
           "mode": "cook",
-          "dinner": "Soy-Glazed Chicken with Courgette & Quinoa"
+          "dinner": "Gochujang Chicken with Brown Rice & Steamed Pak Choi"
         },
         {
           "mode": "cook",
-          "dinner": "Honey Garlic Chicken with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice"
         },
         {
           "mode": "cook",
-          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Teriyaki Salmon with Rice & Wilted Spinach with Garlic"
         },
         {
           "mode": "cook",
-          "dinner": "Quinoa & Roasted Veg Bowl with Salmon"
+          "dinner": "Gochujang-Glazed Salmon with Sesame Rice & Steamed Pak Choi"
         }
       ],
       "officeDays": [
         2,
         3
-      ],
-      "carryOver": [
-        "Red Lentil Dal with Basmati Rice"
       ],
       "useUpText": "Spinach",
       "useUp": [
