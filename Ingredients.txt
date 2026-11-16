@@ -34,3 +34,28 @@ Granulated Sugar|1|kg
 Eggs|5|pcs|used:1794747914115
 Nut And Raisin Granola|400|g|used:1792942535052
 Salt|1|g|staple|used:1794747914113
+Olive Oil|1|g|staple
+Sunflower Oil|1|g|staple
+Sesame Oil|1|g|staple
+Soy Sauce|1|g|staple
+Chilli Flakes|1|g|staple
+Paprika|1|g|staple
+Cumin|1|g|staple
+Turmeric|1|g|staple
+Garam Masala|1|g|staple
+Ground Coriander|1|g|staple
+Garlic Powder|1|g|staple
+Onion Powder|1|g|staple
+Mixed Herbs|1|g|staple
+Sesame Seeds|1|g|staple
+Rice Vinegar|1|g|staple
+Basmati Rice|1|g|staple
+Brown Rice|1|g|staple
+Quinoa|1|g|staple
+Red Lentils|1|g|staple
+Pasta|1|g|staple
+Spaghetti|1|g|staple
+Vegetable Stock|1|g|staple
+Tomato Puree|1|g|staple
+Hoisin Sauce|1|g|staple
+Miso Paste|1|g|staple|loc:fridge
