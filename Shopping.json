@@ -1,11 +1,6 @@
 {
   "manual": [],
-  "checked": {
-    "dinner:salmon fillet|pcs": true,
-    "dinner:chopped tomato|tin": true,
-    "dinner:chickpea|tin": true,
-    "dinner:chicken thigh|pcs": true
-  },
+  "checked": {},
   "aisles": {},
   "aisleOrder": [
     "Fruit & veg",
