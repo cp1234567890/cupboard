@@ -63,3 +63,4 @@ Bananas|0|pcs
 Bell Pepper|0|pcs|loc:fridge
 Chicken Thigh|4|pcs|loc:fridge
 Chickpeas|0|pcs
+Chopped Tomatoes|1|pcs
