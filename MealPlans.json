@@ -160,6 +160,55 @@
         2,
         3
       ]
+    },
+    {
+      "start": "2026-11-23",
+      "onList": true,
+      "days": [
+        {
+          "mode": "cook",
+          "dinner": "Garam Masala Lentil & Spinach Daal with Crispy Roasted Potatoes"
+        },
+        {
+          "mode": "out"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Red Lentil Dal with Basmati Rice",
+          "carried": true
+        },
+        {
+          "mode": "leftover",
+          "dinner": "Red Lentil Dal with Basmati Rice"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Gochujang-Glazed Salmon with Sesame Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
+        },
+        {
+          "mode": "cook",
+          "dinner": "Quinoa & Roasted Veg Bowl"
+        }
+      ],
+      "officeDays": [
+        2,
+        3
+      ],
+      "carryOver": [
+        "Red Lentil Dal with Basmati Rice"
+      ],
+      "useUpText": "Spinach",
+      "useUp": [
+        {
+          "name": "spinach",
+          "quantity": 0,
+          "unit": ""
+        }
+      ]
     }
   ]
 }
