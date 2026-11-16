@@ -37,7 +37,8 @@
     "Nestle Carn Condensed Mi"
   ],
   "Lemon": [
-    "Ea Lemon"
+    "Ea Lemon",
+    "lemons"
   ],
   "Chocolate": [
     "Dark Cooking Chocolate"
@@ -47,5 +48,8 @@
   ],
   "Gochujang": [
     "gochujang paste"
+  ],
+  "Chicken Thigh": [
+    "Chicken"
   ]
 }
