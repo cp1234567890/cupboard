@@ -67,3 +67,4 @@ Chopped Tomatoes|1|pcs
 Condensed Milk|0|pcs
 Cinnamon|1|g|staple
 Coconut Milk|0|pcs
+Courgette|0|pcs|loc:fridge
