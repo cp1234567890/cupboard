@@ -72,3 +72,4 @@ Espresso|1|g|staple
 Lemon|1|pcs|loc:fridge
 Maple Syrup|1|g|staple
 Minced Lamb|0|g|loc:fridge
+Onion|1|pcs|loc:fridge
