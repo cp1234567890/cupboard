@@ -76,3 +76,4 @@ Onion|1|pcs|loc:fridge
 Pak Choi|2|pcs|loc:fridge
 Red Onion|0|pcs|loc:fridge
 Salmon Fillet|2|pcs|loc:fridge
+Spring Onion|0|pcs|loc:fridge
