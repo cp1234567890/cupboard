@@ -1,14 +1,24 @@
 {
   "manual": [],
   "checked": {
-    "dinner:tenderstem broccoli|measure": true,
-    "dinner:potato|measure": true,
-    "dinner:pak choi|pcs": true,
-    "dinner:onion|pcs": true,
     "dinner:salmon fillet|pcs": true,
     "dinner:chopped tomato|tin": true,
     "dinner:chickpea|tin": true,
-    "dinner:chicken thigh|pcs": true,
-    "dinner:spinach|handful": true
-  }
+    "dinner:chicken thigh|pcs": true
+  },
+  "aisles": {},
+  "aisleOrder": [
+    "Fruit & veg",
+    "Bakery",
+    "Meat & fish",
+    "Fridge",
+    "Frozen",
+    "Tins & jars",
+    "Pasta, rice & grains",
+    "Baking",
+    "Spices, oils & sauces",
+    "Drinks",
+    "Household",
+    "Other"
+  ]
 }
