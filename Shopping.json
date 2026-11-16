@@ -1,6 +1,8 @@
 {
   "manual": [],
   "checked": {
-    "dinner:tenderstem broccoli|measure": true
+    "dinner:tenderstem broccoli|measure": true,
+    "dinner:potato|measure": true,
+    "dinner:pak choi|pcs": true
   }
 }
