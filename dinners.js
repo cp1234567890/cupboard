@@ -1,7 +1,8 @@
 /* Cupboard — Dinners: weekly dinner planner.
  *
  * Data lives in two files next to Ingredients.txt:
- *   Dinners.json    — the dinner library plus planning rules (staples, avoid list, packs)
+ *   Dinners.json    — the dinner library plus planning rules (avoid list, packs).
+ *                     Staples come from the Cupboard (items marked Staple).
  *   MealPlans.json  — one entry per week (Monday date), seven days each
  *
  * The first half of this file is plain logic (reading Claude replies, generating
@@ -942,7 +943,7 @@ function dnBuildPrompt(kind, info){
     `- Weeknight dinners take ${rules.maxWeeknightMins} minutes or less.${office ? ` ${office} ${officeList.length > 1 ? "are office days" : "is an office day"}: cover ${officeList.length > 1 ? "them" : "it"} with leftovers from a batch cook the night before, or something very quick.` : ""}`,
     "- Vegetarian dinners are welcome, especially early in the week. Flavours lean Korean and Indian (gochujang, garam masala, cumin, turmeric, sesame oil).",
     "- Recipes are for one person unless they're a batch cook (Serves 2, covering two nights).",
-    `- Staples I already have: ${rules.staples.join(", ")}.`
+    `- Staples I already have: ${rules.staples.filter(n => !dnAvoidHits({name: n, ingredients: []}, rules.avoid).length).join(", ")}.`
   ];
   const library = (info.library || []).map(n => `- ${n}`).join("\n");
 
@@ -1003,7 +1004,11 @@ let dnLibSearch = "";
 let dnParsed = null;               // last pasted reply, while reviewing
 let dnLoaded = false;
 
-function dnRules(){ return Object.assign({}, DN_DEFAULT_RULES, dnData.rules || {}); }
+// Staples live in the Cupboard (items marked "Staple"); Dinners.json no longer keeps its own list.
+function dnCupboardStaples(){
+  return typeof items === "undefined" ? [] : items.filter(i => i.staple).map(i => i.name.toLowerCase()).sort();
+}
+function dnRules(){ return Object.assign({}, DN_DEFAULT_RULES, dnData.rules || {}, {staples: dnCupboardStaples()}); }
 function dnByName(){ return new Map(dnData.dinners.map(d => [d.name, d])); }
 function dnThisMonday(){ return dnIso(dnMonday(new Date())); }
 
@@ -1069,7 +1074,30 @@ async function dnFetchAll(){
   try{ dnPlans = dnNormalisePlans(plans ? JSON.parse(plans.text) : null); }
   catch(e){ throw new Error("MealPlans.json is not valid JSON"); }
   dnLoaded = true;
+  dnMoveStaplesToCupboard();
   if(typeof currentView !== "undefined" && currentView === "dinners") renderDinners();
+}
+
+function dnMoveStaplesToCupboard(){
+  const old = (dnData.rules && dnData.rules.staples) || [];
+  if(!old.length) return;
+  const added = [];
+  old.forEach(name => {
+    if(dnStockFor(name)) return;                       // already in the cupboard: leave it as it is
+    const mem = typeof memFor === "function" ? memFor(name) : null;
+    const loc = mem && mem.loc ? mem.loc : (/miso/.test(name) ? "fridge" : "cupboard");
+    items.push({name: titleCase(name), quantity: 1, unit: "g", staple: true, loc});
+    added.push(titleCase(name));
+  });
+  dnData.rules.staples = [];
+  if(added.length){
+    queueSave(`Move ${added.length} dinner staples into Cupboard`);
+    if(typeof render === "function") render();
+  }
+  dnQueueSave("data", "Staples now come from Cupboard");
+  if(added.length) setTimeout(() => alert(
+    `Staples now live in your Cupboard. ${added.length} from the Dinners tab were added there as staples:\n\n${added.join(", ")}\n\n` +
+    `To change what counts as a staple, tap an item in the Cupboard tab and use the Staple button.`), 300);
 }
 
 async function dnPush(path, obj, which, message){
@@ -1191,7 +1219,7 @@ function dnApplySetup(week, setup){
     });
     week.officeDays = office;
     if(setup.usual){
-      dnData.rules = Object.assign({}, dnRules(), {officeDays: office});
+      dnData.rules = Object.assign({}, dnData.rules, {officeDays: office});
       dnQueueSave("data", "Update usual office days");
     }
     if(setup.carryOver.length) week.carryOver = setup.carryOver; else delete week.carryOver;
@@ -1259,16 +1287,10 @@ function dnShuffleDay(i){
 
 /* ---------- Shopping ---------- */
 
-function dnIsStaple(name){
-  const n = normaliseName(name);
-  const list = dnRules().staples.map(normaliseName);
-  const bare = n.replace(/^(fresh|ground|dried)\s+/, "");
-  return list.includes(n) || list.includes(bare) || list.includes(dnSingular(n));
-}
-
 function dnStockFor(name){
   const n = normaliseName(name);
-  const variants = [n, n.replace(/^fresh\s+/, ""), dnSingular(n), n + "s", n + "es"];
+  // "gochujang paste" is the Gochujang in your cupboard; "fresh ginger" is Ginger.
+  const variants = [n, n.replace(/^fresh\s+/, ""), dnSingular(n), n + "s", n + "es", n.replace(/\s+(paste|sauce)$/, "")];
   for(const v of variants){
     const hit = items.find(i => sameIngredient(i.name, v));
     if(hit) return hit;
@@ -1346,8 +1368,6 @@ function dinnerShoppingNeeds(){
       const conv = g.unit in DN_MEASURE ? convertQty(stock.quantity, stock.unit, g.unit)
         : (g.unit === stock.unit ? stock.quantity : null);
       have = conv === null ? 0 : Math.max(conv, 0);
-    }else if(dnIsStaple(g.name)){
-      return;
     }
     const short = Math.round((g.total - have) * 100) / 100;
     if(short <= 0.001) return;
@@ -1616,8 +1636,7 @@ function dnRenderLibrary(){
     ${retired.length ? `<div class="ideas-title">Retired: never planned</div>${retired.map(row).join("")}` : ""}
     <div class="dn-rules">
       <div class="ideas-title">Planning rules</div>
-      <div class="field"><label for="dnStaples">Staples you always have (left off the shopping list unless you track them in Cupboard)</label>
-        <textarea id="dnStaples" rows="4">${escapeHtml(rules.staples.join(", "))}</textarea></div>
+      <p class="hint dn-staple-note">Staples (${rules.staples.length}) come from your Cupboard: tap an item there and use the <b>Staple</b> button. They're never added to the shopping list and are listed for Claude as things you already have.</p>
       <div class="field"><label for="dnAvoid">Never plan dinners containing</label>
         <textarea id="dnAvoid" rows="3">${escapeHtml(rules.avoid.join(", "))}</textarea></div>
       <button type="button" class="btn-secondary dn-rules-save" id="dnRulesSave">Save rules</button>
@@ -1656,7 +1675,7 @@ function dnRenderLibrary(){
   document.getElementById("dnRulesSave").onclick = () => {
     const split = id => document.getElementById(id).value.split(/[,\n]/).map(s => s.trim().toLowerCase()).filter(Boolean);
     pushUndo("change planning rules");
-    dnData.rules = Object.assign({}, dnRules(), {staples: split("dnStaples"), avoid: split("dnAvoid")});
+    dnData.rules = Object.assign({}, dnData.rules, {avoid: split("dnAvoid")});
     dnQueueSave("data", "Update dinner planning rules");
     dnRenderLibrary();
     updateShopBadge();
@@ -1960,6 +1979,7 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
   .dn-weekactions{display:flex; gap:10px; margin-bottom:16px;}
   .dn-weekactions button{flex:1; padding:11px; border-radius:10px; border:none; font-size:0.9rem; cursor:pointer;}
   .dn-rules{margin-top:20px;}
+  .dn-staple-note{margin:0 0 12px;}
   .dn-rules textarea, #dnPaste{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-size:0.9rem;}
   .dn-rules-save{width:100%; padding:10px; border-radius:10px; margin-bottom:16px; cursor:pointer;}
   .dn-copy{display:flex; gap:8px; margin-bottom:6px;}
