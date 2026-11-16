@@ -39,37 +39,7 @@
       "cabbage",
       "sweet potato"
     ],
-    "staples": [
-      "olive oil",
-      "sunflower oil",
-      "sesame oil",
-      "soy sauce",
-      "honey",
-      "salt",
-      "chilli flakes",
-      "paprika",
-      "cumin",
-      "turmeric",
-      "garam masala",
-      "ground coriander",
-      "ground ginger",
-      "garlic powder",
-      "onion powder",
-      "mixed herbs",
-      "sesame seeds",
-      "rice vinegar",
-      "basmati rice",
-      "brown rice",
-      "quinoa",
-      "red lentils",
-      "pasta",
-      "spaghetti",
-      "vegetable stock",
-      "tomato puree",
-      "hoisin sauce",
-      "miso paste",
-      "gochujang paste"
-    ]
+    "staples": []
   },
   "dinners": [
     {
