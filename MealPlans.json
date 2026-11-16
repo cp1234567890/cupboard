@@ -163,38 +163,28 @@
     },
     {
       "start": "2026-11-23",
-      "onList": true,
+      "onList": false,
       "days": [
         {
-          "mode": "cook",
-          "dinner": "Gochujang Crispy Tofu with Brown Rice & Tenderstem Broccoli",
-          "locked": true
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Red Lentil Dal with Basmati Rice",
-          "carried": true,
-          "locked": true
+          "mode": "free"
         },
         {
-          "mode": "leftover",
-          "dinner": "Red Lentil Dal with Basmati Rice"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Gochujang Chicken with Brown Rice & Steamed Pak Choi"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Cumin & Paprika Chicken with Roasted Courgette & Basmati Rice"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Teriyaki Salmon with Rice & Wilted Spinach with Garlic"
+          "mode": "free"
         },
         {
-          "mode": "cook",
-          "dinner": "Gochujang-Glazed Salmon with Sesame Rice & Steamed Pak Choi"
+          "mode": "free"
         }
       ],
       "officeDays": [
