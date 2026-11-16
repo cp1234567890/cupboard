@@ -7,6 +7,8 @@
     "dinner:onion|pcs": true,
     "dinner:chicken thigh|pcs": true,
     "dinner:salmon fillet|pcs": true,
-    "dinner:spinach|handful": true
+    "dinner:spinach|handful": true,
+    "dinner:chopped tomato|tin": true,
+    "dinner:chickpea|tin": true
   }
 }
