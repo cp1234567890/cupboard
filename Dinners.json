@@ -2228,6 +2228,716 @@
         "Remove salmon. Add sliced garlic to the same pan and cook for 30 seconds, then add spinach and stir until wilted, about 1 minute.",
         "Plate up rice, lay salmon on top, and serve spinach alongside."
       ]
+    },
+    {
+      "name": "Butter-Style Chicken Curry with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 32,
+      "type": "chicken",
+      "ingredients": [
+        {
+          "name": "chicken thigh",
+          "quantity": 4,
+          "unit": "pcs",
+          "note": "bone-in"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 180,
+          "unit": "g",
+          "note": "90g per night"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "finely diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 4,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 2,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "tomato puree",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "butter",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "double cream",
+          "quantity": 4,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 2,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Rub the chicken with half the garam masala, the paprika and a pinch of salt. Heat olive oil in a large, deep pan over medium-high heat and brown the chicken skin-side down for 5 minutes, then turn and brown for 2 minutes more. Lift out.",
+        "Lower the heat to medium. Add butter and onion and cook for 4 minutes until soft. Add garlic, ginger, cumin, turmeric, chilli flakes and the rest of the garam masala and cook for 1 minute.",
+        "Stir in tomato puree and chopped tomatoes with a splash of water. Return the chicken, cover and simmer for 18 minutes, turning once, until cooked through.",
+        "Meanwhile cook tonight's rice (90g) according to packet instructions.",
+        "Stir the cream into the sauce and season with salt. Serve half over the rice. Cool the other two thighs and sauce quickly and keep in an airtight container for tomorrow, cooking fresh rice then."
+      ],
+      "tip": "Simmering the thighs on the bone keeps them juicy, and they reheat well in the sauce. Check one is cooked right through to the bone before adding the cream, and reheat the second portion until piping hot."
+    },
+    {
+      "name": "Gochujang-Glazed Salmon with Sesame Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 20,
+      "protein": 31,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "rice vinegar",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "butter",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook the rice. Once cooked, stir through half the sesame oil and the rice vinegar.",
+        "Mix gochujang, honey, soy sauce, garlic and the rest of the sesame oil.",
+        "Melt butter in a pan over medium heat. Cook the salmon skin-side down for 4 minutes, flip, spoon over the glaze and cook for 2–3 minutes more, basting as it thickens.",
+        "Meanwhile steam the pak choi for 3–4 minutes.",
+        "Serve the salmon over the rice with pak choi, spooning over any glaze. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Gochujang catches faster than honey alone, so keep the heat at medium once the glaze goes in."
+    },
+    {
+      "name": "Tandoori-Spiced Salmon with Cumin Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 20,
+      "protein": 31,
+      "type": "salmon",
+      "ingredients": [
+        {
+          "name": "salmon fillet",
+          "quantity": 1,
+          "unit": "pcs"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "paprika",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.25,
+          "unit": "tsp"
+        },
+        {
+          "name": "lemon",
+          "quantity": 0.5,
+          "unit": "pcs"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "butter",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 0.5,
+          "unit": "tsp"
+        }
+      ],
+      "method": [
+        "Toast the cumin in a dry saucepan for 30 seconds, then add the rice and cook according to packet instructions.",
+        "Mix garam masala, paprika, turmeric, chilli flakes, a squeeze of lemon, half the olive oil and a pinch of salt into a paste. Spread over the salmon flesh.",
+        "Heat the remaining olive oil in a pan over medium-high heat. Cook the salmon skin-side down for 4 minutes, flip and cook for 2–3 minutes more.",
+        "Meanwhile steam or pan-fry the broccoli for 3–4 minutes, then toss with butter.",
+        "Serve the salmon over the cumin rice with the broccoli and a lemon wedge."
+      ],
+      "tip": "Spreading the spice paste on the flesh side only lets the skin still crisp up in the pan."
+    },
+    {
+      "name": "Korean Spicy Pork Stir-Fry with Basmati Rice & Steamed Pak Choi",
+      "serves": 1,
+      "mins": 20,
+      "protein": 33,
+      "type": "pork",
+      "ingredients": [
+        {
+          "name": "pork loin steak",
+          "quantity": 150,
+          "unit": "g",
+          "note": "thinly sliced"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "pak choi",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "halved lengthways"
+        },
+        {
+          "name": "onion",
+          "quantity": 0.5,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "garlic",
+          "quantity": 2,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "sunflower oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Cook the rice according to packet instructions.",
+        "Mix gochujang, soy sauce, honey, sesame oil, ginger and garlic. Toss the pork through it.",
+        "Heat sunflower oil in a pan over high heat. Stir-fry the onion for 2 minutes, then add the pork and its marinade and stir-fry for 4–5 minutes until cooked and sticky.",
+        "Meanwhile steam the pak choi for 3–4 minutes.",
+        "Serve the pork over rice with pak choi alongside. Scatter sesame seeds over to finish."
+      ],
+      "tip": "Slicing the pork thinly is what keeps this under 20 minutes. Popping the steak in the freezer for 10 minutes first makes it much easier to slice."
+    },
+    {
+      "name": "Lamb Keema with Peas & Basmati Rice",
+      "serves": 2,
+      "mins": 25,
+      "protein": 28,
+      "type": "lamb",
+      "ingredients": [
+        {
+          "name": "minced lamb",
+          "quantity": 250,
+          "unit": "g"
+        },
+        {
+          "name": "frozen peas",
+          "quantity": 150,
+          "unit": "g"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "tomato puree",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "ground coriander",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 0.5,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per night"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pan over medium-high heat. Brown the lamb for 5 minutes, breaking it up. Spoon off excess fat.",
+        "Add the onion and cook for 4 minutes, then garlic, ginger and all the spices for 1 minute.",
+        "Stir in tomato puree and chopped tomatoes. Simmer for 10 minutes until thick.",
+        "Add the peas and cook for 3 minutes more. Season with salt.",
+        "Cook the rice fresh each night (100g per serving) and serve the keema over it."
+      ],
+      "tip": "Chill the second portion within an hour. Keema reheats really well, so it's ideal before an office day."
+    },
+    {
+      "name": "Chana Saag with Basmati Rice",
+      "serves": 2,
+      "mins": 25,
+      "protein": 16,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "chickpeas",
+          "quantity": 2,
+          "unit": "tin",
+          "note": "drained"
+        },
+        {
+          "name": "spinach",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "green chilli",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "finely chopped"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "ground coriander",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "lemon",
+          "quantity": 0.5,
+          "unit": "pcs"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per night"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pan over medium heat. Cook the onion for 5 minutes until soft, then add garlic, ginger and chilli for 1 minute.",
+        "Add the spices and cook for 1 minute until fragrant.",
+        "Add tomatoes and chickpeas and simmer for 10 minutes, crushing a few chickpeas to thicken the sauce.",
+        "Stir in the spinach a handful at a time until wilted. Season with salt and a squeeze of lemon.",
+        "Cook the rice fresh each night and serve the curry over it."
+      ],
+      "tip": "Two tins of chickpeas rather than one is what gets the protein up, and the spinach shrinks right down so it's not as much as it looks."
+    },
+    {
+      "name": "Aloo Gobi Chana with Basmati Rice",
+      "serves": 2,
+      "mins": 30,
+      "protein": 14,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "potatoes",
+          "quantity": 300,
+          "unit": "g",
+          "note": "cut into 2cm cubes"
+        },
+        {
+          "name": "cauliflower florets",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "chickpeas",
+          "quantity": 1,
+          "unit": "tin",
+          "note": "drained"
+        },
+        {
+          "name": "chopped tomatoes",
+          "quantity": 1,
+          "unit": "tin"
+        },
+        {
+          "name": "onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "diced"
+        },
+        {
+          "name": "garlic",
+          "quantity": 3,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "fresh ginger",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "grated"
+        },
+        {
+          "name": "garam masala",
+          "quantity": 1.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "cumin",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "turmeric",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "ground coriander",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "chilli flakes",
+          "quantity": 0.5,
+          "unit": "tsp"
+        },
+        {
+          "name": "olive oil",
+          "quantity": 2,
+          "unit": "tbsp"
+        },
+        {
+          "name": "salt",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "basmati rice",
+          "quantity": 200,
+          "unit": "g",
+          "note": "100g per night"
+        }
+      ],
+      "method": [
+        "Heat olive oil in a large pan over medium heat. Add the potatoes and cook for 5 minutes, stirring, until they start to colour.",
+        "Add the onion, garlic and ginger and cook for 3 minutes, then the spices for 1 minute.",
+        "Add the cauliflower, chickpeas, tomatoes and 100ml water. Cover and simmer for 15 minutes, stirring once or twice, until the potatoes are tender.",
+        "Uncover and cook for 2–3 minutes more to thicken. Season with salt.",
+        "Cook the rice fresh each night and serve the curry over it."
+      ],
+      "tip": "Browning the potatoes first stops them going mushy and gives the curry a better texture the next day.",
+      "boost": "serve with a handful of edamame stirred through at the end (adds ~6g per serving)."
+    },
+    {
+      "name": "Gochujang Crispy Tofu with Brown Rice & Tenderstem Broccoli",
+      "serves": 1,
+      "mins": 30,
+      "protein": 26,
+      "type": "veg",
+      "ingredients": [
+        {
+          "name": "firm tofu",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "brown rice",
+          "quantity": 70,
+          "unit": "g"
+        },
+        {
+          "name": "tenderstem broccoli",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "cornflour",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "gochujang paste",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "soy sauce",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "honey",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "sesame oil",
+          "quantity": 1,
+          "unit": "tsp"
+        },
+        {
+          "name": "garlic",
+          "quantity": 1,
+          "unit": "clove",
+          "note": "minced"
+        },
+        {
+          "name": "sunflower oil",
+          "quantity": 1,
+          "unit": "tbsp"
+        },
+        {
+          "name": "spring onion",
+          "quantity": 1,
+          "unit": "pcs",
+          "note": "sliced"
+        },
+        {
+          "name": "sesame seeds",
+          "quantity": 1,
+          "unit": "tsp",
+          "note": "to serve"
+        }
+      ],
+      "method": [
+        "Start the brown rice first, cooking it according to packet instructions.",
+        "Press the tofu in kitchen paper for 10 minutes, then cut into 2cm cubes and toss in cornflour with a pinch of salt.",
+        "Heat sunflower oil in a pan over medium-high heat. Fry the tofu for 8–10 minutes, turning, until crisp on all sides.",
+        "Mix gochujang, soy sauce, honey, sesame oil and garlic. Lower the heat, pour over the tofu and toss for 1 minute until glossy.",
+        "Meanwhile steam the broccoli for 3–4 minutes. Serve the tofu over rice with broccoli, spring onion and sesame seeds."
+      ],
+      "tip": "The cornflour coating is what makes the tofu crisp. Make sure the tofu is properly dry before it goes in."
     }
   ]
 }
