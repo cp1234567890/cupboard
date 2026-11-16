@@ -1366,7 +1366,7 @@ function dinnerShoppingNeeds(){
       if(stock.staple) return;
       label = stock.name;
       const conv = g.unit in DN_MEASURE ? convertQty(stock.quantity, stock.unit, g.unit)
-        : (g.unit === stock.unit ? stock.quantity : null);
+        : (g.unit === stock.unit || (["pcs", "tin", "pack"].includes(g.unit) && ["pcs", "tin", "pack"].includes(stock.unit)) ? stock.quantity : null);
       have = conv === null ? 0 : Math.max(conv, 0);
     }
     const short = Math.round((g.total - have) * 100) / 100;
