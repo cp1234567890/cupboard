@@ -173,7 +173,8 @@
         {
           "mode": "cook",
           "dinner": "Red Lentil Dal with Basmati Rice",
-          "carried": true
+          "carried": true,
+          "locked": true
         },
         {
           "mode": "leftover",
