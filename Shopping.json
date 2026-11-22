@@ -1,7 +1,9 @@
 {
   "manual": [],
   "checked": {
-    "chocolate|measure": true
+    "chocolate|measure": true,
+    "white chocolate|measure": true,
+    "fudge pieces|measure": true
   },
   "aisles": {},
   "aisleOrder": [
