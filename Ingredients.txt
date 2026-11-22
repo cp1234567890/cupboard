@@ -1,10 +1,10 @@
-Plain Flour|895|g|used:1794747914112
+Plain Flour|645|g|used:1795355586877
 Vanilla Extract|1|pcs|staple|used:1794747914115
 Jam Sugar|500|g
 Soft Dark Brown Sugar|740|g
-Golden Caster Sugar|355|g|used:1794747914116
+Golden Caster Sugar|280|g|used:1795355586877
 Light Soft Brown Sugar|590|g|used:1794747914112
-Light Muscovado Sugar|1085|g|used:1794663892609
+Light Muscovado Sugar|985|g|used:1795355586878
 Wholemeal Flour|625|g
 Icing Sugar|1|pcs|staple
 Golden Syrup|1|pcs|staple
@@ -14,7 +14,7 @@ Self-raising Flour|1730|g
 Nutmeg|1|g|staple
 Coconut Oil|1|g|staple
 Poppy Seeds|1|g|staple
-Butter|570|g|staple|used:1794747914115|loc:fridge
+Butter|570|g|staple|used:1795355586878|loc:fridge
 Baking Powder|1|g|staple|used:1794747914112
 Bicarbonate Of Soda|1|g|staple|used:1792942535050
 Cocoa Powder|1|g|staple|used:1792938009416
@@ -59,24 +59,14 @@ Vegetable Stock|1|g|staple
 Tomato Puree|1|g|staple
 Hoisin Sauce|1|g|staple
 Miso Paste|1|g|staple|loc:fridge
-Bananas|0|pcs
-Bell Pepper|0|pcs|loc:fridge
 Chicken Thigh|4|pcs|loc:fridge
-Chickpeas|0|pcs
 Chopped Tomatoes|1|pcs
-Condensed Milk|1|pcs
 Cinnamon|1|g|staple
-Coconut Milk|0|pcs
-Courgette|0|pcs|loc:fridge
 Espresso|1|g|staple
 Lemon|1|pcs|loc:fridge
 Maple Syrup|1|g|staple
-Minced Lamb|0|g|loc:fridge
 Onion|1|pcs|loc:fridge
 Pak Choi|2|pcs|loc:fridge
-Red Onion|0|pcs|loc:fridge
 Salmon Fillet|2|pcs|loc:fridge
-Spring Onion|0|pcs|loc:fridge
-Chocolate|200|g
 White Chocolate|200|g
 Fudge|100|g
