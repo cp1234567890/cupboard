@@ -1,6 +1,8 @@
 {
   "manual": [],
-  "checked": {},
+  "checked": {
+    "chocolate|measure": true
+  },
   "aisles": {},
   "aisleOrder": [
     "Fruit & veg",
