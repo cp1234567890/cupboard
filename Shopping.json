@@ -3,7 +3,10 @@
   "checked": {
     "chocolate|measure": true,
     "white chocolate|measure": true,
-    "fudge pieces|measure": true
+    "fudge pieces|measure": true,
+    "condensed milk|pcs": true,
+    "light soft brown sugar|measure": true,
+    "dark soft brown sugar|measure": true
   },
   "aisles": {},
   "aisleOrder": [
