@@ -166,6 +166,7 @@
       pushUndo(`track ${label}`);
       if(g.item){
         delete g.item.staple;
+        delete g.item.low;
         g.item.quantity = roundQty(q);
         g.item.unit = unit;
       }else{
@@ -316,7 +317,7 @@
   /* ---------- Drawing ---------- */
 
   function statusText(g){
-    if(g.status === "staple") return "Staple";
+    if(g.status === "staple") return g.item.low ? "Staple, running low" : "Staple";
     if(g.status === "tracked") return `Tracking ${amountText(g.item)}`;
     return "Not in cupboard";
   }
@@ -383,7 +384,7 @@
           <div class="ic-name">${escapeHtml(g.display)}${flags.length ? ` <span class="ic-flag">${escapeHtml(flags.join(" · "))}</span>` : ""}</div>
           <div class="ic-sub">${escapeHtml([g.uses.length ? `used in ${g.uses.length}` : "not in any recipe", others].filter(Boolean).join(" · "))}</div>
         </div>
-        <span class="ic-status ic-${g.status}">${escapeHtml(g.status === "tracked" ? amountText(g.item) : g.status === "staple" ? "staple" : "—")}</span>
+        <span class="ic-status ic-${g.status}${g.item && g.item.low ? " ic-low" : ""}">${escapeHtml(g.status === "tracked" ? amountText(g.item) : g.status === "staple" ? (g.item.low ? "running low" : "staple") : "—")}</span>
       </div>`;
     const tick = row.querySelector(".ic-tick");
     tick.onclick = e => {
@@ -430,6 +431,7 @@
           </div>
           <small class="ic-hint ic-portion-hint${defaultUnit === "pcs" ? "" : " hidden"}">Optional. With a portion size, recipes that ask for grams can use your pieces, and the other way round.</small>
         </div>
+        ${g.status === "staple" ? `<button type="button" class="ic-lowbtn${g.item.low ? " on" : ""}">${g.item.low ? "Running low ✓ (on the shopping list)" : "Running low? Add to shopping list"}</button>` : ""}
         ${recipeUnits.length ? `<small class="ic-hint">Recipes measure it in: ${escapeHtml(recipeUnits.join(", "))}</small>` : ""}
       </div>
 
@@ -477,6 +479,8 @@
       setStatusFor(g, "tracked", qty, unit, unit === "pcs" && each > 0 ? {qty: roundQty(each), unit: track.querySelector(".ic-each-unit").value} : null);
     };
     box.querySelectorAll('[data-k="loc"] button').forEach(b => b.onclick = () => setLocation(g, b.dataset.v));
+    const lowBtn = box.querySelector(".ic-lowbtn");
+    if(lowBtn) lowBtn.onclick = () => { setStapleLow(g.item, !g.item.low); draw(); };
     box.querySelector(".ic-aisle").onchange = e => setAisle(g, e.target.value);
     box.querySelectorAll("[data-unalias]").forEach(b => b.onclick = () => unalias(g, g.aliasList[Number(b.dataset.unalias)]));
     box.querySelectorAll("[data-merge]").forEach(b => b.onclick = () => askMerge([g, g.dups[Number(b.dataset.merge)]]));
@@ -552,6 +556,9 @@
   .ic-seg{flex:none; width:100%;}
   .ic-seg button.on{background:var(--herb); color:#fff;}
   .ic-track{display:flex; gap:8px; margin-top:8px;}
+  .ic-status.ic-low{color:var(--brick); font-weight:600; font-style:normal;}
+  .ic-lowbtn{margin-top:8px; width:100%; padding:9px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.88rem; cursor:pointer;}
+  .ic-lowbtn.on{border-color:var(--brick); color:var(--brick); font-weight:600;}
   .ic-portion{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:0.9rem;}
   .ic-portion.hidden, .ic-trackbox.hidden, .ic-portion-hint.hidden{display:none;}
   .ic-each{width:90px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:0.95rem;}
