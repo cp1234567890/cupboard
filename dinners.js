@@ -1039,6 +1039,9 @@ function dnNormalisePlans(raw){
         ["dinner", "text", "note"].forEach(k => { if(d[k]) out[k] = String(d[k]); });
         if(d.locked) out.locked = true;
         if(d.carried) out.carried = true;
+        if(d.skipped) out.skipped = true;
+        // What was taken out of the cupboard for this dinner, so it can be put back.
+        if(Array.isArray(d.used)) out.used = d.used.map(u => ({name: String(u.name), quantity: Number(u.quantity) || 0, unit: String(u.unit || "")}));
         return out;
       })
     };
@@ -1052,7 +1055,9 @@ function dnNormalisePlans(raw){
       return out;
     }).filter(i => i.name);
     return week;
-  }).sort((a, b) => a.start.localeCompare(b.start))};
+  }).sort((a, b) => a.start.localeCompare(b.start)),
+  // Dinners from this date on come out of the cupboard (set when the feature first ran).
+  ...(raw && /^\d{4}-\d{2}-\d{2}$/.test(raw.deductFrom || "") ? {deductFrom: raw.deductFrom} : {})};
 }
 
 // Rules for one week: its own office days when they were confirmed.
@@ -1075,6 +1080,7 @@ async function dnFetchAll(){
   catch(e){ throw new Error("MealPlans.json is not valid JSON"); }
   dnLoaded = true;
   dnMoveStaplesToCupboard();
+  dnDeductPastDinners();
   if(typeof currentView !== "undefined" && currentView === "dinners") renderDinners();
 }
 
@@ -1135,6 +1141,103 @@ function dnQueueSave(which, message){
       dnPush(DN_PLANS_PATH, dnPlans, "plans", message);
     }
   }, 700);
+}
+
+/* ---------- Taking dinners out of the cupboard ----------
+ * The morning after a planned dinner, its ingredients come out of the cupboard:
+ * only what's there, and never staples. "Didn't make it" puts them back. */
+
+const DN_COUNTABLE = ["pcs", "tin", "pack"];
+
+function dnTakeFromCupboard(din){
+  const used = [];
+  din.ingredients.forEach(ing => {
+    const q = ing.quantity * (ing.perPortion ? din.serves : 1);
+    if(!q) return;
+    const stock = dnStockFor(ing.name);
+    if(!stock || stock.staple) return;
+    let amount = null;
+    if(ing.unit in DN_MEASURE) amount = convertQty(q, ing.unit, stock.unit);
+    else if(ing.unit === stock.unit || (DN_COUNTABLE.includes(ing.unit) && DN_COUNTABLE.includes(stock.unit))) amount = q;
+    if(amount === null) return;                         // a clove or a handful can't be taken from grams
+    const take = roundQty(Math.min(amount, Math.max(stock.quantity, 0)));
+    if(take <= 0) return;
+    stock.quantity = roundQty(stock.quantity - take);   // stays at 0 rather than disappearing
+    stock.used = Date.now();
+    const prev = used.find(u => u.name === stock.name && u.unit === stock.unit);
+    if(prev) prev.quantity = roundQty(prev.quantity + take);
+    else used.push({name: stock.name, quantity: take, unit: stock.unit});
+  });
+  return used;
+}
+
+function dnPutBack(used){
+  (used || []).forEach(u => {
+    const item = items.find(i => i.name === u.name) || items.find(i => sameIngredient(i.name, u.name));
+    if(item){
+      const q = item.unit === u.unit ? u.quantity : convertQty(u.quantity, u.unit, item.unit);
+      if(q !== null) item.quantity = roundQty(item.quantity + q);
+    }else{
+      const mem = memFor(u.name);
+      items.push({name: u.name, quantity: u.quantity, unit: u.unit, loc: mem && mem.loc ? mem.loc : "cupboard"});
+    }
+  });
+}
+
+function dnDeductPastDinners(){
+  if(typeof items === "undefined") return;
+  const today = dnIso(new Date());
+  let plansChanged = false;
+  if(!dnPlans.deductFrom){ dnPlans.deductFrom = today; plansChanged = true; }   // never go back before this
+  const map = dnByName();
+  const done = [];
+  dnPlans.weeks.forEach(w => w.days.forEach((d, i) => {
+    const date = dnAddDays(w.start, i);
+    if(date < dnPlans.deductFrom || date >= today) return;
+    if(d.mode !== "cook" || !d.dinner || d.used || d.skipped) return;
+    const din = map.get(d.dinner);
+    if(!din) return;
+    d.used = dnTakeFromCupboard(din);
+    plansChanged = true;
+    done.push(`${DN_DAYS_SHORT[i]} ${din.name.split(/\s+with\s+/i)[0]}`);
+  }));
+  if(done.length) queueSave(`Used for dinners: ${done.join("; ")}`);
+  if(plansChanged) dnQueueSave("plans", done.length ? "Dinners taken from cupboard" : "Start taking dinners from cupboard");
+  if(done.length){
+    if(typeof render === "function") render();
+    if(typeof updateShopBadge === "function") updateShopBadge();
+  }
+}
+
+// A day's dinner changed or cleared after it was taken out: put the old one back.
+function dnUndoTaken(day){
+  if(day && day.used){ dnPutBack(day.used); queueSave(`Put back ${day.dinner || "dinner"}`); }
+}
+
+function dnSkipDay(i){
+  const week = dnGetWeek(dnWeekId);
+  const d = week && week.days[i];
+  if(!d) return;
+  pushUndo(`didn't make ${DN_DAYS[i]}'s dinner`);
+  if(d.used){ dnPutBack(d.used); delete d.used; queueSave(`Put back ${d.dinner}: not made`); }
+  d.skipped = true;
+  dnQueueSave("plans", `Didn't make ${DN_DAYS[i]}'s dinner`);
+  render();
+  renderDinners();
+  updateShopBadge();
+}
+
+function dnUnskipDay(i){
+  const week = dnGetWeek(dnWeekId);
+  const d = week && week.days[i];
+  if(!d) return;
+  pushUndo(`made ${DN_DAYS[i]}'s dinner after all`);
+  delete d.skipped;
+  dnQueueSave("plans", `Made ${DN_DAYS[i]}'s dinner after all`);
+  dnDeductPastDinners();       // takes it out now if the day has passed
+  render();
+  renderDinners();
+  updateShopBadge();
 }
 
 /* ---------- Undo hooks (called from index.html) ---------- */
@@ -1237,6 +1340,13 @@ function dnSetDay(i, patch, label){
   const before = week.days[i];
   const next = Object.assign({}, patch);
   if(before.locked && !("locked" in patch)) next.locked = true;
+  // Same dinner (e.g. just locking it): keep its cupboard record. Different: put the old one back.
+  if(next.mode === before.mode && next.dinner === before.dinner){
+    if(before.used) next.used = before.used;
+    if(before.skipped) next.skipped = true;
+  }else{
+    dnUndoTaken(before);
+  }
   week.days[i] = next;
 
   // Keep the following leftover night in step with a changed batch cook.
@@ -1319,9 +1429,12 @@ function dinnerShoppingNeeds(){
   const packs = dnRules().packs || {};
   const groups = new Map();
   const weeks = dnPlans.weeks.filter(w => w.onList);
+  // Ticks belong to the week(s) being shopped for, so next week's onions aren't already ticked.
+  const weekTag = weeks.map(w => w.start).join("+");
   weeks.forEach(w => {
     w.days.forEach(d => {
       if(d.mode !== "cook" || !d.dinner || d.carried) return;   // carried meals were bought last week
+      if(d.used || d.skipped) return;                            // already eaten, or not being made
       const din = map.get(d.dinner);
       if(!din) return;
       din.ingredients.forEach(ing => {
@@ -1329,7 +1442,7 @@ function dinnerShoppingNeeds(){
         if(!q) return;
         const measure = ing.unit in DN_MEASURE;
         const family = measure ? "measure" : (ing.unit || "pcs");
-        const key = "dinner:" + canonicalName(dnSingular(ing.name)) + "|" + family;
+        const key = "dinner:" + weekTag + ":" + canonicalName(dnSingular(ing.name)) + "|" + family;
         let g = groups.get(key);
         if(!g){
           g = {key, name: ing.name, unit: measure ? (ing.unit === "kg" ? "g" : ing.unit === "l" ? "ml" : ing.unit) : ing.unit || "pcs", total: 0, dinners: []};
@@ -1492,7 +1605,9 @@ function dnRenderPlan(){
       title = "Not planned";
     }
     const dayNotes = d.note ? [d.note] : notes[i];
-    if(dayNotes.length && d.mode !== "free") sub.push(...dayNotes);
+    if(d.mode === "cook" && d.skipped) sub.unshift("Didn't make it");
+    else if(d.mode === "cook" && d.used) sub.unshift("Taken from cupboard ✓");
+    else if(dayNotes.length && d.mode !== "free") sub.push(...dayNotes);
     const open = dnExpanded === i;
     const office = rules.officeDays.includes(i);
 
@@ -1544,6 +1659,9 @@ function dnDayDetails(d, i, din){
       <button type="button" data-act="lock" data-day="${i}" class="${d.locked ? "on" : ""}">${d.locked ? "Locked" : "Lock"}</button>
       <button type="button" data-act="clear" data-day="${i}">Clear</button>
     </div>
+    ${d.mode === "cook" && din ? (d.skipped
+      ? `<div class="dn-made"><span>Marked as not made. Its ingredients are still in the cupboard.</span><button type="button" data-act="unskip" data-day="${i}">Made it after all</button></div>`
+      : `<div class="dn-made"><span>${d.used ? `Taken from cupboard: ${escapeHtml(d.used.length ? d.used.map(u => u.unit === "pcs" ? `${u.name} ×${u.quantity}` : `${u.name} ${fmtQty(u.quantity, u.unit)}`).join(", ") : "nothing tracked")}` : "Comes out of the cupboard the morning after."}</span><button type="button" data-act="skip" data-day="${i}">Didn't make it</button></div>`) : ""}
     ${din && d.mode !== "out" ? dnRecipeHtml(din) : ""}
   </div>`;
 }
@@ -1574,6 +1692,8 @@ function dnWirePlan(host){
     }
     else if(b.dataset.act === "out") dnSetDay(i, {mode: "out"}, `no dinner ${DN_DAYS[i]}`);
     else if(b.dataset.act === "clear") dnSetDay(i, {mode: "free", locked: false}, `clear ${DN_DAYS[i]}`);
+    else if(b.dataset.act === "skip") dnSkipDay(i);
+    else if(b.dataset.act === "unskip") dnUnskipDay(i);
     else if(b.dataset.act === "lock"){
       const next = Object.assign({}, cur);
       if(cur.locked) delete next.locked; else next.locked = true;
@@ -1594,6 +1714,7 @@ function dnWirePlan(host){
     if(!confirm("Clear every day of this week's plan?")) return;
     pushUndo("clear dinner week");
     const w = dnEnsureWeek(dnWeekId);
+    w.days.forEach(dnUndoTaken);
     w.days = DN_DAYS.map(() => ({mode: "free"}));
     w.onList = false;
     dnQueueSave("plans", `Clear dinners w/c ${dnWeekId}`);
@@ -1873,7 +1994,8 @@ function dnOpenSetup(){
       last.push({name: d.dinner, day: i});
     }
   });
-  const carried = new Set((week && week.carryOver) || []);
+  const carried = new Set((week && week.carryOver) ||
+    ((prev && prev.days) || []).filter(d => d.mode === "cook" && d.skipped && d.dinner).map(d => d.dinner));
   document.getElementById("dnSetupCarry").innerHTML = last.length
     ? `<p class="hint dn-setup-sub">Tick any you didn't make. They go early in the week and won't be added to the shopping list again.</p>` +
       last.map(x => `<label class="dn-review-row">
@@ -1978,6 +2100,9 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
   .dn-clear:active{background:var(--brick); color:#fff;}
   .dn-weekactions{display:flex; gap:10px; margin-bottom:16px;}
   .dn-weekactions button{flex:1; padding:11px; border-radius:10px; border:none; font-size:0.9rem; cursor:pointer;}
+  .dn-made{display:flex; align-items:center; gap:10px; margin:-4px 0 12px; font-size:0.84rem; color:var(--ink-soft);}
+  .dn-made span{flex:1;}
+  .dn-made button{padding:7px 10px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.82rem; cursor:pointer; white-space:nowrap;}
   .dn-rules{margin-top:20px;}
   .dn-staple-note{margin:0 0 12px;}
   .dn-rules textarea, #dnPaste{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-size:0.9rem;}
@@ -2057,6 +2182,17 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
     if(e.target.id === "dnSetupModal") dnCloseSetup();
   });
   document.getElementById("dnClaudeBtn").onclick = dnOpenClaude;
+
+  // Coming back to an app left open overnight: reload from GitHub, which takes out
+  // any dinners now due (fresh data, so two devices can't both take the same one).
+  let dnLoadedOn = dnIso(new Date());
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState !== "visible" || !dnLoaded) return;
+    const today = dnIso(new Date());
+    if(today === dnLoadedOn) return;
+    dnLoadedOn = today;
+    if(typeof fetchFile === "function") fetchFile();
+  });
   document.getElementById("dnCopyPlan").onclick = () => dnCopyPrompt("plan");
   document.getElementById("dnCopyRecipe").onclick = () => dnCopyPrompt("recipe");
   document.getElementById("dnClaudeCancel").onclick = dnCloseClaude;
