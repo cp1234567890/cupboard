@@ -9,7 +9,8 @@
     {
       "name": "Ground Ginger",
       "quantity": 1,
-      "unit": "pcs"
+      "unit": "pcs",
+      "checked": true
     },
     {
       "name": "Spinach",
@@ -23,7 +24,9 @@
     "dinner:tenderstem broccoli|measure": true,
     "dinner:spring onion|pcs": true,
     "dinner:tomato|pcs": true,
-    "dinner:double cream|measure": true
+    "dinner:double cream|measure": true,
+    "dinner:chopped tomato|tin": true,
+    "dinner:chickpea|tin": true
   },
   "aisles": {},
   "aisleOrder": [
