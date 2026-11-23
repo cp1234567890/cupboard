@@ -3,7 +3,8 @@
     {
       "name": "Onion",
       "quantity": 1,
-      "unit": "pcs"
+      "unit": "pcs",
+      "checked": true
     },
     {
       "name": "Ground Ginger",
@@ -16,7 +17,9 @@
       "unit": "pcs"
     }
   ],
-  "checked": {},
+  "checked": {
+    "dinner:onion|pcs": true
+  },
   "aisles": {},
   "aisleOrder": [
     "Fruit & veg",
