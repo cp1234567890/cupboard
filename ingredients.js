@@ -97,7 +97,7 @@
       if(u === have) return false;
       if(COUNTABLE.includes(u) && COUNTABLE.includes(have)) return false;
       if(LOOSE.includes(u)) return true;
-      return convertQty(1, u, have) === null;
+      return convertQty(1, u, have, g.item.name) === null;
     });
     return bad.length ? bad : null;
   }
@@ -147,7 +147,7 @@
     draw();
   }
 
-  function setStatusFor(g, status, qty, unit){
+  function setStatusFor(g, status, qty, unit, each){
     const label = g.display;
     if(status === "none"){
       if(!g.item) return;
@@ -171,7 +171,9 @@
       }else{
         items.push(newItem(g, {quantity: roundQty(q), unit}));
       }
-      queueSave(`Track ${label}: ${fmtQty(q, unit)}`);
+      const it = g.item || items[items.length - 1];
+      if(unit === "pcs" && each) it.each = each; else delete it.each;   // portion size only means something for pieces
+      queueSave(`Track ${label}: ${fmtQty(q, unit)}${it.each ? ` (1 portion = ${it.each.qty} ${it.each.unit})` : ""}`);
     }
     afterChange();
   }
@@ -252,7 +254,7 @@
       if(keepItem.staple || oi.staple){
         if(oi.staple && !keepItem.staple && keepItem.quantity <= 0) keepItem.staple = true;
       }else{
-        const conv = convertQty(oi.quantity, oi.unit, keepItem.unit);
+        const conv = convertQty(oi.quantity, oi.unit, keepItem.unit, keepItem.name);
         if(conv !== null) keepItem.quantity = roundQty(keepItem.quantity + conv);
         else notes.push(`${oi.name} (${fmtQty(oi.quantity, oi.unit)}) couldn't be added to ${keepItem.name} because the units differ, so check its amount.`);
       }
@@ -315,8 +317,13 @@
 
   function statusText(g){
     if(g.status === "staple") return "Staple";
-    if(g.status === "tracked") return `Tracking ${fmtQty(g.item.quantity, g.item.unit)}`;
+    if(g.status === "tracked") return `Tracking ${amountText(g.item)}`;
     return "Not in cupboard";
+  }
+
+  function amountText(item){
+    if(item.unit === "pcs" && item.each) return `${roundQty(item.quantity)} × ${item.each.qty} ${item.each.unit}`;
+    return fmtQty(item.quantity, item.unit);
   }
 
   function needsLook(g){ return g.dups.length || g.unitIssue; }
@@ -376,7 +383,7 @@
           <div class="ic-name">${escapeHtml(g.display)}${flags.length ? ` <span class="ic-flag">${escapeHtml(flags.join(" · "))}</span>` : ""}</div>
           <div class="ic-sub">${escapeHtml([g.uses.length ? `used in ${g.uses.length}` : "not in any recipe", others].filter(Boolean).join(" · "))}</div>
         </div>
-        <span class="ic-status ic-${g.status}">${escapeHtml(g.status === "tracked" ? fmtQty(g.item.quantity, g.item.unit) : g.status === "staple" ? "staple" : "—")}</span>
+        <span class="ic-status ic-${g.status}">${escapeHtml(g.status === "tracked" ? amountText(g.item) : g.status === "staple" ? "staple" : "—")}</span>
       </div>`;
     const tick = row.querySelector(".ic-tick");
     tick.onclick = e => {
@@ -402,7 +409,7 @@
         ${g.dups.map((d, k) => `<div class="ic-dup"><span>${escapeHtml(d.display)} <small>${escapeHtml(statusText(d))}</small></span>
           <button type="button" data-merge="${k}">Merge</button><button type="button" class="ic-quiet" data-notsame="${k}">Not the same</button></div>`).join("")}
       </div>` : ""}
-      ${g.unitIssue ? `<div class="ic-block ic-warn-block"><b>Unit clash:</b> you track this in ${escapeHtml(g.item.unit)}, but recipes use ${escapeHtml(g.unitIssue.join(", "))}, so those recipes can't check how much you have. Track it in a matching unit, or make it a staple.</div>` : ""}
+      ${g.unitIssue ? `<div class="ic-block ic-warn-block"><b>Unit clash:</b> you track this in ${escapeHtml(g.item.unit)}, but recipes use ${escapeHtml(g.unitIssue.join(", "))}, so those recipes can't check how much you have. ${g.item.unit === "pcs" ? "Set a portion size below (e.g. 1 portion = 80 g), track it in a matching unit," : "Track it in a matching unit"} or make it a staple.</div>` : ""}
 
       <div class="ic-block"><div class="ic-label">In the cupboard</div>
         <div class="dn-seg ic-seg" data-k="status">
@@ -410,10 +417,18 @@
           <button type="button" data-v="staple" class="${g.status === "staple" ? "on" : ""}">Staple</button>
           <button type="button" data-v="tracked" class="${g.status === "tracked" ? "on" : ""}">Track amount</button>
         </div>
-        <div class="ic-track${g.status === "tracked" ? "" : " hidden"}">
-          <input type="number" class="ic-qty" min="0" step="any" inputmode="decimal" value="${g.item && !g.item.staple ? roundQty(g.item.quantity) : ""}" placeholder="Amount">
-          <select class="ic-unit">${ICUNITS.map(u => `<option${u === defaultUnit ? " selected" : ""}>${u}</option>`).join("")}</select>
-          <button type="button" class="ic-save">Save</button>
+        <div class="ic-trackbox${g.status === "tracked" ? "" : " hidden"}">
+          <div class="ic-track">
+            <input type="number" class="ic-qty" min="0" step="any" inputmode="decimal" value="${g.item && !g.item.staple ? roundQty(g.item.quantity) : ""}" placeholder="Amount">
+            <select class="ic-unit">${ICUNITS.map(u => `<option${u === defaultUnit ? " selected" : ""}>${u}</option>`).join("")}</select>
+            <button type="button" class="ic-save">Save</button>
+          </div>
+          <div class="ic-portion${defaultUnit === "pcs" ? "" : " hidden"}">
+            <span>1 portion =</span>
+            <input type="number" class="ic-each" min="0" step="any" inputmode="decimal" value="${g.item && g.item.each ? g.item.each.qty : ""}" placeholder="${suggestPortion(g) || "e.g. 80"}">
+            <select class="ic-each-unit">${["g", "ml"].map(u => `<option${g.item && g.item.each && g.item.each.unit === u ? " selected" : ""}>${u}</option>`).join("")}</select>
+          </div>
+          <small class="ic-hint ic-portion-hint${defaultUnit === "pcs" ? "" : " hidden"}">Optional. With a portion size, recipes that ask for grams can use your pieces, and the other way round.</small>
         </div>
         ${recipeUnits.length ? `<small class="ic-hint">Recipes measure it in: ${escapeHtml(recipeUnits.join(", "))}</small>` : ""}
       </div>
@@ -436,7 +451,13 @@
         <small class="ic-hint">✕ splits a name back into its own ingredient.</small></div>` : ""}`;
 
     // In the cupboard
-    const track = box.querySelector(".ic-track");
+    const track = box.querySelector(".ic-trackbox");
+    const showPortion = () => {
+      const pcs = track.querySelector(".ic-unit").value === "pcs";
+      track.querySelector(".ic-portion").classList.toggle("hidden", !pcs);
+      track.querySelector(".ic-portion-hint").classList.toggle("hidden", !pcs);
+    };
+    track.querySelector(".ic-unit").onchange = showPortion;
     box.querySelectorAll('[data-k="status"] button').forEach(b => b.onclick = () => {
       if(b.dataset.v === "tracked"){
         if(g.status !== "tracked"){
@@ -451,7 +472,9 @@
     track.querySelector(".ic-save").onclick = () => {
       const qty = track.querySelector(".ic-qty").value;
       if(qty === "" || Number(qty) < 0){ track.querySelector(".ic-qty").focus(); return; }
-      setStatusFor(g, "tracked", qty, track.querySelector(".ic-unit").value);
+      const unit = track.querySelector(".ic-unit").value;
+      const each = Number(track.querySelector(".ic-each").value);
+      setStatusFor(g, "tracked", qty, unit, unit === "pcs" && each > 0 ? {qty: roundQty(each), unit: track.querySelector(".ic-each-unit").value} : null);
     };
     box.querySelectorAll('[data-k="loc"] button').forEach(b => b.onclick = () => setLocation(g, b.dataset.v));
     box.querySelector(".ic-aisle").onchange = e => setAisle(g, e.target.value);
@@ -459,6 +482,17 @@
     box.querySelectorAll("[data-merge]").forEach(b => b.onclick = () => askMerge([g, g.dups[Number(b.dataset.merge)]]));
     box.querySelectorAll("[data-notsame]").forEach(b => b.onclick = () => { dismiss(g.key, g.dups[Number(b.dataset.notsame)].key); draw(); });
     return box;
+  }
+
+  function suggestPortion(g){
+    const amounts = [];
+    (typeof dnData !== "undefined" ? dnData.dinners : []).forEach(d => d.ingredients.forEach(i => {
+      if(canonicalName(i.name) === g.key && (i.unit === "g" || i.unit === "ml") && i.quantity) amounts.push(i.quantity);
+    }));
+    if(!amounts.length) return null;
+    const counts = {};
+    amounts.forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
   }
 
   function guessUnit(units){
@@ -518,6 +552,10 @@
   .ic-seg{flex:none; width:100%;}
   .ic-seg button.on{background:var(--herb); color:#fff;}
   .ic-track{display:flex; gap:8px; margin-top:8px;}
+  .ic-portion{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:0.9rem;}
+  .ic-portion.hidden, .ic-trackbox.hidden, .ic-portion-hint.hidden{display:none;}
+  .ic-each{width:90px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:0.95rem;}
+  .ic-each-unit{padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink);}
   .ic-track.hidden{display:none;}
   .ic-qty{flex:1; min-width:0; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:0.95rem;}
   .ic-unit, .ic-aisle{padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font-size:0.9rem;}
