@@ -1,9 +1,6 @@
 {
   "manual": [],
-  "checked": {
-    "dinner:onion|pcs": true,
-    "dinner:spring onion|pcs": true
-  },
+  "checked": {},
   "aisles": {},
   "aisleOrder": [
     "Fruit & veg",
