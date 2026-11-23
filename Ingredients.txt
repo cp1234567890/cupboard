@@ -68,6 +68,7 @@ Onion|2|pcs|used:1795456055538|loc:fridge
 Pak Choi|2|pcs|used:1795456055582|loc:fridge
 Salmon Fillet|2|pcs|used:1795456055557|loc:fridge
 Fudge|100|g
+Broccoli|1|g|loc:fridge
 Spring Onions|1|pcs|loc:fridge
 Double Cream|150|ml|loc:fridge
 Chickpeas|1|pcs
