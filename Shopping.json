@@ -1,16 +1,5 @@
 {
-  "manual": [
-    {
-      "name": "Onion",
-      "quantity": 1,
-      "unit": "pcs"
-    },
-    {
-      "name": "Spinach",
-      "quantity": 1,
-      "unit": "pcs"
-    }
-  ],
+  "manual": [],
   "checked": {},
   "aisles": {},
   "aisleOrder": [
