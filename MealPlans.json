@@ -125,7 +125,7 @@
     },
     {
       "start": "2026-11-16",
-      "onList": false,
+      "onList": true,
       "days": [
         {
           "mode": "cook",
