@@ -163,28 +163,35 @@
     },
     {
       "start": "2026-11-23",
-      "onList": false,
+      "onList": true,
       "days": [
         {
-          "mode": "free"
+          "mode": "cook",
+          "dinner": "Spiced Chickpea & Tomato Pasta"
         },
         {
-          "mode": "free"
+          "mode": "leftover",
+          "dinner": "Spiced Chickpea & Tomato Pasta"
         },
         {
-          "mode": "free"
+          "mode": "cook",
+          "dinner": "Butter-Style Chicken Curry with Basmati Rice"
         },
         {
-          "mode": "free"
+          "mode": "leftover",
+          "dinner": "Butter-Style Chicken Curry with Basmati Rice"
         },
         {
-          "mode": "free"
+          "mode": "cook",
+          "dinner": "Garam Masala Lentil & Spinach Daal with Crispy Roasted Potatoes"
         },
         {
-          "mode": "free"
+          "mode": "cook",
+          "dinner": "Teriyaki Salmon with Basmati Rice & Steamed Pak Choi"
         },
         {
-          "mode": "free"
+          "mode": "cook",
+          "dinner": "Gochujang-Glazed Salmon with Sesame Rice & Steamed Pak Choi"
         }
       ],
       "officeDays": [
