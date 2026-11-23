@@ -270,6 +270,7 @@
   .adjust-info .close{font-size:0.92rem; white-space:nowrap;}
   .adjust-info .close.on{color:var(--herb); font-weight:600;}
   .row .qty.staple-tag{font-size:0.8rem; font-style:italic;}
+  .row .qty.staple-low{color:var(--brick); font-weight:600;}
   form#add{flex-wrap:wrap;}
   form#add .staple-opt{
     flex-basis:100%; display:flex; align-items:center; gap:8px;
@@ -528,6 +529,7 @@
     <span id="adjustName"></span>
     <select id="adjustUnit"></select>
     <button type="button" class="close" id="adjustStaple">Staple</button>
+    <button type="button" class="close hidden" id="adjustLow">Running low</button>
     <button type="button" class="close" id="adjustAliases">Aliases</button>
     <button type="button" class="close" id="adjustClose" aria-label="Done">Done</button>
   </div>
@@ -919,6 +921,7 @@ function parseText(text){
       const unit = (parts.length >= 3 && UNITS.includes(parts[2])) ? parts[2] : "g";
       const extras = parts.slice(3);
       const staple = extras.includes("staple");
+      const low = extras.includes("low");
       const locTok = extras.find(t => t.startsWith("loc:"));
       const locVal = locTok ? locTok.slice(4) : "cupboard";
       const loc = (LOCS.includes(locVal) || locVal === "unsorted") ? locVal : "cupboard";
@@ -932,6 +935,7 @@ function parseText(text){
       if(isNaN(qty)) qty = 1;
       const entry = {name, quantity: qty, unit, loc};
       if(staple) entry.staple = true;
+      if(staple && low) entry.low = true;     // a staple that's running out
       if(used > 0) entry.used = used;
       if(eachTok){
         const m = eachTok.match(/^each:(\d+(?:\.\d+)?)(g|kg|ml|l)$/);
@@ -947,7 +951,7 @@ function parseText(text){
 }
 
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}${i.loc && i.loc !== "cupboard" ? "|loc:" + i.loc : ""}${i.loc2 ? "|also:" + i.loc2 : ""}${i.each ? "|each:" + i.each.qty + i.each.unit : ""}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.staple && i.low ? "|low" : ""}${i.used ? "|used:" + i.used : ""}${i.loc && i.loc !== "cupboard" ? "|loc:" + i.loc : ""}${i.loc2 ? "|also:" + i.loc2 : ""}${i.each ? "|each:" + i.each.qty + i.each.unit : ""}`).join("\n") + (list.length ? "\n" : "");
 }
 
 function titleCase(s){
@@ -2294,12 +2298,30 @@ function shoppingNeeds(){
   return shortfallFor(recipes.filter(r => r.reserved));
 }
 
+/* ---------------- Staples running low ---------------- */
+
+// Staples ticked off in this session stay on the list (ticked) until the app is reloaded,
+// so a mis-tap can be unticked.
+const boughtStaples = new Set();
+
+function setStapleLow(item, low, quiet){
+  if(!item || !item.staple) return;
+  if(!quiet) pushUndo(low ? `${item.name} running low` : `${item.name} restocked`);
+  if(low) item.low = true; else delete item.low;
+  queueSave(low ? `${item.name} running low` : `${item.name} restocked`);
+  render();
+  if(typeof currentView !== "undefined" && currentView === "shopping") renderShopping();
+  updateShopBadge();
+}
+
+function lowStaples(){ return items.filter(i => i.staple && (i.low || boughtStaples.has(i.name))); }
+
 function dinnerNeedsSafe(){
   return typeof dinnerShoppingNeeds === "function" ? dinnerShoppingNeeds() : [];
 }
 
 function updateShopBadge(){
-  const n = shoppingNeeds().length + shopping.manual.length + dinnerNeedsSafe().length;
+  const n = shoppingNeeds().length + shopping.manual.length + dinnerNeedsSafe().length + items.filter(i => i.staple && i.low).length;
   const tab = document.querySelector('.tab[data-view="shopping"]');
   if(tab) tab.textContent = n ? `Shopping (${n})` : "Shopping";
 }
@@ -2368,6 +2390,13 @@ function renderShopping(){
     sub: "for " + n.recipes.join(", "), checked: !!shopping.checked[n.key], onToggle: tick(n.key)}));
   dinnerNeeds.forEach(n => entries.push({source: "dinners", name: n.name, qtyText: n.qtyText,
     sub: n.sub, checked: !!shopping.checked[n.key], onToggle: tick(n.key)}));
+  lowStaples().forEach(it => entries.push({source: "staples", name: it.name, qtyText: "",
+    sub: shopGroup === "aisle" ? "staple running low" : "", checked: !it.low,
+    onToggle: () => {
+      // Ticking it off means you've bought it: it's no longer running low.
+      if(it.low){ boughtStaples.add(it.name); setStapleLow(it, false); }
+      else { setStapleLow(it, true); boughtStaples.delete(it.name); }
+    }}));
   shopping.manual.forEach(m => entries.push({source: "manual", name: m.name, qtyText: fmtQty(m.quantity, m.unit),
     sub: shopGroup === "aisle" ? "added by you" : "", checked: !!m.checked,
     onToggle: () => {
@@ -2429,7 +2458,7 @@ function renderShopping(){
   const row = (e, picker) => list.appendChild(shopRow({...e, aislePicker: picker}));
 
   if(shopGroup === "source"){
-    [["recipes", "For reserved recipes"], ["dinners", dnShoppingTitleSafe()], ["manual", "Added by you"]].forEach(([src, title]) => {
+    [["recipes", "For reserved recipes"], ["dinners", dnShoppingTitleSafe()], ["staples", "Staples running low"], ["manual", "Added by you"]].forEach(([src, title]) => {
       const group = entries.filter(e => e.source === src);
       if(!group.length) return;
       heading(title);
@@ -3017,7 +3046,7 @@ function render(){
 
       row.innerHTML = `
         <span class="name">${escapeHtml(item.name)}${resHtml}</span>
-        <span class="qty${item.staple ? " staple-tag" : ""}">${item.staple ? "staple" : fmtQty(item.quantity, item.unit)}</span>
+        <span class="qty${item.staple ? " staple-tag" : ""}${item.low ? " staple-low" : ""}">${item.staple ? (item.low ? "running low" : "staple") : fmtQty(item.quantity, item.unit)}</span>
         <button type="button" class="del" aria-label="Remove ${escapeHtml(item.name)}">✕</button>
       `;
 
@@ -3070,13 +3099,20 @@ function renderAdjustBar(){
     pushUndo(item.staple ? `unmark ${item.name} as staple` : `mark ${item.name} as staple`);
     if(item.staple){
       delete item.staple;
+      delete item.low;
       if(item.quantity <= 0) item.quantity = 1;
     }else{
       item.staple = true;
     }
     queueSave(`Update ${item.name} staple`);
     render();
+    updateShopBadge();
   };
+  const lowBtn = document.getElementById("adjustLow");
+  lowBtn.classList.toggle("hidden", !item.staple);
+  lowBtn.textContent = item.low ? "Running low ✓" : "Running low";
+  lowBtn.classList.toggle("on", !!item.low);
+  lowBtn.onclick = () => setStapleLow(item, !item.low);
   document.querySelector("#adjustBar .adjust-controls").classList.toggle("hidden", !!item.staple);
   document.getElementById("adjustUnit").classList.toggle("hidden", !!item.staple);
 
