@@ -1188,7 +1188,9 @@ function dnDeductPastDinners(){
   if(typeof items === "undefined") return;
   const today = dnIso(new Date());
   let plansChanged = false;
-  if(!dnPlans.deductFrom){ dnPlans.deductFrom = today; plansChanged = true; }   // never go back before this
+  // Never go back before this. The first run starts from Tue 17 Nov 2026: the cupboard
+  // amounts were entered on the Monday evening, after that night's dinner.
+  if(!dnPlans.deductFrom){ dnPlans.deductFrom = "2026-11-17" < today ? "2026-11-17" : today; plansChanged = true; }
   const map = dnByName();
   const done = [];
   dnPlans.weeks.forEach(w => w.days.forEach((d, i) => {
