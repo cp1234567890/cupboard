@@ -14,12 +14,14 @@
     {
       "name": "Spinach",
       "quantity": 1,
-      "unit": "pcs"
+      "unit": "pcs",
+      "checked": true
     }
   ],
   "checked": {
     "dinner:onion|pcs": true,
-    "dinner:tenderstem broccoli|measure": true
+    "dinner:tenderstem broccoli|measure": true,
+    "dinner:spring onion|pcs": true
   },
   "aisles": {},
   "aisleOrder": [
