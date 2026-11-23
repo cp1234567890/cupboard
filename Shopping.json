@@ -21,7 +21,8 @@
   "checked": {
     "dinner:onion|pcs": true,
     "dinner:tenderstem broccoli|measure": true,
-    "dinner:spring onion|pcs": true
+    "dinner:spring onion|pcs": true,
+    "dinner:tomato|pcs": true
   },
   "aisles": {},
   "aisleOrder": [
