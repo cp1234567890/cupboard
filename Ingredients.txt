@@ -58,13 +58,13 @@ Vegetable Stock|1|g|staple
 Tomato Puree|1|g|staple
 Hoisin Sauce|1|g|staple
 Miso Paste|1|g|staple|loc:fridge
-Chicken Thigh|4|pcs|loc:fridge
-Chopped Tomatoes|1|pcs
+Chicken Thigh|0|pcs|used:1795456055574|loc:fridge
+Chopped Tomatoes|0|pcs|used:1795456055543
 Cinnamon|1|g|staple
 Espresso|1|g|staple
 Lemon|1|pcs|loc:fridge
 Maple Syrup|1|g|staple
-Onion|1|pcs|loc:fridge
-Pak Choi|2|pcs|loc:fridge
-Salmon Fillet|2|pcs|loc:fridge
+Onion|0|pcs|used:1795456055538|loc:fridge
+Pak Choi|0|pcs|used:1795456055582|loc:fridge
+Salmon Fillet|0|pcs|used:1795456055557|loc:fridge
 Fudge|100|g
