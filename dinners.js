@@ -1157,8 +1157,8 @@ function dnTakeFromCupboard(din){
     const stock = dnStockFor(ing.name);
     if(!stock || stock.staple) return;
     let amount = null;
-    if(ing.unit in DN_MEASURE) amount = convertQty(q, ing.unit, stock.unit);
-    else if(ing.unit === stock.unit || (DN_COUNTABLE.includes(ing.unit) && DN_COUNTABLE.includes(stock.unit))) amount = q;
+    if(ing.unit === stock.unit || (DN_COUNTABLE.includes(ing.unit) && DN_COUNTABLE.includes(stock.unit))) amount = q;
+    else if(ing.unit in DN_MEASURE) amount = convertQty(q, ing.unit, stock.unit, stock.name);   // 80 g -> 1 portion
     if(amount === null) return;                         // a clove or a handful can't be taken from grams
     const take = roundQty(Math.min(amount, Math.max(stock.quantity, 0)));
     if(take <= 0) return;
@@ -1175,7 +1175,7 @@ function dnPutBack(used){
   (used || []).forEach(u => {
     const item = items.find(i => i.name === u.name) || items.find(i => sameIngredient(i.name, u.name));
     if(item){
-      const q = item.unit === u.unit ? u.quantity : convertQty(u.quantity, u.unit, item.unit);
+      const q = item.unit === u.unit ? u.quantity : convertQty(u.quantity, u.unit, item.unit, item.name);
       if(q !== null) item.quantity = roundQty(item.quantity + q);
     }else{
       const mem = memFor(u.name);
@@ -1480,7 +1480,7 @@ function dinnerShoppingNeeds(){
     if(stock){
       if(stock.staple) return;
       label = stock.name;
-      const conv = g.unit in DN_MEASURE ? convertQty(stock.quantity, stock.unit, g.unit)
+      const conv = g.unit in DN_MEASURE ? convertQty(stock.quantity, stock.unit, g.unit, stock.name)
         : (g.unit === stock.unit || (["pcs", "tin", "pack"].includes(g.unit) && ["pcs", "tin", "pack"].includes(stock.unit)) ? stock.quantity : null);
       have = conv === null ? 0 : Math.max(conv, 0);
     }
