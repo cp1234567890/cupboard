@@ -1664,7 +1664,7 @@ function dnDayDetails(d, i, din){
     ${d.mode === "cook" && din ? (d.skipped
       ? `<div class="dn-made"><span>Marked as not made. Its ingredients are still in the cupboard.</span><button type="button" data-act="unskip" data-day="${i}">Made it after all</button></div>`
       : `<div class="dn-made"><span>${d.used ? `Taken from cupboard: ${escapeHtml(d.used.length ? d.used.map(u => u.unit === "pcs" ? `${u.name} ×${u.quantity}` : `${u.name} ${fmtQty(u.quantity, u.unit)}`).join(", ") : "nothing tracked")}` : "Comes out of the cupboard the morning after."}</span><button type="button" data-act="skip" data-day="${i}">Didn't make it</button></div>`) : ""}
-    ${din && d.mode !== "out" ? dnRecipeHtml(din) : ""}
+    ${din && d.mode !== "out" ? dnRecipeHtml(din) + `<button type="button" class="dn-edit-link" data-dnedit="${escapeHtml(din.name)}">Edit this recipe</button>` : ""}
   </div>`;
 }
 
@@ -1679,6 +1679,7 @@ function dnWirePlan(host){
     dnExpanded = dnExpanded === i ? null : i;
     renderDinners();
   });
+  host.querySelectorAll("[data-dnedit]").forEach(b => b.onclick = () => dnOpenEditor(b.dataset.dnedit));
   host.querySelectorAll(".dn-swap").forEach(sel => sel.onchange = () => {
     if(!sel.value) return;
     dnSetDay(Number(sel.dataset.day), {mode: "cook", dinner: sel.value}, `swap ${DN_DAYS[sel.dataset.day]}`);
@@ -1747,6 +1748,7 @@ function dnRenderLibrary(){
       </div>
       ${open ? `<div class="recipe-details">${dnRecipeHtml(d)}
         <div class="recipe-actions">
+          <button type="button" class="r-edit" data-dnedit="${escapeHtml(d.name)}">Edit</button>
           <button type="button" class="r-edit" data-retire="${escapeHtml(d.name)}">${d.retired ? "Bring back" : "Retire"}</button>
           <button type="button" class="r-delete" data-delete="${escapeHtml(d.name)}">Delete</button>
         </div></div>` : ""}
@@ -1754,7 +1756,7 @@ function dnRenderLibrary(){
   };
 
   host.innerHTML = `
-    <div class="search"><input type="search" id="dnLibSearch" placeholder="Search dinners or ingredients" value="${escapeHtml(dnLibSearch)}" autocomplete="off"></div>
+    <div class="search dn-lib-top"><input type="search" id="dnLibSearch" placeholder="Search dinners or ingredients" value="${escapeHtml(dnLibSearch)}" autocomplete="off"><button type="button" id="dnNewDinner" class="dn-new">+ New</button></div>
     ${active.length ? active.map(row).join("") : `<div class="empty">${dnData.dinners.length ? "No dinners match." : "No dinners yet. Use From Claude to paste recipes in."}</div>`}
     ${retired.length ? `<div class="ideas-title">Retired: never planned</div>${retired.map(row).join("")}` : ""}
     <div class="dn-rules">
@@ -1778,6 +1780,9 @@ function dnRenderLibrary(){
     dnExpanded = dnExpanded === el.dataset.lib ? null : el.dataset.lib;
     dnRenderLibrary();
   });
+  host.querySelectorAll("[data-dnedit]").forEach(b => b.onclick = () => dnOpenEditor(b.dataset.dnedit));
+  const add = document.getElementById("dnNewDinner");
+  if(add) add.onclick = () => dnOpenEditor(null);
   host.querySelectorAll("[data-retire]").forEach(b => b.onclick = () => {
     const d = dnData.dinners.find(x => x.name === b.dataset.retire);
     if(!d) return;
@@ -2052,6 +2057,105 @@ function dnReadSetup(){
 
 function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("hidden"); }
 
+/* ---------- Editing a dinner ---------- */
+
+let dnEditing = null;     // name of the dinner being edited, or null for a new one
+
+// One ingredient as an editable line that reads back the same way.
+function dnIngEditLine(ing){
+  const note = ing.note ? ` (${ing.note})` : "";
+  const tail = note + (ing.perPortion ? " (per portion)" : "");
+  if(!ing.quantity) return ing.name.replace(/^./, c => c.toUpperCase()) + note;
+  const q = Math.round(ing.quantity * 100) / 100;
+  if(ing.unit in DN_MEASURE) return `${q}${["g", "kg", "ml"].includes(ing.unit) ? "" : " "}${ing.unit} ${ing.name}${tail}`;
+  if(ing.unit === "pcs" || !ing.unit){
+    // "2 chicken thighs" reads better, but only if it reads back as the same name.
+    const plural = q > 1 ? ing.name + (/(s|ch|sh|x)$/.test(ing.name) ? "es" : "s") : ing.name;
+    return `${q} ${dnSingular(plural) === ing.name ? plural : ing.name}${tail}`;
+  }
+  return `${q} ${dnPlural(ing.unit, q)} ${ing.name}${tail}`;
+}
+
+function dnReadIngredients(text){
+  return String(text || "").split("\n").map(l => l.trim()).filter(Boolean).flatMap(line => dnParseIngredientLine(line)).map(i => {
+    // Only a note that is exactly "per portion" marks it; "100g per serving" is just a note.
+    if(i.note && i.note.split(/;\s*/).some(n => /^per (portion|serving)$/i.test(n.trim()))){
+      i.perPortion = true;
+      i.note = i.note.split(/;\s*/).filter(n => !/^per (portion|serving)$/i.test(n.trim())).join("; ");
+      if(!i.note) delete i.note;
+    }
+    return i;
+  });
+}
+
+function dnOpenEditor(name){
+  const din = name ? dnData.dinners.find(d => d.name === name) : null;
+  dnEditing = din ? din.name : null;
+  const v = (id, val) => { document.getElementById(id).value = val == null ? "" : val; };
+  document.getElementById("dnEditTitle").textContent = din ? "Edit dinner" : "New dinner";
+  v("dnEditName", din && din.name);
+  v("dnEditServes", din ? din.serves : 1);
+  v("dnEditMins", din && din.mins);
+  v("dnEditProtein", din && din.protein);
+  v("dnEditIngs", din ? din.ingredients.map(dnIngEditLine).join("\n") : "");
+  v("dnEditMethod", din ? din.method.join("\n") : "");
+  v("dnEditTip", din && din.tip);
+  v("dnEditBoost", din && din.boost);
+  document.getElementById("dnEditError").style.display = "none";
+  dnEditPreview();
+  document.getElementById("dnEditModal").classList.remove("hidden");
+}
+
+function dnEditPreview(){
+  const ings = dnReadIngredients(document.getElementById("dnEditIngs").value);
+  const box = document.getElementById("dnEditRead");
+  const avoid = dnAvoidHits({name: document.getElementById("dnEditName").value, ingredients: ings}, dnRules().avoid);
+  box.innerHTML = ings.length
+    ? `Reads as: ${ings.map(i => escapeHtml(i.quantity ? `${Math.round(i.quantity * 100) / 100}${i.unit && i.unit !== "pcs" ? " " + i.unit : ""} ${i.name}${i.perPortion ? " (each portion)" : ""}` : `${i.name} (to taste)`)).join(" · ")}` +
+      (avoid.length ? `<span class="dn-warn">Contains ${escapeHtml(avoid.join(", "))}, which is on your avoid list.</span>` : "")
+    : "";
+}
+
+function dnSaveEditor(){
+  const val = id => document.getElementById(id).value.trim();
+  const err = msg => { const e = document.getElementById("dnEditError"); e.textContent = msg; e.style.display = "block"; };
+  const name = val("dnEditName").replace(/\s+/g, " ");
+  if(!name) return err("Give the dinner a name.");
+  const clash = dnData.dinners.find(d => dnNorm(d.name) === dnNorm(name) && d.name !== dnEditing);
+  if(clash) return err(`There's already a dinner called "${clash.name}".`);
+  const ingredients = dnReadIngredients(document.getElementById("dnEditIngs").value);
+  if(!ingredients.length) return err("Add at least one ingredient, one per line.");
+  const old = dnEditing ? dnData.dinners.find(d => d.name === dnEditing) : null;
+  const din = dnNormaliseDinner({
+    name, ingredients,
+    serves: val("dnEditServes") || 1,
+    mins: val("dnEditMins") || null,
+    protein: val("dnEditProtein") || null,
+    method: document.getElementById("dnEditMethod").value.split("\n").map(l => l.trim().replace(/^\d+[.)]\s*/, "")).filter(Boolean),
+    tip: val("dnEditTip") || undefined,
+    boost: val("dnEditBoost") || undefined,
+    retired: old && old.retired
+  });
+
+  pushUndo(old ? `edit ${old.name}` : `add ${name}`);
+  if(old) dnData.dinners[dnData.dinners.indexOf(old)] = din;
+  else dnData.dinners.push(din);
+
+  // A new name is carried through every planned week.
+  if(old && old.name !== din.name){
+    dnPlans.weeks.forEach(w => {
+      w.days.forEach(d => { if(d.dinner === old.name) d.dinner = din.name; });
+      if(w.carryOver) w.carryOver = w.carryOver.map(n => n === old.name ? din.name : n);
+    });
+    dnQueueSave("plans", `Rename ${old.name} to ${din.name}`);
+  }
+  dnQueueSave("data", old ? `Edit dinner ${din.name}` : `Add dinner ${din.name}`);
+  if(dnMode === "library") dnExpanded = din.name;
+  document.getElementById("dnEditModal").classList.add("hidden");
+  renderDinners();
+  updateShopBadge();
+}
+
 /* ---------- Styles and wiring ---------- */
 
 (function dnInit(){
@@ -2105,6 +2209,14 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
   .dn-made{display:flex; align-items:center; gap:10px; margin:-4px 0 12px; font-size:0.84rem; color:var(--ink-soft);}
   .dn-made span{flex:1;}
   .dn-made button{padding:7px 10px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.82rem; cursor:pointer; white-space:nowrap;}
+  .dn-lib-top{display:flex; gap:8px;}
+  .dn-lib-top input{flex:1;}
+  .dn-new{padding:0 14px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.9rem; cursor:pointer; white-space:nowrap;}
+  .dn-edit-link{margin-top:6px; padding:8px 12px; border-radius:9px; border:1px solid var(--line); background:var(--card); color:var(--ink); font-size:0.85rem; cursor:pointer;}
+  #dnEditModal textarea, #dnEditModal input{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-size:0.92rem;}
+  .dn-edit-nums{display:flex; gap:8px;}
+  .dn-edit-nums .field{flex:1;}
+  #dnEditRead{font-size:0.8rem; color:var(--ink-soft); margin:-6px 0 12px;}
   .dn-rules{margin-top:20px;}
   .dn-staple-note{margin:0 0 12px;}
   .dn-rules textarea, #dnPaste{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; font-size:0.9rem;}
@@ -2157,6 +2269,36 @@ function dnCloseSetup(){ document.getElementById("dnSetupModal").classList.add("
       <button type="button" class="dn-setup-claude" id="dnSetupClaude">Ask Claude to plan it instead</button>
     </div>`;
   document.body.appendChild(setup);
+
+  const editor = document.createElement("div");
+  editor.id = "dnEditModal";
+  editor.className = "modal-backdrop hidden";
+  editor.innerHTML = `
+    <div class="modal recipe-modal">
+      <h2 id="dnEditTitle">Edit dinner</h2>
+      <div class="field"><label for="dnEditName">Name</label><input id="dnEditName" autocomplete="off"></div>
+      <div class="dn-edit-nums">
+        <div class="field"><label for="dnEditServes">Serves</label><input id="dnEditServes" type="number" min="1" inputmode="numeric"></div>
+        <div class="field"><label for="dnEditMins">Minutes</label><input id="dnEditMins" type="number" min="0" inputmode="numeric"></div>
+        <div class="field"><label for="dnEditProtein">Protein (g)</label><input id="dnEditProtein" type="number" min="0" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label for="dnEditIngs">Ingredients: one per line, amount first (e.g. "2 tbsp soy sauce", "1 onion (diced)")</label>
+        <textarea id="dnEditIngs" rows="9"></textarea></div>
+      <p id="dnEditRead"></p>
+      <div class="field"><label for="dnEditMethod">Method: one step per line</label><textarea id="dnEditMethod" rows="7"></textarea></div>
+      <div class="field"><label for="dnEditTip">Tip (optional)</label><textarea id="dnEditTip" rows="2"></textarea></div>
+      <div class="field"><label for="dnEditBoost">Protein boost (optional)</label><textarea id="dnEditBoost" rows="2"></textarea></div>
+      <p class="error-text" id="dnEditError"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="dnEditCancel">Cancel</button>
+        <button type="button" class="btn-primary" id="dnEditSave">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(editor);
+  document.getElementById("dnEditCancel").onclick = () => editor.classList.add("hidden");
+  document.getElementById("dnEditSave").onclick = dnSaveEditor;
+  document.getElementById("dnEditIngs").oninput = dnEditPreview;
+  document.getElementById("dnEditName").oninput = dnEditPreview;
 
   document.querySelectorAll("#dnModeChips .chip").forEach(c => c.onclick = () => {
     dnMode = c.dataset.mode;
