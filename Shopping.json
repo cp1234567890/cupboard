@@ -3,8 +3,7 @@
     {
       "name": "Onion",
       "quantity": 1,
-      "unit": "pcs",
-      "checked": true
+      "unit": "pcs"
     },
     {
       "name": "Ground Ginger",
@@ -15,19 +14,10 @@
     {
       "name": "Spinach",
       "quantity": 1,
-      "unit": "pcs",
-      "checked": true
+      "unit": "pcs"
     }
   ],
-  "checked": {
-    "dinner:onion|pcs": true,
-    "dinner:tenderstem broccoli|measure": true,
-    "dinner:spring onion|pcs": true,
-    "dinner:tomato|pcs": true,
-    "dinner:double cream|measure": true,
-    "dinner:chopped tomato|tin": true,
-    "dinner:chickpea|tin": true
-  },
+  "checked": {},
   "aisles": {},
   "aisleOrder": [
     "Fruit & veg",
