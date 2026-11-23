@@ -133,7 +133,19 @@
         },
         {
           "mode": "cook",
-          "dinner": "Red Lentil Dal with Basmati Rice"
+          "dinner": "Red Lentil Dal with Basmati Rice",
+          "used": [
+            {
+              "name": "Onion",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Chopped Tomatoes",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "leftover",
@@ -141,19 +153,57 @@
         },
         {
           "mode": "cook",
-          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi"
+          "dinner": "Chilli & Ginger Salmon with Basmati Rice & Steamed Pak Choi",
+          "used": [
+            {
+              "name": "Salmon Fillet",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Pak Choi",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "cook",
-          "dinner": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli"
+          "dinner": "Soy & Sesame Glazed Salmon with Rice & Tenderstem Broccoli",
+          "used": [
+            {
+              "name": "Salmon Fillet",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "cook",
-          "dinner": "Honey Garlic Chicken with Basmati Rice & Wilted Spinach"
+          "dinner": "Honey Garlic Chicken with Basmati Rice & Wilted Spinach",
+          "used": [
+            {
+              "name": "Chicken Thigh",
+              "quantity": 2,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "cook",
-          "dinner": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi"
+          "dinner": "Gochujang & Sesame Chicken with Quinoa, Wilted Spinach & Steamed Pak Choi",
+          "used": [
+            {
+              "name": "Chicken Thigh",
+              "quantity": 2,
+              "unit": "pcs"
+            },
+            {
+              "name": "Pak Choi",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         }
       ],
       "officeDays": [
@@ -199,5 +249,6 @@
         3
       ]
     }
-  ]
+  ],
+  "deductFrom": "2026-11-17"
 }
