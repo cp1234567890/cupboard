@@ -1,5 +1,11 @@
 {
-  "manual": [],
+  "manual": [
+    {
+      "name": "Onion",
+      "quantity": 1,
+      "unit": "pcs"
+    }
+  ],
   "checked": {},
   "aisles": {},
   "aisleOrder": [
