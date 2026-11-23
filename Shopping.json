@@ -4,6 +4,11 @@
       "name": "Onion",
       "quantity": 1,
       "unit": "pcs"
+    },
+    {
+      "name": "Ground Ginger",
+      "quantity": 1,
+      "unit": "pcs"
     }
   ],
   "checked": {},
