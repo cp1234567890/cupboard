@@ -762,10 +762,24 @@ const LOCATIONS_PATH = "Locations.json";
 const LOC_KEY = "cupboard-loc";
 function locOf(item){ return item.loc || "cupboard"; }
 
-function convertQty(q, from, to){
+// Pass the ingredient's name when you have it: an item with a portion size
+// ("1 pcs = 80 g") can then be converted between pieces and weight.
+function convertQty(q, from, to, name){
   if(from === to) return q;
-  if(!(from in UNIT_BASE) || !(to in UNIT_BASE)) return null;
-  return q * UNIT_BASE[from] / UNIT_BASE[to];
+  if(from in UNIT_BASE && to in UNIT_BASE) return q * UNIT_BASE[from] / UNIT_BASE[to];
+  const p = portionOf(name);
+  if(p){
+    if(from === "pcs" && to in UNIT_BASE) return q * p.qty * UNIT_BASE[p.unit] / UNIT_BASE[to];
+    if(to === "pcs" && from in UNIT_BASE) return q * UNIT_BASE[from] / UNIT_BASE[p.unit] / p.qty;
+  }
+  return null;
+}
+
+// The portion size of a cupboard item ({qty, unit}, e.g. 80 g), or null.
+function portionOf(name){
+  if(!name || typeof items === "undefined") return null;
+  const it = items.find(i => i.each && sameIngredient(i.name, name));
+  return it ? it.each : null;
 }
 function roundQty(n){ return Math.round(n * 100) / 100; }
 function fmt(n){ return String(roundQty(n)); }
@@ -911,6 +925,7 @@ function parseText(text){
       const alsoTok = extras.find(t => t.startsWith("also:"));
       const also = alsoTok ? alsoTok.slice(5) : "";
       const usedTok = extras.find(t => t.startsWith("used:"));
+      const eachTok = extras.find(t => /^each:\d+(\.\d+)?(g|kg|ml|l)$/.test(t));
       const used = usedTok ? parseInt(usedTok.slice(5), 10) : 0;
       const name = parts[0];
       let qty = parseFloat(parts[1]);
@@ -918,6 +933,10 @@ function parseText(text){
       const entry = {name, quantity: qty, unit, loc};
       if(staple) entry.staple = true;
       if(used > 0) entry.used = used;
+      if(eachTok){
+        const m = eachTok.match(/^each:(\d+(?:\.\d+)?)(g|kg|ml|l)$/);
+        if(Number(m[1]) > 0) entry.each = {qty: Number(m[1]), unit: m[2]};
+      }
       if(LOCS.includes(also) && also !== loc && loc !== "unsorted") entry.loc2 = also;
       out.push(entry);
     } else {
@@ -928,7 +947,7 @@ function parseText(text){
 }
 
 function serialize(list){
-  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}${i.loc && i.loc !== "cupboard" ? "|loc:" + i.loc : ""}${i.loc2 ? "|also:" + i.loc2 : ""}`).join("\n") + (list.length ? "\n" : "");
+  return list.map(i => `${i.name}|${i.quantity}|${i.unit}${i.staple ? "|staple" : ""}${i.used ? "|used:" + i.used : ""}${i.loc && i.loc !== "cupboard" ? "|loc:" + i.loc : ""}${i.loc2 ? "|also:" + i.loc2 : ""}${i.each ? "|each:" + i.each.qty + i.each.unit : ""}`).join("\n") + (list.length ? "\n" : "");
 }
 
 function titleCase(s){
@@ -1091,12 +1110,12 @@ function saveAliasesFromModal(){
   const item = items.find(i => normaliseName(i.name) === normCanon);
   if(item){
     const dupes = items.filter(i => i !== item && seen.has(normaliseName(i.name)));
-    const mergeable = dupes.filter(d => convertQty(1, d.unit, item.unit) !== null);
+    const mergeable = dupes.filter(d => convertQty(1, d.unit, item.unit, item.name) !== null);
     if(mergeable.length){
       const desc = mergeable.map(d => `${d.name} (${d.quantity} ${d.unit})`).join(", ");
       if(confirm(`Merge ${desc} into ${item.name}?`)){
         mergeable.forEach(d => {
-          item.quantity = roundQty(item.quantity + convertQty(d.quantity, d.unit, item.unit));
+          item.quantity = roundQty(item.quantity + convertQty(d.quantity, d.unit, item.unit, item.name));
           if(d.staple) item.staple = true;
           if(locOf(item) === "unsorted" && locOf(d) !== "unsorted") item.loc = d.loc;
           if((d.used || 0) > (item.used || 0)) item.used = d.used;
@@ -1386,8 +1405,8 @@ function queueSave(message){
 function combineSectionIngredients(sections){
   const combined = [];
   sections.forEach(section => (section.ingredients || []).forEach(ing => {
-    const found = combined.find(x => sameIngredient(x.name, ing.name) && convertQty(1, ing.unit, x.unit) !== null);
-    if(found) found.quantity = roundQty(found.quantity + convertQty(ing.quantity, ing.unit, found.unit));
+    const found = combined.find(x => sameIngredient(x.name, ing.name) && convertQty(1, ing.unit, x.unit, ing.name) !== null);
+    if(found) found.quantity = roundQty(found.quantity + convertQty(ing.quantity, ing.unit, found.unit, ing.name));
     else combined.push({...ing});
   }));
   return combined;
@@ -1520,7 +1539,7 @@ function reservedAmount(item, excludeRecipe){
     if(excludeRecipe instanceof Set && excludeRecipe.has(r)) return;
     r.ingredients.forEach(ing => {
       if(!sameIngredient(ing.name, item.name)) return;
-      const need = convertQty(ing.quantity, ing.unit, item.unit);
+      const need = convertQty(ing.quantity, ing.unit, item.unit, item.name);
       if(need !== null) total += need;
     });
   });
@@ -1563,7 +1582,7 @@ function getRecipeAvailability(recipe, selected = null, reservationOwner = recip
       return {...ingredient, available, status:"missing"};
     }
 
-    const need = convertQty(ingredient.quantity, ingredient.unit, cupboard.unit);
+    const need = convertQty(ingredient.quantity, ingredient.unit, cupboard.unit, cupboard.name);
     const held = reservedAmount(cupboard, reservationOwner); // set aside by other reserved recipes
 
     if(need === null){
@@ -1929,7 +1948,7 @@ function qaEval(r){
     if(existing.staple){
       return {blocked: true, warn: false, text: `${existing.name} is a staple, so there's nothing to add`};
     }
-    const conv = convertQty(r.qty, r.unit, existing.unit);
+    const conv = convertQty(r.qty, r.unit, existing.unit, existing.name);
     if(conv === null){
       return {blocked: true, warn: true,
         text: `Cupboard has ${existing.name} in ${existing.unit}. Change the unit or amount to match.`};
@@ -2088,7 +2107,7 @@ function applyQuickAdd(){
     }
 
     if(existing){
-      existing.quantity = roundQty(existing.quantity + convertQty(r.qty, r.unit, existing.unit));
+      existing.quantity = roundQty(existing.quantity + convertQty(r.qty, r.unit, existing.unit, existing.name));
     }else{
       const mem = memFor(name);
       const loc2 = mem && mem.loc === r.loc && mem.loc2 ? mem.loc2 : undefined;
@@ -2245,7 +2264,7 @@ function shortfallFor(list){
         g = {key, name: ing.name, unit: ing.unit, total: 0, recipes: []};
         groups.set(key, g);
       }
-      g.total += convertQty(ing.quantity, ing.unit, g.unit);
+      g.total += convertQty(ing.quantity, ing.unit, g.unit, ing.name);
       if(!g.recipes.includes(r.name)) g.recipes.push(r.name);
     });
   });
@@ -2259,7 +2278,7 @@ function shortfallFor(list){
       label = stock.name;
       if(stock.staple) return; // staples never need buying
       const free = stock.quantity - reservedAmount(stock, exclude);
-      const converted = convertQty(free, stock.unit, g.unit);
+      const converted = convertQty(free, stock.unit, g.unit, stock.name);
       have = converted === null ? 0 : Math.max(converted, 0);
     }
     const short = roundQty(g.total - have);
@@ -3092,7 +3111,7 @@ function renderAdjustBar(){
   unitSel.onchange = () => {
     pushUndo();
     // Convert the stored amount when the new unit is compatible (e.g. 500 g -> 2 cups).
-    const converted = convertQty(item.quantity, item.unit, unitSel.value);
+    const converted = convertQty(item.quantity, item.unit, unitSel.value, item.name);
     if(converted !== null) item.quantity = roundQty(converted);
     item.unit = unitSel.value;
     queueSave(`Set ${item.name} unit`);
@@ -3206,7 +3225,7 @@ function addItem(name, qty, unit, staple = false){
         queueSave(`Mark ${existing.name} as staple`);
       }
     }else if(!existing.staple){
-      const add = convertQty(qty, unit, existing.unit);
+      const add = convertQty(qty, unit, existing.unit, existing.name);
       existing.quantity = roundQty(existing.quantity + (add ?? qty));
       queueSave(`Increase ${existing.name}`);
     }
@@ -3469,7 +3488,7 @@ async function confirmSectionMake(){
   const requirements=sectionIngredients(recipe,selected);
   clearTimeout(saveTimer);pushUndo(`make ${recipe.name}: ${selected.map(i=>recipe.sections[i].name).join(", ")}`);
   requirements.forEach(ingredient=>{const item=items.find(i=>sameIngredient(i.name,ingredient.name));if(!item)return;
-    item.used=Date.now();if(item.staple)return;const amount=convertQty(ingredient.quantity,ingredient.unit,item.unit);
+    item.used=Date.now();if(item.staple)return;const amount=convertQty(ingredient.quantity,ingredient.unit,item.unit,item.name);
     if(amount!==null)item.quantity=roundQty(item.quantity-amount);});
   items=items.filter(i=>i.staple||i.quantity>0);
   recipe.lastMade=Date.now();if(selected.length===recipe.sections.length)delete recipe.reserved;
@@ -3508,7 +3527,7 @@ async function makeRecipe(name){
     if(!item) return;
     item.used = Date.now();
     if(item.staple) return; // staples aren't tracked
-    const used = convertQty(ingredient.quantity, ingredient.unit, item.unit);
+    const used = convertQty(ingredient.quantity, ingredient.unit, item.unit, item.name);
     if(used !== null) item.quantity = roundQty(item.quantity - used);
   });
 
@@ -4393,9 +4412,9 @@ document.getElementById("shopAdd").addEventListener("submit", e => {
 
   pushUndo(`add ${name} to shopping list`);
   const existing = shopping.manual.find(m =>
-    sameIngredient(m.name, name) && convertQty(1, m.unit, unit) !== null);
+    sameIngredient(m.name, name) && convertQty(1, m.unit, unit, name) !== null);
   if(existing){
-    existing.quantity = roundQty(existing.quantity + convertQty(qty, unit, existing.unit));
+    existing.quantity = roundQty(existing.quantity + convertQty(qty, unit, existing.unit, existing.name));
   }else{
     shopping.manual.push({name, quantity: qty, unit});
   }
