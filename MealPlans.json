@@ -217,7 +217,24 @@
       "days": [
         {
           "mode": "cook",
-          "dinner": "Spiced Chickpea & Tomato Pasta"
+          "dinner": "Spiced Chickpea & Tomato Pasta",
+          "used": [
+            {
+              "name": "Chickpeas",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Chopped Tomatoes",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Onion",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "leftover",
