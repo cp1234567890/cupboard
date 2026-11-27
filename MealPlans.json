@@ -242,7 +242,29 @@
         },
         {
           "mode": "cook",
-          "dinner": "Butter-Style Chicken Curry with Basmati Rice"
+          "dinner": "Butter-Style Chicken Curry with Basmati Rice",
+          "used": [
+            {
+              "name": "Chicken Thigh",
+              "quantity": 4,
+              "unit": "pcs"
+            },
+            {
+              "name": "Onion",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Chopped Tomatoes",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Double Cream",
+              "quantity": 60,
+              "unit": "ml"
+            }
+          ]
         },
         {
           "mode": "leftover",
