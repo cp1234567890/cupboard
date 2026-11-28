@@ -272,7 +272,19 @@
         },
         {
           "mode": "cook",
-          "dinner": "Gochujang Crispy Tofu with Brown Rice & Tenderstem Broccoli"
+          "dinner": "Gochujang Crispy Tofu with Brown Rice & Tenderstem Broccoli",
+          "used": [
+            {
+              "name": "Broccoli",
+              "quantity": 1,
+              "unit": "pcs"
+            },
+            {
+              "name": "Spring Onions",
+              "quantity": 1,
+              "unit": "pcs"
+            }
+          ]
         },
         {
           "mode": "cook",
